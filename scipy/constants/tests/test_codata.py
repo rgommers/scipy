@@ -1,6 +1,7 @@
 import warnings
 
-from scipy.constants import constants, codata, find
+import scipy.constants as constants
+from scipy.constants import find, value
 from numpy.testing import assert_equal, assert_, run_module_suite, \
                           assert_almost_equal
 
@@ -29,23 +30,23 @@ def test_find():
 
 def test_basic_table_parse():
     c = 'speed of light in vacuum'
-    assert_equal(codata.value(c), constants.c)
-    assert_equal(codata.value(c), constants.speed_of_light)
+    assert_equal(value(c), constants.c)
+    assert_equal(value(c), constants.speed_of_light)
 
 def test_basic_lookup():
-    assert_equal('%d %s' % (codata.c, codata.unit('speed of light in vacuum')),
+    assert_equal('%d %s' % (constants.c, constants.unit('speed of light in vacuum')),
                  '299792458 m s^-1')
 
 def test_find_all():
-    assert_(len(codata.find(disp=False)) > 300)
+    assert_(len(find(disp=False)) > 300)
 
 def test_find_single():
-    assert_equal(codata.find('Wien freq', disp=False)[0],
+    assert_equal(find('Wien freq', disp=False)[0],
                  'Wien frequency displacement law constant')
 
 def test_2002_vs_2006():
-    assert_almost_equal(codata.value('magn. flux quantum'),
-                        codata.value('mag. flux quantum'))
+    assert_almost_equal(value('magn. flux quantum'),
+                        value('mag. flux quantum'))
 
 if __name__ == "__main__":
     run_module_suite()
