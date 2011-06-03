@@ -3,7 +3,7 @@ from info import __doc__
 __all__ = ['who', 'source', 'info', 'doccer']
 
 import doccer
-from common import *
+from _common import *
 from numpy import who, source, info as _info
 
 import sys
@@ -18,7 +18,7 @@ try:
 except ImportError:
     pass
 
-__all__ += common.__all__
+__all__ += _common.__all__
 
 from numpy.testing import Tester
 test = Tester().test
