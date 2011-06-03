@@ -2,7 +2,7 @@
 
 from random import random
 
-from scipy.optimize import zeros as cc
+from scipy.optimize import bisect, ridder, brenth, brentq
 
 def f1(x) :
     return x*(x-1.)
@@ -41,7 +41,7 @@ bisection in such circumstance, while being faster for smooth
 monotone sorts of functions.
 """
 
-methods = [cc.bisect,cc.ridder,cc.brenth,cc.brentq]
-mstrings = ['cc.bisect','cc.ridder','cc.brenth','cc.brentq']
+methods = [bisect, ridder, brenth, brentq]
+mstrings = ['bisect', 'ridder', 'brenth', 'brentq']
 functions = [f2,f3,f4,f5,f6]
 fstrings = ['f2','f3','f4','f5','f6']

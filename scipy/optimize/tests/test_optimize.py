@@ -16,7 +16,7 @@ from numpy.testing import assert_raises, assert_almost_equal, \
 from scipy import optimize
 from numpy import array, zeros, float64, dot, log, exp, inf, sin, cos
 import numpy as np
-from scipy.optimize.tnc import RCSTRINGS, MSG_NONE
+from scipy.optimize._tnc import RCSTRINGS, MSG_NONE
 import numpy.random
 from math import pow
 

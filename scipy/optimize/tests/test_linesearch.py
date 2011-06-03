@@ -4,7 +4,7 @@ Tests for line search routines
 
 from numpy.testing import assert_, assert_equal, \
      assert_array_almost_equal, assert_array_almost_equal_nulp
-import scipy.optimize.linesearch as ls
+import scipy.optimize._linesearch as ls
 import numpy as np
 
 def assert_wolfe(s, phi, derphi, c1=1e-4, c2=0.9, err_msg=""):

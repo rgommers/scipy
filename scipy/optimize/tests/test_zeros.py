@@ -5,7 +5,7 @@ from math import sqrt
 from numpy.testing import TestCase, assert_almost_equal, assert_warns, \
                             assert_, run_module_suite
 
-from scipy.optimize import zeros as cc
+from scipy.optimize import bisect, ridder, brentq, brenth, newton
 
 # Import testing parameters
 from scipy.optimize._tstutils import functions, fstrings
@@ -21,18 +21,18 @@ class TestBasic(TestCase) :
                 err_msg='method %s, function %s' % (name, fname))
 
     def test_bisect(self):
-        self.run_check(cc.bisect, 'bisect')
+        self.run_check(bisect, 'bisect')
     def test_ridder(self):
-        self.run_check(cc.ridder, 'ridder')
+        self.run_check(ridder, 'ridder')
     def test_brentq(self):
-        self.run_check(cc.brentq, 'brentq')
+        self.run_check(brentq, 'brentq')
     def test_brenth(self):
-        self.run_check(cc.brenth, 'brenth')
+        self.run_check(brenth, 'brenth')
 
     def test_deriv_zero_warning(self):
         func = lambda x: x**2
         dfunc = lambda x: 2*x
-        assert_warns(RuntimeWarning, cc.newton, func, 0.0, dfunc)
+        assert_warns(RuntimeWarning, newton, func, 0.0, dfunc)
 
 if __name__ == '__main__' :
     run_module_suite()

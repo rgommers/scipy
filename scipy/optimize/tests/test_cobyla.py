@@ -2,7 +2,7 @@ import math
 
 from numpy.testing import assert_almost_equal, TestCase, run_module_suite
 
-from scipy.optimize import cobyla as co
+from scipy.optimize import _cobyla_py as co
 
 class TestCobyla(TestCase):
     def test_simple(self):

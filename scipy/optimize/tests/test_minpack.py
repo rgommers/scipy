@@ -8,7 +8,7 @@ import numpy as np
 from numpy import array, float64
 
 from scipy import optimize
-from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
+from scipy.optimize import leastsq, curve_fit, fixed_point
 
 
 class ReturnShape(object):

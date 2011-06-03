@@ -78,8 +78,8 @@ RCSTRINGS = {
 # Changes to interface made by Travis Oliphant, Apr. 2004 for inclusion in
 #  SciPy
 
-import optimize
-approx_fprime = optimize.approx_fprime
+import _optimize
+approx_fprime = _optimize.approx_fprime
 
 def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
              bounds=None, epsilon=1e-8, scale=None, offset=None,

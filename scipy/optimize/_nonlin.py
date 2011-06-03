@@ -103,7 +103,7 @@ The solution can be found using the `newton_krylov` solver:
    plt.pcolor(x, y, sol)
    plt.colorbar()
    plt.show()
-   
+
 """
 # Copyright (C) 2009, Pauli Virtanen <pav@iki.fi>
 # Distributed under the same license as Scipy.
@@ -116,7 +116,7 @@ import scipy.sparse.linalg
 import scipy.sparse
 import scipy.lib.blas as blas
 import inspect
-from linesearch import scalar_search_wolfe1, scalar_search_armijo
+from _linesearch import scalar_search_wolfe1, scalar_search_armijo
 
 __all__ = [
     'broyden1', 'broyden2', 'anderson', 'linearmixing',
@@ -401,7 +401,7 @@ class TerminationCondition(object):
             x_tol = np.inf
         if x_rtol is None:
             x_rtol = np.inf
-        
+
         self.x_tol = x_tol
         self.x_rtol = x_rtol
         self.f_tol = f_tol
@@ -412,7 +412,7 @@ class TerminationCondition(object):
 
         self.f0_norm = None
         self.iteration = 0
-        
+
     def check(self, f, x, dx):
         self.iteration += 1
         f_norm = self.norm(f)
@@ -421,7 +421,7 @@ class TerminationCondition(object):
 
         if self.f0_norm is None:
             self.f0_norm = f_norm
-            
+
         if f_norm == 0:
             return True
 
@@ -464,7 +464,7 @@ class Jacobian(object):
     todense : optional
         Form the dense Jacobian matrix. Necessary for dense trust region
         algorithms, and useful for testing.
-        
+
     Attributes
     ----------
     shape
@@ -790,7 +790,7 @@ class LowRankMatrix(object):
            \"A limited memory Broyden method to solve high-dimensional
            systems of nonlinear equations\". Mathematisch Instituut,
            Universiteit Leiden, The Netherlands (2003).
-           
+
            http://www.math.leidenuniv.nl/scripties/Rotten.pdf
 
         """
@@ -889,7 +889,7 @@ class BroydenFirst(GenericBroyden):
         GenericBroyden.__init__(self)
         self.alpha = alpha
         self.Gm = None
-        
+
         if max_rank is None:
             max_rank = np.inf
         self.max_rank = max_rank
@@ -1097,7 +1097,7 @@ class Anderson(GenericBroyden):
     def _update(self, x, f, dx, df, dx_norm, df_norm):
         if self.M == 0:
             return
-        
+
         self.dx.append(dx)
         self.df.append(df)
 
@@ -1126,7 +1126,7 @@ class Anderson(GenericBroyden):
 class DiagBroyden(GenericBroyden):
     """
     Find a root of a function, using diagonal Broyden Jacobian approximation.
-    
+
     The Jacobian approximation is derived from previous iterations, by
     retaining only the diagonal of Broyden matrices.
 
@@ -1447,8 +1447,8 @@ def _nonlin_wrapper(name, jac):
     # Construct the wrapper function so that it's keyword arguments
     # are visible in pydoc.help etc.
     wrapper = """
-def %(name)s(F, xin, iter=None %(kw)s, verbose=False, maxiter=None, 
-             f_tol=None, f_rtol=None, x_tol=None, x_rtol=None, 
+def %(name)s(F, xin, iter=None %(kw)s, verbose=False, maxiter=None,
+             f_tol=None, f_rtol=None, x_tol=None, x_rtol=None,
              tol_norm=None, line_search='armijo', callback=None, **kw):
     jac = %(jac)s(%(kwkw)s **kw)
     return nonlin_solve(F, xin, jac, iter, verbose, maxiter,
