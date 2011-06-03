@@ -53,7 +53,6 @@ ndimage
 filters
 fourier
 interpolation
-io
 measurements
 morphology
 
