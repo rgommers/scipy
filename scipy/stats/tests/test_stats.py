@@ -2059,7 +2059,7 @@ class TestMannWhitneyU(TestCase):
         assert_equal(u2, 102)
         assert_approx_equal(p1, 8.81880199916178e-05)
 
-    def test_mannwhitneyu_ones():
+    def test_mannwhitneyu_ones(self):
         x = np.array([ 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
             1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1.,
             1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
