@@ -1114,6 +1114,7 @@ def describe(a, axis=0):
     kurt = kurtosis(a, axis)
     return n, mm, m, v, sk, kurt
 
+
 #####################################
 ########  NORMALITY TESTS  ##########
 #####################################
@@ -1147,12 +1148,14 @@ def skewtest(a, axis=0):
     if axis is None:
         a = np.ravel(a)
         axis = 0
+
     b2 = skew(a, axis)
     n = float(a.shape[axis])
     if n < 8:
         raise ValueError(
             "skewtest is not valid with less than 8 samples; %i samples"
             " were given." % int(n))
+
     y = b2 * math.sqrt(((n + 1) * (n + 3)) / (6.0 * (n - 2)))
     beta2 = (3.0 * (n * n + 27 * n - 70) * (n + 1) * (n + 3) /
             ((n - 2.0) * (n + 5) * (n + 7) * (n + 9)))
@@ -1162,6 +1165,7 @@ def skewtest(a, axis=0):
     y = np.where(y == 0, 1, y)
     Z = delta * np.log(y / alpha + np.sqrt((y / alpha) ** 2 + 1))
     return Z, 2 * distributions.norm.sf(np.abs(Z))
+
 
 def kurtosistest(a, axis=0):
     """
@@ -1201,6 +1205,7 @@ def kurtosistest(a, axis=0):
         warnings.warn(
             "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" %
             int(n))
+
     b2 = kurtosis(a, axis, fisher=False)
     E = 3.0*(n-1) /(n+1)
     varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1)*(n+3)*(n+5))
@@ -1216,6 +1221,7 @@ def kurtosistest(a, axis=0):
     Z = np.where(denom == 99, 0, Z)
     if Z.ndim == 0:
         Z = Z[()]
+
     #JPNote: p-value sometimes larger than 1
     #zprob uses upper tail, so Z needs to be positive
     return Z, 2 * distributions.norm.sf(np.abs(Z))
@@ -1262,8 +1268,6 @@ def normaltest(a, axis=0):
     k2 = s*s + k*k
     return k2, chisqprob(k2,2)
 
-# Martinez-Iglewicz test
-# K-S test
 
 #####################################
 ######  FREQUENCY FUNCTIONS  #######
@@ -1320,6 +1324,7 @@ def itemfreq(a):
     freq = zeros(len(scores))
     for i in range(len(scores)):
         freq[i] = np.add.reduce(np.equal(a,scores[i]))
+
     return array(_support.abut(scores, freq))
 
 
@@ -1328,6 +1333,7 @@ def _interpolate(a, b, fraction):
     'fraction' must be between 0 and 1.
     """
     return a + (b - a)*fraction;
+
 
 def scoreatpercentile(a, per, limit=()):
     """
@@ -1380,7 +1386,7 @@ def scoreatpercentile(a, per, limit=()):
 
 
 def percentileofscore(a, score, kind='rank'):
-    '''
+    """
     The percentile rank of a score relative to a list of scores.
 
     A `percentileofscore` of, for example, 80% means that 80% of the
@@ -1444,7 +1450,7 @@ def percentileofscore(a, score, kind='rank'):
     >>> percentileofscore([1, 2, 3, 3, 4], 3, kind='mean')
     60.0
 
-    '''
+    """
     a = np.array(a)
     n = len(a)
 
@@ -1563,6 +1569,7 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
     if extrapoints > 0 and printextras:
         warnings.warn("Points outside given histogram range = %s" \
                       %extrapoints)
+
     return (hist, defaultlimits[0], binsize, extrapoints)
 
 
@@ -1695,10 +1702,12 @@ def obrientransform(*args):
             t2 = 0.5*v[j]*(n[j]-1.0)
             t3 = (n[j]-1.0)*(n[j]-2.0)
             nargs[j][i] = (t1-t2) / float(t3)
+
     check = 1
     for j in range(k):
         if v[j] - np.mean(nargs[j]) > TINY:
             check = 0
+
     if check != 1:
         raise ValueError('Lack of convergence in obrientransform.')
     else:
@@ -1941,9 +1950,9 @@ def threshold(a, threshmin=None, threshmax=None, newval=0):
         mask |= (a < threshmin)
     if threshmax is not None:
         mask |= (a > threshmax)
+
     a[mask] = newval
     return a
-
 
 
 def sigmaclip(a, low=4., high=4.):
@@ -2008,6 +2017,7 @@ def sigmaclip(a, low=4., high=4.):
         critupper = c_mean + c_std*high
         c = c[(c>critlower) & (c<critupper)]
         delta = size-c.size
+
     return c, critlower, critupper
 
 
@@ -2048,6 +2058,7 @@ def trimboth(a, proportiontocut):
     uppercut = len(a) - lowercut
     if (lowercut >= uppercut):
         raise ValueError("Proportion too big.")
+
     return a[lowercut:uppercut]
 
 
@@ -2225,6 +2236,7 @@ def pearsonr(x, y):
     else:
         t_squared = r*r * (df / ((1.0 - r) * (1.0 + r)))
         prob = betai(0.5*df, 0.5, df / (df + t_squared))
+
     return r, prob
 
 
@@ -2807,6 +2819,7 @@ def linregress(x, y=None):
     else:
         r = r_num / r_den
         if (r > 1.0): r = 1.0 # from numerical error
+
     #z = 0.5*log((1.0+r+TINY)/(1.0-r+TINY))
     df = n-2
     t = r*np.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))
@@ -2876,9 +2889,7 @@ def ttest_1samp(a, popmean, axis=0):
            [ 2.77025808,  4.11038784]]), array([[  4.99613833e-01,   9.65686743e-01],
            [  7.89094663e-03,   1.49986458e-04]]))
 
-"""
-
-
+    """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
     df=n-1
@@ -2897,6 +2908,7 @@ def ttest_1samp(a, popmean, axis=0):
     if t.ndim == 0:
         t = t[()]
         prob = prob[()]
+
     return t,prob
 
 
@@ -3076,8 +3088,6 @@ def ttest_rel(a,b,axis=0):
     return t, prob
 
 
-#import scipy.stats
-#import distributions
 def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**kwds):
     """
     Perform the Kolmogorov-Smirnov test for goodness of fit
@@ -3234,6 +3244,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
             else:
                 return D, distributions.ksone.sf(D,N)*2
 
+
 def chisquare(f_obs, f_exp=None, ddof=0):
     """
     Calculates a one-way chi square test.
@@ -3278,7 +3289,6 @@ def chisquare(f_obs, f_exp=None, ddof=0):
            Statistics". Chapter 8. http://faculty.vassar.edu/lowry/ch8pt1.html
 
     """
-
     f_obs = asarray(f_obs)
     k = len(f_obs)
     if f_exp is None:
@@ -3378,10 +3388,11 @@ def ks_2samp(data1, data2):
         prob = ksprob((en+0.12+0.11/en)*d)
     except:
         prob = 1.0
+
     return d, prob
 
 
-def mannwhitneyu(x, y, use_continuity=True):
+def mannwhitneyu(x, y, use_continuity=True, alternative='less'):
     """
     Computes the Mann-Whitney rank test on samples x and y.
 
@@ -3392,11 +3403,14 @@ def mannwhitneyu(x, y, use_continuity=True):
     use_continuity : bool, optional
             Whether a continuity correction (1/2.) should be taken into
             account. Default is True.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Which alternative hypothesis to the null hypothesis the test uses.
+        Default is 'less'.
 
     Returns
     -------
     u : float
-        The Mann-Whitney statistics.
+        The Mann-Whitney test statistic.
     prob : float
         One-sided p-value assuming a asymptotic normal distribution.
 
@@ -3404,41 +3418,43 @@ def mannwhitneyu(x, y, use_continuity=True):
     -----
     Use only when the number of observation in each sample is > 20 and
     you have 2 independent samples of ranks. Mann-Whitney U is
-    significant if the u-obtained is LESS THAN or equal to the critical
+    significant if the `u` obtained is less than or equal to the critical
     value of U.
 
     This test corrects for ties and by default uses a continuity correction.
-    The reported p-value is for a one-sided hypothesis, to get the two-sided
-    p-value multiply the returned p-value by 2.
 
     """
-    x = asarray(x)
-    y = asarray(y)
+    x = np.asarray(x)
+    y = np.asarray(y)
     n1 = len(x)
     n2 = len(y)
-    ranked = rankdata(np.concatenate((x,y)))
-    rankx = ranked[0:n1]       # get the x-ranks
-    #ranky = ranked[n1:]        # the rest are y-ranks
-    u1 = n1*n2 + (n1*(n1+1))/2.0 - np.sum(rankx,axis=0)  # calc U for x
-    u2 = n1*n2 - u1                            # remainder is U for y
+    ranked = rankdata(np.concatenate((x, y)))
+    rankx = ranked[0:n1]   # get the x-ranks
+    u1 = n1*n2 + (n1*(n1+1))/2.0 - np.sum(rankx, axis=0)  # calc U for x
+    u2 = n1*n2 - u1  # remainder is U for y
     bigu = max(u1,u2)
-    smallu = min(u1,u2)
-    #T = np.sqrt(tiecorrect(ranked))  # correction factor for tied scores
     T = tiecorrect(ranked)
     if T == 0:
-        raise ValueError('All numbers are identical in amannwhitneyu')
-    sd = np.sqrt(T*n1*n2*(n1+n2+1)/12.0)
+        raise ValueError('All numbers are identical in mannwhitneyu().')
 
-    if use_continuity:
-        # normal approximation for prob calc with continuity correction
-        z = abs((bigu-0.5-n1*n2/2.0) / sd)
-    else:
-        z = abs((bigu-n1*n2/2.0) / sd)  # normal approximation for prob calc
-    return smallu, distributions.norm.sf(z)  #(1.0 - zprob(z))
+    sd = np.sqrt(T * n1 * n2 * (n1 + n2 + 1) / 12.0)
+    fact2 = 1
+    if alternative in ['less', 'smaller']:
+        z = u1 - n1*n2/2.0 - 0.5 * use_continuity
+    elif alternative in ['greater', 'larger']:
+        z = u2 - n1*n2/2.0 - 0.5 * use_continuity
+    elif alternative in ['two-sided']:
+        z = np.abs(bigu - n1*n2/2.0 - 0.5 * use_continuity)
+        fact2 = 2.
+
+    z = z / sd
+
+    return u2, distributions.norm.sf(z) * fact2  # (1.0 - zprob(z))
 
 
 def tiecorrect(rankvals):
     """Tie-corrector for ties in Mann Whitney U and Kruskal Wallis H tests.
+
     See Siegel, S. (1956) Nonparametric Statistics for the Behavioral
     Sciences.  New York: McGraw-Hill.  Code adapted from |Stat rankind.c
     code.
@@ -3510,7 +3526,6 @@ def ranksums(x, y):
     return z, prob
 
 
-
 def kruskal(*args):
     """
     Compute the Kruskal-Wallis H-test for independent samples
@@ -3552,26 +3567,25 @@ def kruskal(*args):
     if na < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
     n = np.asarray(map(len, args))
-    
+
     alldata = np.concatenate(args)
 
     ranked = rankdata(alldata)  # Rank the data
     T = tiecorrect(ranked)      # Correct for ties
     if T == 0:
         raise ValueError('All numbers are identical in kruskal')
-    
+
     # Compute sum^2/n for each group and sum
     j = np.insert(np.cumsum(n), 0, 0)
     ssbn = 0
     for i in range(na):
-        ssbn += square_of_sums(ranked[j[i]:j[i+1]]) / float(n[i]) 
-        
+        ssbn += square_of_sums(ranked[j[i]:j[i+1]]) / float(n[i])
+
     totaln = np.sum(n)
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
     df = na - 1
     h = h / float(T)
     return h, chisqprob(h, df)
-
 
 
 def friedmanchisquare(*args):
@@ -3664,8 +3678,10 @@ def chisqprob(chisq, df):
     """
     return special.chdtrc(df,chisq)
 
+
 ksprob = special.kolmogorov
 fprob = special.fdtrc
+
 
 def betai(a, b, x):
     """
@@ -3696,6 +3712,7 @@ def betai(a, b, x):
     x = np.asarray(x)
     x = np.where(x < 1.0, x, 1.0)  # if x > 1 then return 1.0
     return special.betainc(a, b, x)
+
 
 #####################################
 #######  ANOVA CALCULATIONS  #######
@@ -3755,6 +3772,7 @@ def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
     d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
     return n_um / d_en
 
+
 def f_value(ER, EF, dfR, dfF):
     """
     Returns an F-statistic for a restricted vs. unrestricted model.
@@ -3781,7 +3799,6 @@ def f_value(ER, EF, dfR, dfF):
 
     """
     return ((ER-EF)/float(dfR-dfF) / (EF/float(dfF)))
-
 
 
 def f_value_multivariate(ER, EF, dfnum, dfden):
@@ -3918,6 +3935,7 @@ def fastsort(a):
     as_ = a[it]
     return as_, it
 
+
 def rankdata(a):
     """
     Ranks the data, dealing with ties appropriately.
@@ -3957,4 +3975,5 @@ def rankdata(a):
                 newarray[ivec[j]] = averank
             sumranks = 0
             dupcount = 0
+
     return newarray
