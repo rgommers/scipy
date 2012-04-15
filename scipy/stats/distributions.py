@@ -1793,11 +1793,15 @@ class rv_continuous(rv_generic):
         index = range(Nargs)
         names = ['f%d' % n for n in range(Nargs - 2)] + ['floc', 'fscale']
         x0 = args[:]
+        x0_new = []
         for n, key in zip(index, names):
             if kwds.has_key(key):
                 fixedn.append(n)
                 args[n] = kwds[key]
-                del x0[n]
+            else:
+                x0_new.append(x0[n])
+
+        x0 = x0_new
 
         if len(fixedn) == 0:
             func = self.nnlf
