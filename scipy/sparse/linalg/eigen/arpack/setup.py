@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import re
 from os.path import join
 
 def needs_veclib_wrapper(info):
@@ -35,32 +34,21 @@ def configuration(parent_package='',top_path=None):
     arpack_sources.extend([join('ARPACK','UTIL', '*.f')])
     arpack_sources.extend([join('ARPACK','LAPACK', '*.f')])
 
+    arpack_sources += [join('ARPACK', 'FWRAPPERS', 'dummy.f')]
     if needs_veclib_wrapper(lapack_opt):
-        arpack_sources += [join('ARPACK', 'FWRAPPERS', 'veclib_cabi_f.f'),
-                           join('ARPACK', 'FWRAPPERS', 'veclib_cabi_c.c')]
-
         # Veclib/Accelerate ABI is g77
         lapack_opt = dict(lapack_opt)
         lapack_opt.setdefault('extra_f77_compile_args', []).append('-ff2c')
         lapack_opt.setdefault('extra_f90_compile_args', []).append('-ff2c')
-    else:
-        arpack_sources += [join('ARPACK', 'FWRAPPERS', 'dummy.f')]
 
     config.add_library('arpack_scipy', sources=arpack_sources,
                        include_dirs=[join('ARPACK', 'SRC')],
-                       depends = [join('ARPACK', 'FWRAPPERS',
-                                       'veclib_cabi_f.f'),
-                                  join('ARPACK', 'FWRAPPERS',
-                                       'veclib_cabi_c.c'),
-                                  join('ARPACK', 'FWRAPPERS',
-                                        'dummy.f')])
-
+                       extra_info=lapack_opt)
 
     config.add_extension('_arpack',
                          sources='arpack.pyf.src',
                          libraries=['arpack_scipy'],
-                         extra_info = lapack_opt
-                        )
+                         extra_info=lapack_opt)
 
     config.add_data_dir('tests')
     return config
