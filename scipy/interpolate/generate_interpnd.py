@@ -10,7 +10,7 @@ import shutil
 
 from mako.template import Template
 
-f = open('interpnd.pyx.in', 'r')
+f = open('interpnd.pyx.src', 'r')
 template = f.read()
 f.close()
 
