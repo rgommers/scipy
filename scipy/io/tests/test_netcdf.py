@@ -5,17 +5,16 @@ import os
 from os.path import join as pjoin, dirname
 import shutil
 import tempfile
-import time
-import sys
 from io import BytesIO
 from glob import glob
 
 import numpy as np
-from numpy.testing import dec, assert_
+from numpy.testing import assert_, assert_allclose
 
 from scipy.io.netcdf import netcdf_file
 
 from nose.tools import assert_true, assert_false, assert_equal, assert_raises
+
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
 
@@ -85,7 +84,6 @@ def test_read_write_files():
     shutil.rmtree(tmpdir)
 
 
-@dec.skipif(sys.version[:3] < '2.5', "Random StringIO issue on 2.4")
 def test_read_write_sio():
     eg_sio1 = BytesIO()
     f1 = make_simple(eg_sio1, 'w')
@@ -153,7 +151,7 @@ def test_write_invalid_dtype():
 def test_flush_rewind():
     stream = BytesIO()
     f = make_simple(stream, mode='w')
-    x = f.createDimension('x',4)
+    f.createDimension('x',4)
     v = f.createVariable('v', 'i2', ['x'])
     v[:] = 1
     f.flush()
@@ -169,9 +167,41 @@ def test_dtype_specifiers():
     # Specifying np.int16 or similar only works from the same commit as this
     # comment was made.
     f = make_simple(BytesIO(), mode='w')
-    x = f.createDimension('x',4)
-    v1 = f.createVariable('v1', 'i2', ['x'])
-    v2 = f.createVariable('v2', np.int16, ['x'])
-    v3 = f.createVariable('v3', np.dtype(np.int16), ['x'])
+    f.createDimension('x',4)
+    f.createVariable('v1', 'i2', ['x'])
+    f.createVariable('v2', np.int16, ['x'])
+    f.createVariable('v3', np.dtype(np.int16), ['x'])
     f.close()
+
+
+def test_read_write_float_values():
+    # write some floats and read them back.  Not done in any other test.
+    # Regression test for ticket1720.
+    cwd = os.getcwd()
+    try:
+        tmpdir = tempfile.mkdtemp()
+        os.chdir(tmpdir)
+
+        f = netcdf_file('simple.nc', 'w')
+        f.history = 'Created for a test'
+        f.createDimension('float_var', 10)
+        float_var = f.createVariable('float_var', 'f', ('float_var',))
+        vals = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
+        float_var[:] = vals
+        float_var.units = 'metres'
+        f.close()
+
+        f = netcdf_file('simple.nc', 'r')
+        float_var = f.variables['float_var']
+        assert_(float_var.units == 'metres')
+        assert_(float_var.shape == (10,))
+        assert_allclose(float_var[:], vals)
+        f.close()
+    except:
+        os.chdir(cwd)
+        shutil.rmtree(tmpdir)
+        raise
+
+    os.chdir(cwd)
+    shutil.rmtree(tmpdir)
 
