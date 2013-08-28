@@ -5282,12 +5282,14 @@ class norminvgauss_gen(rv_continuous):
                exp(b * x - a * sqrt(1 + x**2)) / sqrt(1 + x**2))
         return res
 
-    def _cdf(self, x, a, b):
+    def _cdf(self, x, a, b, x_opt=None):
         # x_opt is expensive to compute, but we can't cache it easily (no state
         # variables that depend on shape parameters can be used) - therefore
         # pass it directly to _cdf_single_call
-        x_opt = np.empty(a.shape, dtype=float)  # a.shape == b.shape == x.shape
-        x_opt.fill(self._compute_xopt(a[0], b[0]))
+        if x_opt is None:
+            x_opt = np.empty(a.shape, dtype=float)  # a.shape == b.shape == x.shape
+            x_opt.fill(self._compute_xopt(a[0], b[0]))
+
         self.veccdf.nin = self.numargs + 2  # shape args, x, x_opt
         return self.veccdf(x, a, b, x_opt)
 
@@ -5297,6 +5299,16 @@ class norminvgauss_gen(rv_continuous):
         else:
             h = integrate.quad(self._pdf, x, np.inf, args=(a, b))[0]
             return 1 - h
+
+    def _ppf(self, q, a, b):
+        a, b = map(np.atleast_1d, (a, b))  # needed because of _rvs
+        x_opt = np.empty(a.shape, dtype=float)
+        x_opt.fill(self._compute_xopt(a[0], b[0]))
+        self.vecfunc.nin = self.numargs + 2
+        return self.vecfunc(q, a, b, x_opt)
+
+    def _ppf_to_solve(self, x, q, a, b, x_opt):
+        return self._cdf(x, a, b, x_opt) - q
 
     def _stats(self, a, b):
         gamma = sqrt(a**2 - b**2)
