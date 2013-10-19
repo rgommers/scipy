@@ -15,7 +15,7 @@ from scipy import stats
 from numpy.testing import TestCase, run_module_suite
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
-    assert_allclose)
+    assert_allclose, assert_raises)
 
 
 class TestMquantiles(TestCase):
@@ -521,6 +521,13 @@ class TestNormalitytests():
         assert_array_almost_equal(mstats.skewtest(x), stats.skewtest(x))
         assert_array_almost_equal(mstats.kurtosistest(x),
                                   stats.kurtosistest(x))
+
+        funcs = [stats.normaltest, stats.skewtest, stats.kurtosistest]
+        mfuncs = [mstats.normaltest, mstats.skewtest, mstats.kurtosistest]
+        x = [1, 2, 3, 4]
+        for func, mfunc in zip(funcs, mfuncs):
+            assert_raises(ValueError, func, x)
+            assert_raises(ValueError, mfunc, x)
 
     def test_axis_None(self):
         # Test axis=None (equal to axis=0 for 1-D input)
