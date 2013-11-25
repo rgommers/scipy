@@ -92,7 +92,7 @@ class Test_lsim2(object):
         assert_almost_equal(x[:,1], expected_x1)
 
     def test_06(self):
-        """Test use of the default values of the arguments `T` and `U`."""
+        # Test use of the default values of the arguments `T` and `U`.
         # Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = 0.
         # With initial conditions x(0)=1.0 and x'(t)=0.0, the exact solution
         # is (1-t)*exp(-t).
@@ -102,25 +102,22 @@ class Test_lsim2(object):
         assert_almost_equal(x[:,0], expected_x)
 
     def test_07(self):
-        """Test the simulation of a MIMO system"""
-        # Basic MIMO system. Two inputs, two outputs. Output same as input.
+        # Test the simulation of a MIMO system.
+        # Basic MIMO system: Two inputs, two outputs. Output same as input.
         A = np.zeros((1,1))
         B = np.zeros((1,2))
         C = np.zeros((2,1))
         D = np.eye(2)
 
-        t=np.arange(3)
-        u0=np.arange(3)
-        u1=2*u0
-        u=np.vstack((u0,u1)).T
-        tout, y, x = lsim2((A,B,C,D),T=t,U=u)
+        t = np.arange(3)
+        u0 = np.arange(3)
+        u1 = 2 * u0
+        u = np.vstack((u0, u1)).T
+        tout, y, x = lsim2((A, B, C, D), T=t, U=u)
         expected_y = u
-        expected_x = np.zeros((3,1))
+        expected_x = np.zeros((3, 1))
         assert_almost_equal(y, expected_y)
         assert_almost_equal(x, expected_x)
-
-
-
 
 
 class _TestImpulseFuncs(object):

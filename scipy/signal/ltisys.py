@@ -423,7 +423,7 @@ class lti(object):
             self._num, self._den = zpk2tf(self.zeros, self.poles, self.gain)
             self._A, self._B, self._C, self._D = zpk2ss(self.zeros,
                                                         self.poles, self.gain)
-        if N== 4:
+        if N == 4:
             if self.inputs==1:
                 self._num, self._den = ss2tf(self.A, self.B, self.C, self.D)
                 self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B,
