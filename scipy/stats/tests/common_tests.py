@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import inspect
 import warnings
+import doctest
 
 import numpy as np
 import numpy.testing as npt
@@ -151,3 +152,37 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     # unknown arguments should not go through:
     k.update({'kaboom': 42})
     npt.assert_raises(TypeError, distfn.cdf, x, **k)
+
+
+def _prepare_stubs_docstrings():
+    # prepare the stubs for running the docstring examples:
+    class plt(object):
+        """Stub out matplotlib.pyplot as plt."""
+        @staticmethod
+        def show(*args, **kwds):
+            pass
+        @staticmethod
+        def plot(*args, **kwds):
+            pass
+
+    # stub out the namespace for the doctests to run in
+    ns = {'np': np, 'plt': plt,
+          'assert_allclose': npt.assert_allclose,
+          'assert_equal': npt.assert_equal}
+
+    return ns
+
+
+def check_docstring_examples(distfn, ns):
+    # Run examples in the `distfn` docstring. Is (almost) the same as
+    # doctest.run_docstring_examples(distr, ns)
+    finder = doctest.DocTestFinder()
+    runner = doctest.DocTestRunner()
+    tests = finder.find(distfn, distfn.name, globs=ns)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        for t in tests:
+            res = runner.run(t)
+    if res.failed != 0:
+        raise AssertionError(distfn.name + ' docstring example')

@@ -8,9 +8,11 @@ from scipy import stats
 from common_tests import (check_normalization, check_moment, check_mean_expect,
         check_var_expect, check_skew_expect, check_kurt_expect,
         check_entropy, check_private_entropy, check_edge_support,
-        check_named_args)
+        check_named_args, check_docstring_examples, _prepare_stubs_docstrings)
 from scipy.stats._distr_params import distdiscrete
 knf = npt.dec.knownfailureif
+_ns_for_docstrings = _prepare_stubs_docstrings()
+
 
 def test_discrete_basic():
     for distname, arg in distdiscrete:
@@ -48,6 +50,8 @@ def test_discrete_basic():
         yield check_entropy, distfn, arg, distname
         if distfn.__class__._entropy != stats.rv_discrete._entropy:
             yield check_private_entropy, distfn, arg, stats.rv_discrete
+
+        yield check_docstring_examples, distfn, _ns_for_docstrings
 
 
 def test_moments():
