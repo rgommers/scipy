@@ -187,5 +187,9 @@ def check_docstring_examples(distfn, ns):
         warnings.simplefilter('ignore')
         for t in tests:
             res = runner.run(t)
-    if res.failed != 0:
-        raise AssertionError(distfn.name + ' docstring example')
+    try:
+        if res.failed != 0:
+            raise AssertionError(distfn.name + ' docstring example')
+    except UnboundLocalError:
+        # python -OO strips docstrings, there's nothing to test then
+        pass
