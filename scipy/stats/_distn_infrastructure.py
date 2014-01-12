@@ -212,8 +212,8 @@ Alternatively, freeze the distribution and display the frozen pdf:
 
 Check accuracy of ``cdf`` and ``ppf``:
 
->>> prob = %(name)s.cdf(x, %(shapes)s)
->>> assert_allclose(x, %(name)s.ppf(prob, %(shapes)s))
+>>> vals = %(name)s.ppf([0.001, 0.5, 0.999], %(shapes)s)
+>>> assert_allclose([0.001, 0.5, 0.999], %(name)s.cdf(vals, %(shapes)s))
 
 Generate random numbers:
 
