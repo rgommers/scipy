@@ -304,25 +304,37 @@ _doc_default_discrete_example = """\
 Examples
 --------
 >>> from scipy.stats import %(name)s
->>> [ %(shapes)s ] = [<Replace with reasonable values>]
+
+Calculate a few first moments:
+
+%(set_vals_stmt)s
+>>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
+
+Display the ``pmf``:
+
+>>> x = np.arange(np.maximum(0, %(name)s.a),
+...                 np.minimum(8, %(name)s.b)) 
+>>> plt.vlines(x, %(name)s.pmf(x, %(shapes)s),
+...         colors='b', linestyles='-', lw=5, alpha=0.4, label='pmf')
+
+(Here, ``%(name)s.a`` and ``%(name)s.b`` are the left-hand and right-hand
+endpoints of the support of ``%(name)s``, respectively.)
+
+Alternatively, freeze the distribution and display the frozen ``pmf``:
+
 >>> rv = %(name)s(%(shapes)s)
+>>> plt.vlines(x, rv.pmf(x), 
+...         colors='k', linestyles='--', lw=2, label='frozen pmf')
+>>> plt.show()
 
-Display frozen pmf
+Check accuracy of ``cdf`` and ``ppf``:
 
->>> x = np.arange(0, np.minimum(rv.dist.b, 3))
->>> h = plt.vlines(x, 0, rv.pmf(x), lw=2)
+>>> prob = %(name)s.cdf(x, %(shapes)s)
+>>> assert_allclose(x, %(name)s.ppf(prob, %(shapes)s))
 
-Here, ``rv.dist.b`` is the right endpoint of the support of ``rv.dist``.
+Generate random numbers:
 
-Check accuracy of cdf and ppf
-
->>> prb = %(name)s.cdf(x, %(shapes)s)
->>> h = plt.semilogy(np.abs(x - %(name)s.ppf(prb, %(shapes)s)) + 1e-20)
-
-Random number generation
-
->>> R = %(name)s.rvs(%(shapes)s, size=100)
-
+>>> r = %(name)s.rvs(%(shapes)s, size=100)
 """
 docdict_discrete['example'] = _doc_default_discrete_example
 
@@ -708,6 +720,9 @@ class rv_generic(object):
                 # necessary because we use %(shapes)s in two forms (w w/o ", ")
                 self.__doc__ = self.__doc__.replace("%(shapes)s, ", "")
             self.__doc__ = doccer.docformat(self.__doc__, tempdict)
+
+        # correct for empty shapes
+        self.__doc__ = self.__doc__.replace('(, ', '(').replace(', )', ')')
 
     def freeze(self, *args, **kwds):
         """Freeze the distribution for the given arguments.
@@ -2646,7 +2661,8 @@ class rv_discrete(rv_generic):
                 self._construct_default_doc(longname=longname,
                                             extradoc=extradoc)
             else:
-                self._construct_doc(docdict_discrete)
+                dct = dict(distdiscrete)
+                self._construct_doc(docdict_discrete, dct[self.name])
 
             #discrete RV do not have the scale parameter, remove it
             self.__doc__ = self.__doc__.replace(
