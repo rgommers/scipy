@@ -3951,7 +3951,7 @@ class wald_gen(invgauss_gen):
     -----
     The probability density function for `wald` is::
 
-        wald.pdf(x, a) = 1/sqrt(2*pi*x**3) * exp(-(x-1)**2/(2*x))
+        wald.pdf(x) = 1/sqrt(2*pi*x**3) * exp(-(x-1)**2/(2*x))
 
     for ``x > 0``.
 
