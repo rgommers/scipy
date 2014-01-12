@@ -159,14 +159,15 @@ def _prepare_stubs_docstrings():
     class plt(object):
         """Stub out matplotlib.pyplot as plt."""
         @staticmethod
-        def show(*args, **kwds):
-            pass
+        def show(*args, **kwds): pass
         @staticmethod
-        def plot(*args, **kwds):
-            pass
+        def plot(*args, **kwds): pass
         @staticmethod
-        def vlines(*args, **kwds):
-            pass
+        def vlines(*args, **kwds): pass
+        @staticmethod
+        def set_xlabel(*args, **kwds): pass
+        @staticmethod
+        def set_ylabel(*args, **kwds): pass
 
     # stub out the namespace for the doctests to run in
     ns = {'np': np, 'plt': plt,

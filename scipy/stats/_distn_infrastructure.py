@@ -194,7 +194,7 @@ Calculate a few first moments:
 %(set_vals_stmt)s
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
 
-Display the ``pdf``:
+Display the probability density function (``pdf``):
 
 >>> x = np.linspace(np.maximum(0, %(name)s.a),
 ...                 np.minimum(3, %(name)s.b), 30) 
@@ -310,10 +310,10 @@ Calculate a few first moments:
 %(set_vals_stmt)s
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
 
-Display the ``pmf``:
+Display the probability mass function (``pmf``):
 
 >>> x = np.arange(np.maximum(0, %(name)s.a),
-...                 np.minimum(8, %(name)s.b)) 
+...               np.minimum(8, %(name)s.b)) 
 >>> plt.vlines(x, %(name)s.pmf(x, %(shapes)s),
 ...         colors='b', linestyles='-', lw=5, alpha=0.4, label='pmf')
 
