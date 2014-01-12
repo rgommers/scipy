@@ -2367,7 +2367,7 @@ class johnsonsb_gen(rv_continuous):
 
     def _ppf(self, q, a, b):
         return 1.0 / (1 + exp(-1.0 / b * (_norm_ppf(q) - a)))
-johnsonsb = johnsonsb_gen(a=0.0, b=1.0, name='johnsonb')
+johnsonsb = johnsonsb_gen(a=0.0, b=1.0, name='johnsonsb')
 
 
 class johnsonsu_gen(rv_continuous):
