@@ -13,6 +13,7 @@ import inspect
 import types
 
 from scipy.misc import doccer
+from ._distr_params import distcont, distdiscrete
 
 from scipy.special import comb, xlogy, chndtr, gammaln, hyp0f1
 
@@ -188,25 +189,45 @@ _doc_default_example = """\
 Examples
 --------
 >>> from scipy.stats import %(name)s
->>> numargs = %(name)s.numargs
->>> [ %(shapes)s ] = [0.9,] * numargs
+
+Calculate a few first moments:
+%(set_vals_stmt)s
+>>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
+
+Display the ``pdf``:
+
+>>> x = np.linspace(np.maximum(0, %(name)s.a),
+...                 np.minimum(3, %(name)s.b), 30) 
+>>> plt.plot(x, %(name)s.pdf(x, %(shapes)s),
+...         'r-', lw=5, alpha=0.4, label='pdf')
+
+(Here, ``%(name)s.a`` and ``%(name)s.b`` are the left-hand and right-hand
+endpoints of the support of ``%(name)s``, respectively.)
+
+Alternatively, freeze the distribution and display the frozen pdf:
+
 >>> rv = %(name)s(%(shapes)s)
+>>> plt.plot(x, rv.pdf(x), 'k--', lw=2, label='frozen')
+>>> plt.show()
 
-Display frozen pdf
+Check accuracy of ``cdf`` and ``ppf``:
 
->>> x = np.linspace(0, np.minimum(rv.dist.b, 3))
->>> h = plt.plot(x, rv.pdf(x))
+>>> prob = %(name)s.cdf(x, %(shapes)s)
+>>> assert_allclose(x, %(name)s.ppf(prob, %(shapes)s))
 
-Here, ``rv.dist.b`` is the right endpoint of the support of ``rv.dist``.
+Generate random numbers:
 
-Check accuracy of cdf and ppf
+>>> r = %(name)s.rvs(%(shapes)s, size=100)
+"""
 
->>> prb = %(name)s.cdf(x, %(shapes)s)
->>> h = plt.semilogy(np.abs(x - %(name)s.ppf(prb, %(shapes)s)) + 1e-20)
+# mangle the name so that it does not get del-ed
+_rv_generic__doc_named_arg_ex_templ = """\
+Note that all methods accept shape parameters as either positional or
+keyword arguments:
 
-Random number generation
+>>> assert_equal(%(name)s.sf(x, %(vals)s),
+...              %(name)s.sf(x, %(shapes_eq_vals)s))
 
->>> R = %(name)s.rvs(%(shapes)s, size=100)
 """
 
 _doc_default = ''.join([_doc_default_longsummary,
@@ -657,11 +678,25 @@ class rv_generic(object):
             # allows more general subclassing with *args
             self.numargs = len(shapes)
 
-    def _construct_doc(self, docdict):
+    def _construct_doc(self, docdict, shapes_vals=None):
         """Construct the instance docstring with string substitutions."""
         tempdict = docdict.copy()
         tempdict['name'] = self.name or 'distname'
         tempdict['shapes'] = self.shapes or ''
+
+        if shapes_vals is None:
+            shapes_vals = ()
+        vals = ', '.join(str(_) for _ in shapes_vals)
+        tempdict['vals'] = vals
+
+        if self.shapes:
+            pairs = [a + '=' + str(b) for (a, b) 
+                    in zip(self.shapes.split(','), shapes_vals)]
+            tempdict['shapes_eq_vals'] = ','.join(pairs)
+            tempdict['set_vals_stmt'] = '>>> %s = %s' % (self.shapes, vals)
+          #  self.__doc__ += __doc_named_arg_ex_templ  # FIXME: this confuses doccer's indentation
+        else:
+            tempdict['set_vals_stmt'] = ''
 
         if self.shapes is None:
             # remove shapes from call parameters if there are none
@@ -1408,7 +1443,7 @@ class rv_continuous(rv_generic):
                 self._construct_default_doc(longname=longname,
                                             extradoc=extradoc)
             else:
-                self._construct_doc(docdict)
+                self._construct_doc(docdict, dict(distcont)[self.name])
 
     def _construct_default_doc(self, longname=None, extradoc=None):
         """Construct instance docstring from the default template."""
