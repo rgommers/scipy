@@ -171,8 +171,7 @@ def _prepare_stubs_docstrings():
 
     # stub out the namespace for the doctests to run in
     ns = {'np': np, 'plt': plt,
-          'assert_allclose': npt.assert_allclose,
-          'assert_equal': npt.assert_equal}
+          'assert_allclose': npt.assert_allclose}
 
     return ns
 
