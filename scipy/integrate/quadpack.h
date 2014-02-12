@@ -47,6 +47,29 @@ static double (*quadpack_ctypes_function)(double) = NULL;
 
 static PyObject *quadpack_error;
 
+static double* globalargs; //Array to store function parameters (x[1],...,x[n])
+static double (*globalf)(int, double *); //Pointer to function of array
+static int globalnargs; //Int to store number of elements in globalargs
+static double (*globalbasef)(double *); //Function received from __quadpack.h to initialize and convert to form used in wrapper
+
+typedef struct { //Similar to QStorage: allows reentrancy
+    //Last
+    double *z_args0;
+    int z_nargs0;
+    double (*z_f0)(int, double *);
+    //Current
+    double *z_args1;
+    int z_nargs1;
+    double (*z_f1)(int, double *);
+} ZStorage;
+
+typedef struct { 
+    //Last
+    double (*y_func0)(double *);
+    //Current
+    double (*y_func1)(double *);
+} YStorage;
+
 /* Stack Storage for re-entrant capability */
 typedef struct {
     void *global0;
@@ -118,14 +141,86 @@ restore_ctypes_func(QStorage *store) {
     quadpack_ctypes_function = store->global0;
 }
 
+int init_c_multivariate(ZStorage* store, double (*f)(int, double *), int n, double args[n]){
+  /*Initialize function of n+1 variables
+  Input: 
+    f - Function pointer to function to evaluate
+    n - integer number of extra parameters 
+    args - double array of length n with parameters x[1]....x[n]
+  Output:
+    NPY_FAIL on failure 
+    NPY_SUCCEED on success
+  */
+
+  //Store current parameters
+  store->z_f0 = globalf;      
+  store->z_nargs0 = globalnargs;
+  store->z_args0 = globalargs;
+
+  //Store new parameters
+  store->z_f1 = f;      
+  store->z_nargs1 = n;
+  store->z_args1 = args;
+  if (store->z_f1 == NULL) return NPY_FAIL;
+  
+  //Set globals
+  globalf = store->z_f1;
+  globalnargs = store->z_nargs1;
+  globalargs = store->z_args1;
+  return NPY_SUCCEED;
+}
+
+double call_c_multivariate(double* x){ 
+  /*Evaluates user defined function as function of one variable. 
+    MUST BE INITIALIZED FIRST
+  Input: Pointer to double x to evaluate function at
+  Output: Function evaluated at x with initialized parameters
+  We want to create a new array with [x0, concatenated with [x1, . . . , xn]]
+  */ 
+  double evalArray[globalnargs+1];
+  int i = 1;
+  evalArray[0] = *x;
+  for(i; i < globalnargs + 1 ; i++){
+    evalArray[i] = globalargs[i-1]; //Add everything from globalargs to end of evalArray
+  }
+  return globalf(globalnargs, evalArray);
+}
+
+void restore_c_multivariate(ZStorage* store){
+  globalf = store->z_f0;
+  globalnargs = store->z_nargs0;
+  globalargs = store->z_args0;
+  return;
+}
 
 
 
+/*Second wrapper. Interprets funciton of f(x) as f(n,x[n]) for use with
+above cwrapper
+For use: call funcwrapper_init(f(x))
+         call routine2(funcwrapper, ...) (from above)
+*/
+
+void funcwrapper_init(YStorage* store, double (*f)(double *)){
+  //sets f as global for future use
+  //input: f - function of double pointer
+  store->y_func0 = globalbasef;
+  store->y_func1 = f;
 
 
+  globalbasef = store->y_func1;
+  return;
+}
 
+double funcwrapper(int nargs, double args[nargs]){
+  /*Take globalbasef and evaluate it in the form that cwrapper
+  can handle
+  NOTE: This will need to be more complex to add support for multivariate functions,
+  as currently only single variable functions are called through this wrapper.*/
+  return globalbasef(args);  
+}
 
-
-
-
-
+void funcwrapper_restore(YStorage* store){
+    //Restores function after use
+    globalbasef = store->y_func0;
+}
