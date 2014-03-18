@@ -54,15 +54,15 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         A Python function or method to integrate.  If `func` takes many
         arguments, it is integrated along the axis corresponding to the
         first argument.
-        If the user desires improved integration performance, then f may
-        instead be a ctypes function of the form:
-            f(int n, double args[n]), 
-        where args is an array of function arguments and n is the length
-        of args. f.argtypes should be set to (c_int, c_double), and 
-        f.restype should be (c_double,). Users are cautioned that this 
-        functionality is experimental, and it is not presently testable 
-        using SciPy unit tests. Comparative testing with equivalent Python 
-        functions is advised.
+        If speed is desired, this function may be a ctypes function of
+        the form
+            f(int n, double args[n])
+        where n is the number of extra parameters and args is an array
+        of doubles of the additional parameters.  This function may then
+        be compiled to a dynamic/shared library then imported through
+        ctypes, setting the function's argtypes to (c_int,c_double), and
+        the function's restypes to (c_double).  Its pointer may then be
+        passed into quad normally.
     a : float
         Lower limit of integration (use -numpy.inf for -infinity).
     b : float
@@ -150,7 +150,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         A rank-1 array of length M, the first K elements of which are the
         left end points of the subintervals in the partition of the
         integration range.
-    'blist'
+    'blist'Its
         A rank-1 array of length M, the first K elements of which are the
         right end points of the subintervals.
     'rlist'
@@ -289,7 +289,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     testlib.c =>
         double func(int n, double args[n]){
             return args[0]*args[0] + args[1]*args[1];}
-    compile to library testlib.*
+    compile to library testlib.so / dll
 
     >>> from scipy import integrate
     >>> import ctypes
@@ -572,9 +572,9 @@ def nquad(func, ranges, args=None, opts=None):
         ``func(x0, x1, ..., xn, t0, t1, ..., tm)``.  Integration is carried out
         in order.  That is, integration over ``x0`` is the innermost integral,
         and ``xn`` is the outermost.
-        If speed is desired, this function may be a ctypes function of 
+        If speed is desired, this function may be a ctypes function of
         the form
-            f(int n, double args[n]) 
+            f(int n, double args[n])
         where n is the number of extra parameters and args is an array
         of doubles of the additional parameters.  This function may then
         be compiled to a dynamic/shared library then imported through
