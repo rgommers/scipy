@@ -54,6 +54,15 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         A Python function or method to integrate.  If `func` takes many
         arguments, it is integrated along the axis corresponding to the
         first argument.
+        If speed is desired, this function may be a ctypes function of 
+        the form
+            f(int n, double args[n]) 
+        where n is the number of extra parameters and args is an array
+        of doubles of the additional parameters.  This function may then
+        be compiled to a dynamic/shared library then imported through
+        ctypes, setting the function's argtypes to (c_int,c_double), and
+        the function's restypes to (c_double).  Its pointer may then be
+        passed into quad normally.
     a : float
         Lower limit of integration (use -numpy.inf for -infinity).
     b : float
@@ -141,7 +150,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         A rank-1 array of length M, the first K elements of which are the
         left end points of the subintervals in the partition of the
         integration range.
-    'blist'
+    'blist'Its
         A rank-1 array of length M, the first K elements of which are the
         right end points of the subintervals.
     'rlist'
@@ -273,6 +282,25 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     >>> y, err = integrate.quad(f, 0, 1, args=(3,))
     >>> y
     1.5
+
+    Calculate :math:'\\int^\\1_0 x^2 + y^2 dx' with ctypes, holding
+    y parameter as 1
+
+    testlib.c =>
+        double func(int n, double args[n]){
+            return args[0]*args[0] + args[1]*args[1];}
+    compile to library testlib.so / dll
+
+    >>> from scipy import integrate
+    >>> import ctypes
+    >>> lib = ctypes.CDLL('/home/.../testlib.*') #use absolute path
+    >>> lib.func.restype = ctypes.c_double
+    >>> lib.func.argtypes = (ctypes.c_int,ctypes.c_double)
+    >>> integrate.quad(lib.func,0,1,(1))
+    (1.3333333333333333, 1.4802973661668752e-14)
+    >>> print((1.0**3/3.0 + 1.0) - (0.0**3/3.0 + 0.0)) #Analytic result
+    1.3333333333333333
+
 
     """
     if not isinstance(args, tuple):
