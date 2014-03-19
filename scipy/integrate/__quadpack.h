@@ -523,7 +523,7 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
       nargs = PyTuple_Size(extra_args);
       ctypes_args = c_array_from_tuple(extra_args);
       if (init_c_multivariate(&zstorevar, fcn, nargs, ctypes_args) == NPY_FAIL) goto fail;
-      DQAGPE(quad_function2, &a, &b, &npts2, points, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, pts, iord, level, ndin, &last);
+      DQAGPE(call_c_multivariate, &a, &b, &npts2, points, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, pts, iord, level, ndin, &last);
       restore_c_multivariate(&zstorevar);
       free(ctypes_args);  
     }
@@ -651,7 +651,7 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
       nargs = PyTuple_Size(extra_args);
       ctypes_args = c_array_from_tuple(extra_args);
       if (init_c_multivariate(&zstorevar, fcn, nargs, ctypes_args) == NPY_FAIL) goto fail;
-      DQAWOE(quad_function2, &a, &b, &omega, &integr, &epsabs, &epsrel, &limit, &icall, &maxp1, &result, &abserr, &neval, &ier, &last, alist, blist, rlist, elist, iord, nnlog, &momcom, chebmo);
+      DQAWOE(call_c_multivariate, &a, &b, &omega, &integr, &epsabs, &epsrel, &limit, &icall, &maxp1, &result, &abserr, &neval, &ier, &last, alist, blist, rlist, elist, iord, nnlog, &momcom, chebmo);
       restore_c_multivariate(&zstorevar);
       free(ctypes_args);  
     }
@@ -773,7 +773,7 @@ static PyObject *quadpack_qawfe(PyObject *dummy, PyObject *args) {
       nargs = PyTuple_Size(extra_args);
       ctypes_args = c_array_from_tuple(extra_args);
       if (init_c_multivariate(&zstorevar, fcn, nargs, ctypes_args) == NPY_FAIL) goto fail;
-      DQAWFE(quad_function2, &a, &omega, &integr, &epsabs, &limlst, &limit, &maxp1, &result, &abserr, &neval, &ier, rslst, erlst, ierlst, &lst, alist, blist, rlist, elist, iord, nnlog, chebmo);
+      DQAWFE(call_c_multivariate, &a, &omega, &integr, &epsabs, &limlst, &limit, &maxp1, &result, &abserr, &neval, &ier, rslst, erlst, ierlst, &lst, alist, blist, rlist, elist, iord, nnlog, chebmo);
       restore_c_multivariate(&zstorevar);
       free(ctypes_args);  
     }
@@ -884,7 +884,7 @@ static PyObject *quadpack_qawce(PyObject *dummy, PyObject *args) {
       nargs = PyTuple_Size(extra_args);
       ctypes_args = c_array_from_tuple(extra_args);
       if (init_c_multivariate(&zstorevar, fcn, nargs, ctypes_args) == NPY_FAIL) goto fail;
-      DQAWCE(quad_function2, &a, &b, &c, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+      DQAWCE(call_c_multivariate, &a, &b, &c, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
       restore_c_multivariate(&zstorevar);
       free(ctypes_args);  
     }
@@ -984,7 +984,7 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
       nargs = PyTuple_Size(extra_args);
       ctypes_args = c_array_from_tuple(extra_args);
       if (init_c_multivariate(&zstorevar, fcn, nargs, ctypes_args) == NPY_FAIL) goto fail;
-      DQAWSE(quad_function2, &a, &b, &alfa, &beta, &integr, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+      DQAWSE(call_c_multivariate, &a, &b, &alfa, &beta, &integr, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
       restore_c_multivariate(&zstorevar);
       free(ctypes_args);  
     }
