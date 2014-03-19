@@ -150,7 +150,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         A rank-1 array of length M, the first K elements of which are the
         left end points of the subintervals in the partition of the
         integration range.
-    'blist'Its
+    'blist'
         A rank-1 array of length M, the first K elements of which are the
         right end points of the subintervals.
     'rlist'
