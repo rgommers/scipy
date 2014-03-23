@@ -309,10 +309,8 @@ static PyObject *quadpack_qagse(PyObject *dummy, PyObject *args) {
       free(ctypes_args);
     }
     else{ /* func_type == VALID_CTYPE */
-      if (init_ctypes_func(&storevar, fcn) == NPY_FAIL)
-        goto fail;
-      DQAGSE(quad_function2, &a, &b, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist,
-             blist, rlist, elist, iord, &last);
+      if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
+      DQAGSE(quad_function2, &a, &b, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
       restore_ctypes_func(&storevar);
     }
   }
@@ -414,9 +412,9 @@ static PyObject *quadpack_qagie(PyObject *dummy, PyObject *args) {
     }
     else { /* func_type == VALID_CTYPE */
       if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
-        DQAGIE(quad_function2, &bound, &inf, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
-        restore_ctypes_func(&storevar);
-      }
+      DQAGIE(quad_function2, &bound, &inf, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+      restore_ctypes_func(&storevar);
+    }
   }
 
   if (full_output) {
