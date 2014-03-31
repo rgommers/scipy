@@ -289,7 +289,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     testlib.c =>
         double func(int n, double args[n]){
             return args[0]*args[0] + args[1]*args[1];}
-    compile to library testlib.so / dll
+    compile to library testlib.*
 
     >>> from scipy import integrate
     >>> import ctypes
@@ -572,6 +572,15 @@ def nquad(func, ranges, args=None, opts=None):
         ``func(x0, x1, ..., xn, t0, t1, ..., tm)``.  Integration is carried out
         in order.  That is, integration over ``x0`` is the innermost integral,
         and ``xn`` is the outermost.
+        If speed is desired, this function may be a ctypes function of 
+        the form
+            f(int n, double args[n]) 
+        where n is the number of extra parameters and args is an array
+        of doubles of the additional parameters.  This function may then
+        be compiled to a dynamic/shared library then imported through
+        ctypes, setting the function's argtypes to (c_int,c_double), and
+        the function's restypes to (c_double).  Its pointer may then be
+        passed into nquad normally.
     ranges : iterable object
         Each element of ranges may be either a sequence  of 2 numbers, or else
         a callable that returns such a sequence.  ``ranges[0]`` corresponds to
