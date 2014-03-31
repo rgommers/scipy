@@ -289,7 +289,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     testlib.c =>
         double func(int n, double args[n]){
             return args[0]*args[0] + args[1]*args[1];}
-    compile to library testlib.so / dll
+    compile to library testlib.*
 
     >>> from scipy import integrate
     >>> import ctypes
