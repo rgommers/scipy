@@ -572,9 +572,15 @@ def nquad(func, ranges, args=None, opts=None):
         ``func(x0, x1, ..., xn, t0, t1, ..., tm)``.  Integration is carried out
         in order.  That is, integration over ``x0`` is the innermost integral,
         and ``xn`` is the outermost.
+<<<<<<< HEAD
         If speed is desired, this function may be a ctypes function of
         the form
             f(int n, double args[n])
+=======
+        If speed is desired, this function may be a ctypes function of 
+        the form
+            f(int n, double args[n]) 
+>>>>>>> dd8d3d9... BUG: Fix file renaming bug from test_multivariate.c
         where n is the number of extra parameters and args is an array
         of doubles of the additional parameters.  This function may then
         be compiled to a dynamic/shared library then imported through
