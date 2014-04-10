@@ -54,15 +54,15 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         A Python function or method to integrate.  If `func` takes many
         arguments, it is integrated along the axis corresponding to the
         first argument.
-        If speed is desired, this function may be a ctypes function of 
-        the form
-            f(int n, double args[n]) 
-        where n is the number of extra parameters and args is an array
-        of doubles of the additional parameters.  This function may then
-        be compiled to a dynamic/shared library then imported through
-        ctypes, setting the function's argtypes to (c_int,c_double), and
-        the function's restypes to (c_double).  Its pointer may then be
-        passed into quad normally.
+        If the user desires improved integration performance, then f may
+        instead be a ctypes function of the form:
+            f(int n, double args[n]), 
+        where args is an array of function arguments and n is the length
+        of args. f.argtypes should be set to (c_int, c_double), and 
+        f.restype should be (c_double,). Users are cautioned that this 
+        functionality is experimental, and it is not presently testable 
+        using SciPy unit tests. Comparative testing with equivalent Python 
+        functions is advised.
     a : float
         Lower limit of integration (use -numpy.inf for -infinity).
     b : float
