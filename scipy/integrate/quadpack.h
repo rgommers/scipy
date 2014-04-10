@@ -155,8 +155,7 @@ init_c_multivariate(ZStorage * store, PyObject * f, int n, double args[n])
     store->z_f1 = get_ctypes_function_pointer(f);
     store->z_nargs1 = n;
     store->z_args1 = args;
-    if (store->z_f1 == NULL)
-	return NPY_FAIL;
+    if (store->z_f1 == NULL) return NPY_FAIL;
 
     /*Set globals */
     global_function = store->z_f1;
@@ -193,8 +192,7 @@ c_array_from_tuple(PyObject * tuple)
 {
     /* Accepts Python tuple and converts to double array in c for use in
      * multivariate ctypes */
-    if (!PyTuple_CheckExact(tuple))
-	return NULL;		/*Ensure python tuple is passed in */
+    if (!PyTuple_CheckExact(tuple)) return NULL;    /*Ensure python tuple is passed in */
     Py_ssize_t nargs = PyTuple_Size(tuple);
     Py_ssize_t i = 0;
     double *array = (double *) malloc(sizeof(double) * (nargs + 1));
@@ -202,8 +200,8 @@ c_array_from_tuple(PyObject * tuple)
 
     array[0] = 0.0;
     for (i = 0; i < nargs; i++) {
-	item = PyTuple_GetItem(tuple, i);
-	array[i + 1] = PyFloat_AsDouble(item);
+       item = PyTuple_GetItem(tuple, i);
+       array[i + 1] = PyFloat_AsDouble(item);
     }
     return array;
 }
