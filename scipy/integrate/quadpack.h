@@ -64,7 +64,7 @@ typedef struct {
 typedef struct {
     void *global0;
     void *global1;
-    jmp_buf jmp;    
+    jmp_buf jmp;
     PyObject *arg;
 } QStorage;
 
@@ -156,7 +156,7 @@ init_c_multivariate(ZStorage * store, PyObject * f, int n, double args[n])
     store->z_nargs1 = n;
     store->z_args1 = args;
     if (store->z_f1 == NULL)
-	return NPY_FAIL;
+      return NPY_FAIL;
 
     /*Set globals */
     global_function = store->z_f1;
@@ -194,16 +194,15 @@ c_array_from_tuple(PyObject * tuple)
     /* Accepts Python tuple and converts to double array in c for use in
      * multivariate ctypes */
     if (!PyTuple_CheckExact(tuple))
-	return NULL;		/*Ensure python tuple is passed in */
+      return NULL;    /*Ensure python tuple is passed in */
     Py_ssize_t nargs = PyTuple_Size(tuple);
     Py_ssize_t i = 0;
     double *array = (double *) malloc(sizeof(double) * (nargs + 1));
     PyObject *item = NULL;
-
     array[0] = 0.0;
     for (i = 0; i < nargs; i++) {
-	item = PyTuple_GetItem(tuple, i);
-	array[i + 1] = PyFloat_AsDouble(item);
+      item = PyTuple_GetItem(tuple, i);
+      array[i + 1] = PyFloat_AsDouble(item);
     }
     return array;
 r
