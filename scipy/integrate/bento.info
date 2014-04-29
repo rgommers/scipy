@@ -37,3 +37,5 @@ Library:
         Sources: lsoda.pyf
     Extension: _dop
         Sources: dop.pyf
+    Extension:
+        Sources: tests/_test_multivariate.c
