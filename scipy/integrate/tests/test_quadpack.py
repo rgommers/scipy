@@ -86,7 +86,6 @@ class TestMultivariateCtypesQuad(TestCase):
     def setUp(self):
         self.lib = ctypes.CDLL(clib_test.__file__)
         restype = ctypes.c_double
-        # Shouldn't this have an array number in the argtypes dec (c_double*4)?
         argtypes = (ctypes.c_int,ctypes.c_double)
         for name in ['_multivariate_typical','_multivariate_indefinite',
                      '_multivariate_sin']:
