@@ -1,16 +1,77 @@
+#include <Python.h>
+
+/*
+  Backwards compatibility:
+  Python2.2 used LONG_LONG instead of PY_LONG_LONG
+*/
+#if defined(HAVE_LONG_LONG) && !defined(PY_LONG_LONG)
+#define PY_LONG_LONG LONG_LONG
+#endif
+
+#ifdef MS_WIN32
+#include <windows.h>
+#endif
+
+#if defined(MS_WIN32) || defined(__CYGWIN__)
+#define EXPORT(x) __declspec(dllexport) x
+#else
+#define EXPORT(x) x
+#endif
+
 #include "math.h"
 const double PI = 3.141592653589793238462643383279502884;
-double _multivariate_typical(int n, double args[n])
+EXPORT(double)
+_multivariate_typical(int n, double args[n])
 {
     return cos(args[1] * args[0] - args[2] * sin(args[0])) / PI;
 }
 
-double _multivariate_indefinite(int n, double args[n])
+EXPORT(double)
+_multivariate_indefinite(int n, double args[n])
 {
     return -exp(-args[0]) * log(args[0]);
 }
 
-double _multivariate_sin(int n, double args[n])
+EXPORT(double)
+_multivariate_sin(int n, double args[n])
 {
     return sin(args[0]);
 }
+
+EXPORT(void)
+init_test_multivariate(void)
+{
+  /*
+    This won't allow you to actually use the methods here. It just
+    lets you load the module so you can get at the __file__ attribute.
+  */
+  Py_InitModule("_test_multivariate", NULL);
+}
+
+/*static PyMethodDef module_methods[] = {
+    {"_multivariate_typical", __insert name here__, METH_VARARGS}
+    {"_multivariate_indefinite", }
+    {"_multivariate_sin", }
+    {"func_si", py_func_si, METH_VARARGS},
+    {"func", py_func, METH_NOARGS},
+    { NULL, NULL, 0, NULL},
+};
+
+static struct PyModuleDef _test_multivariatemodule = {
+    PyModuleDef_HEAD_INIT,
+    "_test_multivariate",
+    NULL,
+    -1,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyMODINIT_FUNC
+PyInit__test_multivariate(void)
+{
+    return PyModule_Create(&_test_multivariatemodule);
+}
+*/

@@ -12,6 +12,8 @@ from numpy.testing import (assert_, TestCase, run_module_suite, dec,
 from scipy.integrate import quad, dblquad, tplquad, nquad
 from scipy.lib.six import xrange
 
+import scipy.integrate._test_multivariate as clib_test
+
 try:
     import ctypes
     import ctypes.util
@@ -82,17 +84,7 @@ class TestMultivariateCtypesQuad(TestCase):
     @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
                 msg="Compiling test functions failed")
     def setUp(self):
-        dll_name = "_test_multivariate"
-        location = os.path.dirname(inspect.getfile(quad))
-        if sys.platform == 'win32':
-            # I'm not at all sure this works. I need a Windows test machine.
-            file = dll_name+'.dll'
-        elif sys.platform == 'darwin':
-            file = dll_name+'.so'
-        else:
-            file = dll_name+'.so'
-
-        self.lib = ctypes.CDLL(os.path.join(location,file))
+        self.lib = ctypes.CDLL(clib_test.__file__)
         restype = ctypes.c_double
         # Shouldn't this have an array number in the argtypes dec (c_double*4)?
         argtypes = (ctypes.c_int,ctypes.c_double)
