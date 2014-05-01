@@ -2,17 +2,12 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 import math
-import inspect
-import os
-
 import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
 from numpy.testing import (assert_, TestCase, run_module_suite, dec,
         assert_allclose, assert_array_less, assert_almost_equal)
 from scipy.integrate import quad, dblquad, tplquad, nquad
 from scipy.lib.six import xrange
-
-import scipy.integrate._test_multivariate as clib_test
 
 try:
     import ctypes
@@ -22,11 +17,7 @@ except ImportError:
     _ctypes_missing = True
 
 try:
-    import subprocess
-    import os
-    folder = os.path.dirname(os.path.abspath(__file__)) + os.path.sep
-    cmd = "gcc -shared -o " + folder + "test_multivariate.so -fPIC " + folder + "test_multivariate.c"
-    subprocess.call(cmd,shell=True)
+    import scipy.integrate._test_multivariate as clib_test
     _ctypes_multivariate_fail = False
 except:
     _ctypes_multivariate_fail = True
@@ -80,9 +71,8 @@ class TestCtypesQuad(TestCase):
 
 
 class TestMultivariateCtypesQuad(TestCase):
-
     @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
-                msg="Compiling test functions failed")
+                msg="Compiled test functions not loaded")
     def setUp(self):
         self.lib = ctypes.CDLL(clib_test.__file__)
         restype = ctypes.c_double
@@ -94,29 +84,29 @@ class TestMultivariateCtypesQuad(TestCase):
             func.argtypes = argtypes
 
     @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
-                msg="Compiling test functions failed")
+                msg="Compiled test functions not loaded")
     def test_typical(self):
         # 1) Typical function with two extra arguments:
         assert_quad(quad(self.lib._multivariate_typical,0,pi,(2,1.8)),
                     0.30614353532540296487)
 
     @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
-                msg="Compiling test functions failed")
+                msg="Compiled test functions not loaded")
     def test_indefinite(self):
         # 2) Infinite integration limits --- Euler's constant
         assert_quad(quad(self.lib._multivariate_indefinite,0,Inf),
                     0.577215664901532860606512)
 
     @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
-                msg="Compiling test functions failed")
+                msg="Compiled test functions not loaded")
     def test_threadsafety(self):
-        # 3) Ensure multivariate ctypes are threadsafe
+        # Ensure multivariate ctypes are threadsafe
         def threadsafety(y):
             return y + quad(self.lib._multivariate_sin, 0, 1)[0]
         assert_quad(quad(threadsafety, 0, 1), 0.9596976941318602)
 
     @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
-                msg="Compiling test functions failed")
+                msg="Compiled test functions not loaded")
     def test_improvement(self):
         import time
         start = time.time()
@@ -131,7 +121,7 @@ class TestMultivariateCtypesQuad(TestCase):
         assert_(fast < .666 * slow, (fast, slow))
 
     @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
-                msg="Compiling test functions failed")
+                msg="Compiled test functions not loaded")
     def test_improvement2(self):
         def myfunc(x):           # Euler's constant integrand
             return -exp(-x)*log(x)
