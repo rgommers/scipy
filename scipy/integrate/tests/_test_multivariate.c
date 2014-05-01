@@ -38,31 +38,18 @@ _multivariate_sin(int n, double args[n])
     return sin(args[0]);
 }
 
-EXPORT(void)
-init_test_multivariate(void)
-{
-  /*
-    This won't allow you to actually use the methods here. It just
-    lets you load the module so you can get at the __file__ attribute.
-  */
-  Py_InitModule("_test_multivariate", NULL);
-}
+/*
+  This won't allow you to actually use the methods here. It just
+  lets you load the module so you can get at the __file__ attribute.
+*/
 
-/*static PyMethodDef module_methods[] = {
-    {"_multivariate_typical", __insert name here__, METH_VARARGS}
-    {"_multivariate_indefinite", }
-    {"_multivariate_sin", }
-    {"func_si", py_func_si, METH_VARARGS},
-    {"func", py_func, METH_NOARGS},
-    { NULL, NULL, 0, NULL},
-};
-
-static struct PyModuleDef _test_multivariatemodule = {
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_test_multivariate",
     NULL,
     -1,
-    NULL,
+    NULL, /* Empty methods section */
     NULL,
     NULL,
     NULL,
@@ -72,6 +59,14 @@ static struct PyModuleDef _test_multivariatemodule = {
 PyMODINIT_FUNC
 PyInit__test_multivariate(void)
 {
-    return PyModule_Create(&_test_multivariatemodule);
+    return PyModule_Create(&moduledef);
 }
-*/
+
+#else
+
+EXPORT(void)
+init_test_multivariate(void)
+{
+    Py_InitModule("_test_multivariate", NULL);
+}
+#endif
