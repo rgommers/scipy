@@ -131,16 +131,34 @@ restore_ctypes_func(QStorage *store) {
     quadpack_ctypes_function = store->global0;
 }
 
+static double*
+c_array_from_tuple(PyObject * tuple)
+{
+    /* Accepts Python tuple and converts to double array in c for use in
+     * multivariate ctypes */
+    if (!PyTuple_CheckExact(tuple))
+      return NULL;    /*Ensure python tuple is passed in */
+    Py_ssize_t nargs = PyTuple_Size(tuple);
+    Py_ssize_t i = 0;
+    double *array = (double *) malloc(sizeof(double) * (nargs + 1));
+    PyObject *item = NULL;
+    array[0] = 0.0;
+    for (i = 0; i < nargs; i++) {
+      item = PyTuple_GetItem(tuple, i);
+      array[i + 1] = PyFloat_AsDouble(item);
+    }
+    return array;
+}
 
 static int 
-init_c_multivariate(ZStorage * store, PyObject * f, int n, double args[n])
+init_c_multivariate(ZStorage * store, PyObject * f, PyObject * args)
 {
     /*Initialize function of n+1 variables
      * Parameters: 
      * store - Zstorage pointer to hold current state of stack
      * f - Pyobject function pointer to function to evaluate
      * n - integer number of extra parameters 
-     * args - double array of length n with parameters x[1]....x[n]
+     * args - Python tuple with parameters x[1] ... x[n]
      * Output:
      * NPY_FAIL on failure 
      * NPY_SUCCEED on success
@@ -152,16 +170,15 @@ init_c_multivariate(ZStorage * store, PyObject * f, int n, double args[n])
     store->z_args0 = global_args;
 
     /*Store new parameters */
-    store->z_f1 = get_ctypes_function_pointer(f);
-    store->z_nargs1 = n;
-    store->z_args1 = args;
-    if (store->z_f1 == NULL)
+    if ((global_function = get_ctypes_function_pointer(f)) == NULL){
+      PyErr_SetString(quadpack_error, "Ctypes function not correctly initialized");
       return NPY_FAIL;
-
-    /*Set globals */
-    global_function = store->z_f1;
-    global_n_args = store->z_nargs1;
-    global_args = store->z_args1;
+    }
+    global_n_args =  PyTuple_Size(args);
+    if ((global_args = c_array_from_tuple(args)) == NULL){
+      PyErr_SetString(quadpack_error, "Extra Arguments must be in a tuple");
+      return NPY_FAIL;
+    }
     return NPY_SUCCEED;
 }
 
@@ -182,27 +199,9 @@ call_c_multivariate(double *x)
 static void 
 restore_c_multivariate(ZStorage * store)
 {
+    free(store->z_args0);
     global_function = store->z_f0;
     global_n_args = store->z_nargs0;
     global_args = store->z_args0;
     return;
 }
-
-static double*
-c_array_from_tuple(PyObject * tuple)
-{
-    /* Accepts Python tuple and converts to double array in c for use in
-     * multivariate ctypes */
-    if (!PyTuple_CheckExact(tuple))
-      return NULL;    /*Ensure python tuple is passed in */
-    Py_ssize_t nargs = PyTuple_Size(tuple);
-    Py_ssize_t i = 0;
-    double *array = (double *) malloc(sizeof(double) * (nargs + 1));
-    PyObject *item = NULL;
-    array[0] = 0.0;
-    for (i = 0; i < nargs; i++) {
-      item = PyTuple_GetItem(tuple, i);
-      array[i + 1] = PyFloat_AsDouble(item);
-    }
-    return array;
-r

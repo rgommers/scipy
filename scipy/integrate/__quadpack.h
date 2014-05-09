@@ -253,8 +253,6 @@ static PyObject *quadpack_qagse(PyObject *dummy, PyObject *args) {
   int      neval=0, ier=6, last=0, *iord;
   double   result=0.0, abserr=0.0;
   double   *alist, *blist, *rlist, *elist;
-  double   *ctypes_args;
-  Py_ssize_t nargs = 0;
   FuncType func_type;
   QStorage storevar;
   ZStorage zstorevar;
@@ -301,12 +299,9 @@ static PyObject *quadpack_qagse(PyObject *dummy, PyObject *args) {
       /* Can't allow another thread to run because of the global variables
          quadpack_raw_function and quad_function2 being used */
     if (func_type != Valid_Ctype) { /* func_type == VALID_MULTIVARIATE_CTYPE */
-      nargs = PyTuple_Size(extra_args);
-      if((ctypes_args = c_array_from_tuple(extra_args)) == NULL) goto fail;
-      if (init_c_multivariate(&zstorevar, fcn, nargs, ctypes_args) == NPY_FAIL) goto fail;
+      if (init_c_multivariate(&zstorevar, fcn, extra_args) == NPY_FAIL) goto fail;
       DQAGSE(call_c_multivariate, &a, &b, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
       restore_c_multivariate(&zstorevar);
-      free(ctypes_args);
     }
     else{ /* func_type == VALID_CTYPE */
       if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
@@ -354,8 +349,6 @@ static PyObject *quadpack_qagie(PyObject *dummy, PyObject *args) {
   int      inf, neval=0, ier=6, last=0, *iord;
   double   result=0.0, abserr=0.0;
   double   *alist, *blist, *rlist, *elist;
-  double   *ctypes_args;
-  Py_ssize_t nargs = 0;
   FuncType func_type;
   QStorage storevar;
   ZStorage zstorevar;
@@ -403,12 +396,9 @@ static PyObject *quadpack_qagie(PyObject *dummy, PyObject *args) {
       /* Can't allow another thread to run because of the global variables
          quadpack_raw_function and quad_function2 being used */
     if (func_type != Valid_Ctype) { /* func_type == VALID_MULTIVARIATE_CTYPE */
-      nargs = PyTuple_Size(extra_args);
-      if((ctypes_args = c_array_from_tuple(extra_args)) == NULL) goto fail;
-      if (init_c_multivariate(&zstorevar, fcn, nargs, ctypes_args) == NPY_FAIL) goto fail;
+      if (init_c_multivariate(&zstorevar, fcn, extra_args) == NPY_FAIL) goto fail;
       DQAGIE(call_c_multivariate, &bound, &inf, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
       restore_c_multivariate(&zstorevar);
-      free(ctypes_args);
     }
     else { /* func_type == VALID_CTYPE */
       if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
@@ -461,8 +451,6 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
   double   result=0.0, abserr=0.0;
   double   *alist, *blist, *rlist, *elist;
   double   *pts, *points;
-  double   *ctypes_args;
-  Py_ssize_t nargs = 0;
   FuncType func_type;
   QStorage storevar;
   ZStorage zstorevar;
@@ -518,14 +506,11 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
   }
   else {
     if (func_type != Valid_Ctype) { /* func_type == VALID_MULTIVARIATE_CTYPE */
-      nargs = PyTuple_Size(extra_args);
-      if((ctypes_args = c_array_from_tuple(extra_args)) == NULL) goto fail;
-      if (init_c_multivariate(&zstorevar, fcn, nargs, ctypes_args) == NPY_FAIL) goto fail;
+      if (init_c_multivariate(&zstorevar, fcn, extra_args) == NPY_FAIL) goto fail;
       DQAGPE(call_c_multivariate, &a, &b, &npts2, points, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, pts, iord, level, ndin, &last);
       restore_c_multivariate(&zstorevar);
-      free(ctypes_args);
     }
-    else { /* func_type == VALID_CTYPE */
+    else { /* func_type == VALID_CTYPE */ 
       if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
       DQAGPE(quad_function2, &a, &b, &npts2, points, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, pts, iord, level, ndin, &last);
       restore_ctypes_func(&storevar);
@@ -584,8 +569,6 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
   double   result=0.0, abserr=0.0, omega=0.0;
   double   *chebmo;
   double   *alist, *blist, *rlist, *elist;
-  double   *ctypes_args;
-  Py_ssize_t nargs = 0;
   FuncType func_type;
   QStorage storevar;
   ZStorage zstorevar;
@@ -646,12 +629,9 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
   }
   else {
     if (func_type != Valid_Ctype) { /* func_type == VALID_MULTIVARIATE_CTYPE */
-      nargs = PyTuple_Size(extra_args);
-      if((ctypes_args = c_array_from_tuple(extra_args)) == NULL) goto fail;
-      if (init_c_multivariate(&zstorevar, fcn, nargs, ctypes_args) == NPY_FAIL) goto fail;
+      if (init_c_multivariate(&zstorevar, fcn, extra_args) == NPY_FAIL) goto fail;
       DQAWOE(call_c_multivariate, &a, &b, &omega, &integr, &epsabs, &epsrel, &limit, &icall, &maxp1, &result, &abserr, &neval, &ier, &last, alist, blist, rlist, elist, iord, nnlog, &momcom, chebmo);
       restore_c_multivariate(&zstorevar);
-      free(ctypes_args);
     }
     else { /* func_type == VALID_CTYPE */
       if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
@@ -708,8 +688,6 @@ static PyObject *quadpack_qawfe(PyObject *dummy, PyObject *args) {
   double   *chebmo, *rslst, *erlst;
   double   result=0.0, abserr=0.0, omega=0.0;
   double   *alist, *blist, *rlist, *elist;
-  double   *ctypes_args;
-  Py_ssize_t nargs = 0;
   FuncType func_type;
   QStorage storevar;
   ZStorage zstorevar;
@@ -768,12 +746,9 @@ static PyObject *quadpack_qawfe(PyObject *dummy, PyObject *args) {
   }
   else {
     if (func_type != Valid_Ctype) { /* func_type == VALID_MULTIVARIATE_CTYPE */
-      nargs = PyTuple_Size(extra_args);
-      if((ctypes_args = c_array_from_tuple(extra_args)) == NULL) goto fail;
-      if (init_c_multivariate(&zstorevar, fcn, nargs, ctypes_args) == NPY_FAIL) goto fail;
+      if (init_c_multivariate(&zstorevar, fcn, extra_args) == NPY_FAIL) goto fail;
       DQAWFE(call_c_multivariate, &a, &omega, &integr, &epsabs, &limlst, &limit, &maxp1, &result, &abserr, &neval, &ier, rslst, erlst, ierlst, &lst, alist, blist, rlist, elist, iord, nnlog, chebmo);
       restore_c_multivariate(&zstorevar);
-      free(ctypes_args);
     }
     else { /* func_type == VALID_CTYPE */
       if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
@@ -833,8 +808,6 @@ static PyObject *quadpack_qawce(PyObject *dummy, PyObject *args) {
   int      neval=0, ier=6, last=0, *iord;
   double   result=0.0, abserr=0.0;
   double   *alist, *blist, *rlist, *elist;
-  double   *ctypes_args;
-  Py_ssize_t nargs = 0;
   FuncType func_type;
   QStorage storevar;
   ZStorage zstorevar;
@@ -879,12 +852,9 @@ static PyObject *quadpack_qawce(PyObject *dummy, PyObject *args) {
   } 
   else {
     if (func_type != Valid_Ctype) { /* func_type == VALID_MULTIVARIATE_CTYPE */
-      nargs = PyTuple_Size(extra_args);
-      if((ctypes_args = c_array_from_tuple(extra_args)) == NULL) goto fail;
-      if (init_c_multivariate(&zstorevar, fcn, nargs, ctypes_args) == NPY_FAIL) goto fail;
+      if (init_c_multivariate(&zstorevar, fcn, extra_args) == NPY_FAIL) goto fail;
       DQAWCE(call_c_multivariate, &a, &b, &c, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
       restore_c_multivariate(&zstorevar);
-      free(ctypes_args);
     }
     else { /* func_type == VALID_CTYPE */
       if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
@@ -934,8 +904,6 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
   int      neval=0, ier=6, last=0, *iord;
   double   result=0.0, abserr=0.0;
   double   *alist, *blist, *rlist, *elist;
-  double   *ctypes_args;
-  Py_ssize_t nargs = 0;
   FuncType func_type;
   QStorage storevar;
   ZStorage zstorevar;
@@ -979,12 +947,9 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
   }
   else {
     if (func_type != Valid_Ctype) { /* func_type == VALID_MULTIVARIATE_CTYPE */
-      nargs = PyTuple_Size(extra_args);
-      if((ctypes_args = c_array_from_tuple(extra_args)) == NULL) goto fail;
-      if (init_c_multivariate(&zstorevar, fcn, nargs, ctypes_args) == NPY_FAIL) goto fail;
+      if (init_c_multivariate(&zstorevar, fcn, extra_args) == NPY_FAIL) goto fail;
       DQAWSE(call_c_multivariate, &a, &b, &alfa, &beta, &integr, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
       restore_c_multivariate(&zstorevar);
-      free(ctypes_args);
     }
     else { /* func_type == VALID_CTYPE */
       if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
