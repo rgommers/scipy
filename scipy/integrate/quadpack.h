@@ -50,16 +50,6 @@ static double *global_args;
 static double (*global_function) (int, double *) = NULL;
 static int global_n_args;
 
-/* Re-entrant capability for multivariate ctypes */
-typedef struct {
-    double *z_args0;
-    int z_nargs0;
-    double (*z_f0) (int, double *);
-    double *z_args1;
-    int z_nargs1;
-    double (*z_f1) (int, double *);
-} ZStorage;
-
 /* Stack Storage for re-entrant capability */
 typedef struct {
     void *global0;
@@ -151,7 +141,7 @@ c_array_from_tuple(PyObject * tuple)
 }
 
 static int 
-init_c_multivariate(ZStorage * store, PyObject * f, PyObject * args)
+init_c_multivariate(QStorage * store, void * f, PyObject * args)
 {
     /*Initialize function of n+1 variables
      * Parameters: 
@@ -165,16 +155,22 @@ init_c_multivariate(ZStorage * store, PyObject * f, PyObject * args)
      */
 
     /*Store current parameters */
-    store->z_f0 = global_function;
-    store->z_nargs0 = global_n_args;
-    store->z_args0 = global_args;
+    store->global0 = global_function;
+    store->global1 = global_n_args;
+    store->arg = global_args;
+    printf("test1\n");
 
     /*Store new parameters */
-    if ((global_function = get_ctypes_function_pointer(f)) == NULL){
-      PyErr_SetString(quadpack_error, "Ctypes function not correctly initialized");
-      return NPY_FAIL;
-    }
+    global_function = f;
+    quadpack_python_function = f;
+    printf("test2\n");
+    // if ((global_function = get_ctypes_function_pointer(f)) == NULL){
+    //   PyErr_SetString(quadpack_error, "Function not correctly initialized");
+    //   return NPY_FAIL;
+    // }
     global_n_args =  PyTuple_Size(args);
+
+    quadpack_extra_arguments = args;
     if ((global_args = c_array_from_tuple(args)) == NULL){
       PyErr_SetString(quadpack_error, "Extra Arguments must be in a tuple");
       return NPY_FAIL;
@@ -191,17 +187,70 @@ call_c_multivariate(double *x)
      * Output: 
      * Function evaluated at x with initialized parameters
      * Evaluate at  [*x, concatenated with params [x1, . . . , xn]] */
-
+    printf("test3\n");
     global_args[0] = *x;
+    printf("test5\n");
     return global_function(global_n_args, global_args);
 }
 
 static void 
-restore_c_multivariate(ZStorage * store)
+restore_c_multivariate(QStorage * store)
 {
-    free(store->z_args0);
-    global_function = store->z_f0;
-    global_n_args = store->z_nargs0;
-    global_args = store->z_args0;
+    free(store->arg);
+    global_function = store->global0;
+    global_n_args = store->global1;
+    global_args = store->arg;
     return;
 }
+
+double quad_function3(int n, double args[n]) {
+
+  double d_result;
+  PyObject *arg1 = NULL, *arglist=NULL, *result=NULL;
+  double xp = global_args[0];
+
+  printf("test6\n");
+  /* Build argumestore->arg;
+    return NPY_SUCCEED;nt list */
+  if ((arg1 = PyTuple_New(1)) == NULL) goto fail;
+
+  PyTuple_SET_ITEM(arg1, 0, PyFloat_FromDouble(xp));
+                /* arg1 now owns reference to Float object*/
+  //if ((arglist = PySequence_Concat( arg1, quadpack_extra_arguments)) == NULL) goto fail;
+  arglist = arg1;
+  /* Call function object --- stored as a global variable.  Extra
+          arguments are in another global variable.
+   */
+  printf("test7\n");
+  if ((result = PyEval_CallObject(quadpack_python_function, arglist))==NULL) goto fail;
+  printf("test8\n");
+  /* Have to do own error checking because PyFloat_AsDouble returns -1 on
+     error -- making that return value from the function unusable.
+     No; Solution is to test for Python Error Occurrence if -1 is return of PyFloat_AsDouble.
+  */
+
+  d_result = PyFloat_AsDouble(result);
+  if (PyErr_Occurred())
+    PYERR(quadpack_error, "Supplied function does not return a valid float.")
+
+  Py_DECREF(arg1); /* arglist has the reference to Float object. */
+  Py_DECREF(arglist);
+  Py_DECREF(result);
+
+  return d_result;
+
+ fail:
+  Py_XDECREF(arg1);
+  Py_XDECREF(arglist);
+  Py_XDECREF(result);
+  longjmp(quadpack_jmpbuf, 1);
+}
+
+// double funcwrapper(int n, double args[n]){
+//     //Only works for fns of one arg
+//     double x = args[0];
+//     PyObject* xp = PyFloat_FromDouble(x);
+//     //PyObject* x = PyFloat_FromDouble(args[0]);
+//     PyObject* result = PyEval_CallObject(quadpack_python_function, xp);
+//     return PyFloat_AsDouble(result);
+// }
