@@ -39,26 +39,16 @@ the result tuple when the full_output argument is non-zero.
 #define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
 
 
-static PyObject *quadpack_python_function=NULL;
-static PyObject *quadpack_extra_arguments=NULL;    /* a tuple */
+static PyObject *quadpack_python_function = NULL;
+static PyObject *quadpack_extra_arguments = NULL;	/* a tuple */
 static jmp_buf quadpack_jmpbuf;
 
-static double (*quadpack_ctypes_function)(double) = NULL;
+static double (*quadpack_ctypes_function) (double) = NULL;
 
 static PyObject *quadpack_error;
-static double *global_args;
+static double *global_args = NULL;
 static double (*global_function) (int, double *) = NULL;
-static int global_n_args;
-
-/* Re-entrant capability for multivariate ctypes */
-typedef struct {
-    double *z_args0;
-    int z_nargs0;
-    double (*z_f0) (int, double *);
-    double *z_args1;
-    int z_nargs1;
-    double (*z_f1) (int, double *);
-} ZStorage;
+static int *global_n_args = NULL;
 
 /* Stack Storage for re-entrant capability */
 typedef struct {
@@ -68,94 +58,94 @@ typedef struct {
     PyObject *arg;
 } QStorage;
 
-typedef double (*_sp_double_func)(double);
+typedef double (*_sp_double_func) (double);
 
 typedef struct {
-    PyObject_HEAD
-    char *b_ptr;
+    PyObject_HEAD char *b_ptr;
 } _sp_cfuncptr_object;
 
-static _sp_double_func
-get_ctypes_function_pointer(PyObject *obj) {
-    return (*((void **)(((_sp_cfuncptr_object *)(obj))->b_ptr)));
+static _sp_double_func get_ctypes_function_pointer(PyObject * obj)
+{
+    return (*((void **) (((_sp_cfuncptr_object *) (obj))->b_ptr)));
 }
 
-static int 
-quad_init_func(QStorage *store, PyObject *fun, PyObject *arg) {
-    store->global0 = (void *)quadpack_python_function;
-    store->global1 = (void *)quadpack_extra_arguments;
+static int quad_init_func(QStorage * store, PyObject * fun, PyObject * arg)
+{
+    store->global0 = (void *) quadpack_python_function;
+    store->global1 = (void *) quadpack_extra_arguments;
     memcpy(&(store->jmp), &quadpack_jmpbuf, sizeof(jmp_buf));
     store->arg = arg;
     if (store->arg == NULL) {
-        if ((store->arg = PyTuple_New(0)) == NULL) 
-            return NPY_FAIL;
+      	if ((store->arg = PyTuple_New(0)) == NULL)
+      	    return NPY_FAIL;
     }
     else {
-        Py_INCREF(store->arg);  /* We decrement on restore */
+      	Py_INCREF(store->arg);	/* We decrement on restore */
     }
     if (!PyTuple_Check(store->arg)) {
-        PyErr_SetString(quadpack_error, "Extra Arguments must be in a tuple");
-        Py_XDECREF(store->arg);
-        return NPY_FAIL;
+      	PyErr_SetString(quadpack_error,
+      			"Extra Arguments must be in a tuple");
+      	Py_XDECREF(store->arg);
+      	return NPY_FAIL; 
     }
     quadpack_python_function = fun;
     quadpack_extra_arguments = store->arg;
     return NPY_SUCCEED;
 }
 
-static void
-quad_restore_func(QStorage *store, int *ierr) {
-    quadpack_python_function = (PyObject *)store->global0;
-    quadpack_extra_arguments = (PyObject *)store->global1;
+static void quad_restore_func(QStorage * store, int *ierr)
+{
+    quadpack_python_function = (PyObject *) store->global0;
+    quadpack_extra_arguments = (PyObject *) store->global1;
     memcpy(&quadpack_jmpbuf, &(store->jmp), sizeof(jmp_buf));
     Py_XDECREF(store->arg);
     if (ierr != NULL) {
-        if (PyErr_Occurred()) {
-            *ierr = 80;             /* Python error */
-            PyErr_Clear();
-        }
+      	if (PyErr_Occurred()) {
+      	    *ierr = 80;		/* Python error */
+      	    PyErr_Clear();
+      	}
     }
 }
 
-static int
-init_ctypes_func(QStorage *store, PyObject *fun) {
+static int init_ctypes_func(QStorage * store, PyObject * fun)
+{
     store->global0 = quadpack_ctypes_function;
     store->global1 = get_ctypes_function_pointer(fun);
-    if (store->global1 == NULL) return NPY_FAIL;
+    if (store->global1 == NULL)
+      	return NPY_FAIL;
     quadpack_ctypes_function = store->global1;
     return NPY_SUCCEED;
 }
 
-static void
-restore_ctypes_func(QStorage *store) {
+static void restore_ctypes_func(QStorage * store)
+{
     quadpack_ctypes_function = store->global0;
 }
 
-static double*
-c_array_from_tuple(PyObject * tuple)
+static double *c_array_from_tuple(PyObject * tuple)
 {
     /* Accepts Python tuple and converts to double array in c for use in
      * multivariate ctypes */
     if (!PyTuple_CheckExact(tuple))
-      return NULL;    /*Ensure python tuple is passed in */
-    Py_ssize_t nargs = PyTuple_Size(tuple);
+      	return NULL;		/*Ensure python tuple is passed in */
+    Py_ssize_t n_args = PyTuple_Size(tuple);
     Py_ssize_t i = 0;
-    double *array = (double *) malloc(sizeof(double) * (nargs + 1));
+    double *array = (double *) malloc(sizeof(double) * (n_args + 1));
     PyObject *item = NULL;
     array[0] = 0.0;
-    for (i = 0; i < nargs; i++) {
-      item = PyTuple_GetItem(tuple, i);
-      array[i + 1] = PyFloat_AsDouble(item);
+    for (i = 0; i < n_args; i++) {
+      	item = PyTuple_GetItem(tuple, i);
+      	array[i + 1] = PyFloat_AsDouble(item);
     }
     return array;
 }
 
-static int 
-init_c_multivariate(ZStorage * store, PyObject * f, PyObject * args)
+static int
+init_c_multivariate(QStorage * store, PyObject * f, PyObject * args)
 {
     /*Initialize function of n+1 variables
      * Parameters: 
-     * store - Zstorage pointer to hold current state of stack
+     * store - Qstorage pointer to hold current state of stack
      * f - Pyobject function pointer to function to evaluate
      * n - integer number of extra parameters 
      * args - Python tuple with parameters x[1] ... x[n]
@@ -165,25 +155,27 @@ init_c_multivariate(ZStorage * store, PyObject * f, PyObject * args)
      */
 
     /*Store current parameters */
-    store->z_f0 = global_function;
-    store->z_nargs0 = global_n_args;
-    store->z_args0 = global_args;
+    store->global0 = global_function;
+    store->global1 = global_n_args;
+    store->arg = global_args;
 
-    /*Store new parameters */
-    if ((global_function = get_ctypes_function_pointer(f)) == NULL){
-      PyErr_SetString(quadpack_error, "Ctypes function not correctly initialized");
-      return NPY_FAIL;
+    /*Set new parameters */
+    if ((global_function = get_ctypes_function_pointer(f)) == NULL) {
+      	PyErr_SetString(quadpack_error,
+      			"Ctypes function not correctly initialized");
+      	return NPY_FAIL;
     }
-    global_n_args =  PyTuple_Size(args);
-    if ((global_args = c_array_from_tuple(args)) == NULL){
-      PyErr_SetString(quadpack_error, "Extra Arguments must be in a tuple");
-      return NPY_FAIL;
+    if ((global_args = c_array_from_tuple(args)) == NULL) {
+      	PyErr_SetString(quadpack_error,
+      			"Extra Arguments must be in a tuple");
+      	return NPY_FAIL;
     }
+    int n_args_ref = PyTuple_Size(args);
+    global_n_args = &n_args_ref;
     return NPY_SUCCEED;
 }
 
-static double 
-call_c_multivariate(double *x)
+static double call_c_multivariate(double *x)
 {
     /*Evaluates user defined function as function of one variable after initialization.
      * Parameter: 
@@ -193,15 +185,15 @@ call_c_multivariate(double *x)
      * Evaluate at  [*x, concatenated with params [x1, . . . , xn]] */
 
     global_args[0] = *x;
-    return global_function(global_n_args, global_args);
+    return global_function(*global_n_args, global_args);
 }
 
-static void 
-restore_c_multivariate(ZStorage * store)
+static void restore_c_multivariate(QStorage * store)
 {
-    free(store->z_args0);
-    global_function = store->z_f0;
-    global_n_args = store->z_nargs0;
-    global_args = store->z_args0;
+    /*Frees memory allocated for args array, then restores globals for thread safety. */
+    free(store->arg);
+    global_function = store->global0;
+    global_n_args = store->global1;
+    global_args = store->arg;
     return;
 }
