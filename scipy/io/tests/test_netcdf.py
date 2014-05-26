@@ -10,7 +10,7 @@ from glob import glob
 from contextlib import contextmanager
 
 import numpy as np
-from numpy.testing import assert_, assert_allclose
+from numpy.testing import assert_, assert_allclose, run_module_suite
 
 from scipy.io.netcdf import netcdf_file
 
@@ -214,5 +214,9 @@ def test_zero_dimensional_var():
         v = f.createVariable('zerodim', 'i2', [])
         # This is checking that .isrec returns a boolean - don't simplify it
         # to 'assert not ...'
-        assert v.isrec is False, v.isrec
+        assert_(v.isrec is False, msg=v.isrec)
         f.flush()
+
+
+if __name__ == "__main__":
+    run_module_suite()
