@@ -205,7 +205,10 @@ odr
 Rename the module to ``regression`` or ``fitting``, include
 ``optimize.curve_fit``. This module will then provide a home for other fitting
 functionality - what exactly needs to be worked out in more detail, a
-discussion can be found at https://github.com/scipy/scipy/pull/448.
+discussion can be found at https://github.com/scipy/scipy/pull/448.  Perhaps
+wrap the rewritten ODRPACK95 which includes weighting and bound constraints on
+parameters.  Paper is at http://semi.vt.edu/presentations/SEMI-March05_Watson.pdf
+and the code is at http://www.netlib.org/toms/869.
 
 
 optimize
