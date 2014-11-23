@@ -1879,6 +1879,7 @@ end function dlamch
 function slamch(cmach)
     character :: cmach
     fortranname wslamch
+    entry wslamch(cmach)
     real intent(out):: wslamch
 end function slamch
 
