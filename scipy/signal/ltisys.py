@@ -33,7 +33,7 @@ from numpy.linalg.linalg import LinAlgError
 
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
            'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
-           'freqresp', 'place']
+           'freqresp', 'place_poles']
 
 
 def tf2ss(num, den):
@@ -1132,17 +1132,12 @@ def _valid_inputs(A,B,poles, method):
         raise ValueError("B must be a 2D array/matrix")
     if A.shape[0] != A.shape[1]:
         raise ValueError("A must be square")
-    if B.shape[1] > B.shape[0]:
-        raise ValueError("B must have nb col  < = nb lines")
     if len(poles) > A.shape[0]:
         raise ValueError("maximum number of poles is %d but you asked for %d" % (A.shape[0],len(poles)))
     if len(poles) < A.shape[0]:
         raise ValueError("number of poles is %d but you should provide %d" % (len(poles),A.shape[0]))
     
     r = matrix_rank(B)
-    if r != B.shape[1]:
-        raise ValueError("rank of B should be equal to its number of columns")
-
     for p in poles:
         if sum(p == poles) > r:
             raise ValueError("at least one of the requested pole is repeated more than rank(B) times")
@@ -1317,7 +1312,6 @@ def _YT_complex(ker_pole,Q,transfer_matrix,i,j):
     
     
 def _YT(B,ker_pole,transfer_matrix,j_main_loop,poles):
-#def YT(B,ker_pole,transfer_matrix,i,j):
     """
     Algorithm "YT" Tits, Yang. Globally Convergent
     Algorithms for Robust Pole Assignment by State Feedback
@@ -1357,7 +1351,7 @@ def _YT(B,ker_pole,transfer_matrix,j_main_loop,poles):
     else:
         _YT_complex(ker_pole,Q,transfer_matrix,i,j) 
 
-def place(A,B,poles, method="YT", maxtry=20, force_maxtry=False, return_poles=False):
+def place_poles(A,B,poles, method="YT", maxtry=20, force_maxtry=False, return_poles=False):
     """
     Compute K such as eigenvalues(A-dot(B,K))=P.    
     
@@ -1463,8 +1457,8 @@ def place(A,B,poles, method="YT", maxtry=20, force_maxtry=False, return_poles=Fa
     u1 = u[:,B.shape[1]:]
     z = z[:B.shape[1],:]
     
-    #if B is square there is almost nothing to do
-    if B.shape[0] == B.shape[1]:
+    #if the solution is unique
+    if B.shape[0] == matrix_rank(B):
         #if B is square and full rank there is only one solution 
         #such as (A+BK)=diag(P) i.e BK=diag(P)-A
         #for complex poles we use the following trick
@@ -1489,7 +1483,8 @@ def place(A,B,poles, method="YT", maxtry=20, force_maxtry=False, return_poles=Fa
                 diag_poles[idx+1,idx] = imag(p)
                 idx += 1  # skip next one
             idx += 1
-        gain_matrix = linalg.solve(B,diag_poles-A)
+        gain_matrix = linalg.lstsq(B,diag_poles-A)[0]
+
     else:        
         #step A (p1144 KNV) and beginnig of step F: decompose dot(U1.T,A-P[i]*I).T
         #and build our set of transfer_matrix vectors in the same loop
