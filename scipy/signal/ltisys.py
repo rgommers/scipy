@@ -15,9 +15,6 @@ from __future__ import division, print_function, absolute_import
 
 from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 import numpy
-<<<<<<< HEAD
-from numpy import (product, zeros, array, dot, transpose, ones,
-                   nan_to_num, zeros_like, linspace)
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
