@@ -173,7 +173,8 @@ LTI Representations
    zpk2ss        -- zero-pole-gain to state-space.
    ss2zpk        -- state-space to pole-zero-gain.
    cont2discrete -- continuous-time to discrete-time LTI conversion.
-
+   place         -- pole placement.
+   
 Waveforms
 =========
 
