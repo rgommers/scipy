@@ -25,7 +25,7 @@ from numpy import r_, eye, real, atleast_1d, atleast_2d, poly, \
      squeeze, diag, asarray, isreal, imag, newaxis, hstack, sort,\
      delete, allclose, sqrt, conj, vstack, spacing, argsort, \
      sum as npsum, product, zeros, array, dot, transpose, ones, \
-    nan_to_num, zeros_like, linspace
+     nan_to_num, zeros_like, linspace
 from numpy.linalg import matrix_rank
 from numpy.linalg.linalg import LinAlgError
 import warnings
@@ -1345,7 +1345,7 @@ def _YT(B, ker_pole, transfer_matrix, j_main_loop, poles):
                 #unclear in the original paper so use KNV0 at least we're sure
                 #it will do no harm.
                 return _KNV0(B, ker_pole, transfer_matrix, i, poles)
-            elif j < B.shape[0] and ~isreal(poles[j]):
+            elif j < B.shape[0] and isreal(poles[i]) and ~isreal(poles[j]):
                 #we are on the last real pole switch with the first one
                 j = 0
             else:  # both poles are complex we are shifted on the right by one
