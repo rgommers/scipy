@@ -1355,10 +1355,10 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
     r_p = arange(1, hnb+1)
     update_order[0].extend(2*r_p-1)
     update_order[1].extend(2*r_p)
-    if nb_real % 2:
-        update_order[0].append(nb_real)
-        update_order[1].append(1)
     #step 1.d
+    if hnb == 0:
+        update_order[0].append(1)
+        update_order[1].append(1)
     update_order[0].extend(r_comp)
     update_order[1].extend(r_comp+1)
     #step 2.a
@@ -1371,6 +1371,9 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
             update_order[0].append(i)
             update_order[1].append(idx_1)
     #step 2.b
+    if hnb == 0:
+        update_order[0].append(1)
+        update_order[1].append(1)
     update_order[0].extend(r_comp)
     update_order[1].extend(r_comp+1)
     #step 2.c
@@ -1383,6 +1386,9 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
             update_order[0].append(i)
             update_order[1].append(idx_1)
     #step 2.d
+    if hnb == 0:
+        update_order[0].append(1)
+        update_order[1].append(1)
     update_order[0].extend(r_comp)
     update_order[1].extend(r_comp+1)
     #step 3.a
@@ -1390,6 +1396,9 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
         update_order[0].append(i)
         update_order[1].append(i+hnb)
     #step 3.b
+    if hnb == 0:
+        update_order[0].append(1)
+        update_order[1].append(1)
     update_order[0].extend(r_comp)
     update_order[1].extend(r_comp+1)
 
