@@ -1496,25 +1496,14 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     maxiter: int, optional
         Maximum number of iterations to compute the gain matrix.
         Default is 30.
-    return_poles: bool, optional
-        Whether to return or not the actual placed poles.  Default is False.
 
     Returns
     -------
     K : 1-D ndarray
         The closed loop matrix such as the eigenvalues of ``A - BK`` are as
         close as possible to the requested poles.
-    Pa : 1D ndarray (optional)
+    Pa : 1-D ndarray
         The poles corresponding to ``A - BK``.
-
-    References
-    ----------
-    .. [1] J. Kautsky, N.K. Nichols and P. van Dooren, "Robust pole assignment
-           in linear state feedback", International Journal of Control, Vol. 41
-           pp. 1129-1155, 1985.
-    .. [2] A.L. Tits and Y. Yang, "Globally convergent algorithms for robust
-           pole assignment by state feedback, IEEE Transactions on Automatic
-           Control, Vol. 41, pp. 1432-1452, 1996.
 
     Notes
     -----
@@ -1546,6 +1535,15 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     is only provided because it is needed by ``'YT'`` in some specific cases.
     Furthermore ``'YT'`` usually converges much faster than ``'KNV0'``.
 
+    References
+    ----------
+    .. [1] J. Kautsky, N.K. Nichols and P. van Dooren, "Robust pole assignment
+           in linear state feedback", International Journal of Control, Vol. 41
+           pp. 1129-1155, 1985.
+    .. [2] A.L. Tits and Y. Yang, "Globally convergent algorithms for robust
+           pole assignment by state feedback, IEEE Transactions on Automatic
+           Control, Vol. 41, pp. 1432-1452, 1996.
+
     Examples
     --------
     A simple example demonstrating real pole placement using both KNV and YT
@@ -1566,6 +1564,25 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     >>> K1, P1 = signal.place_poles(A, B, P, method='KNV0')
     >>> K2, P2 = signal.place_poles(A, B, P, method='YT')
     >>> K3, P3 = signal.place_poles(A, B, P, rtol=-1, maxiter=100)
+
+    Now a simple example for complex poles:
+
+    >>> A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4) / 3.
+    >>> B = np.array([0,0,0,0,1,0,0,1]).reshape(4,2)
+    >>> P = np.array([-3, -1, -2-1j, -2+1j]) / 3.
+    >>> gain_matrix, computed_poles = signal.place_poles(A, B, P, method='YT')
+
+    We can plot the desired and computed poles in the complex plane:
+
+    >>> t = np.linspace(0, 2*np.pi, num=401)
+    >>> plt.figure()
+    >>> plt.plot(np.cos(t), np.sin(t), 'k--')  # unit circle
+    >>> plt.plot(P.real, P.imag, 'ro', label='Desired poles')
+    >>> plt.plot(computed_poles.real, computed_poles.imag, 'bx',
+    ...          label='Computed poles (YT)')
+    >>> plt.legend()
+    >>> plt.grid()
+    >>> plt.show()
 
     """
     # Move away all the inputs checking, it only adds noise to the code
