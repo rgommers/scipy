@@ -147,6 +147,8 @@ Irvin Probst (ENSTA Bretagne) for pole placement.
 Ian Henriksen for Cython wrappers for BLAS and LAPACK
 Fukumu Tsutsumi for bug fixes.
 J.J. Green for interpolation bug fixes.
+Alexander Grigorevskiy for adding extra LAPACK least-square solvers and 
+    modifying linalg.lstsq function accordingly.
 
 
 Institutions
