@@ -80,22 +80,22 @@ All functions
    dgelss
    cgelss
    zgelss
-   
+
    sgelss_lwork
    dgelss_lwork
    cgelss_lwork
    zgelss_lwork
-   
+
    sgelsd
    dgelsd
    cgelsd
    zgelsd
-   
+
    sgelsd_lwork
    dgelsd_lwork
    cgelsd_lwork
    zgelsd_lwork
-   
+
    sgelsy
    dgelsy
    cgelsy
@@ -105,7 +105,7 @@ All functions
    dgelsy_lwork
    cgelsy_lwork
    zgelsy_lwork
-   
+
    sgeqp3
    dgeqp3
    cgeqp3
@@ -189,7 +189,7 @@ All functions
 
    chegvx
    zhegvx
-   
+
    slarf
    dlarf
    clarf
@@ -205,8 +205,8 @@ All functions
    clartg
    zlartg
 
-   dlasd4
    slasd4
+   dlasd4
 
    slaswp
    dlaswp
