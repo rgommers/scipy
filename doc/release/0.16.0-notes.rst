@@ -85,6 +85,11 @@ with ``statsmodels.distributions.ExpandedNormal``.
 ``scipy.stats.fastsort`` is deprecated.  This function is unnecessary,
 ``numpy.argsort`` can be used instead.
 
+The following functions from `scipy.misc` have been deprecated:
+``who``, ``source``, ``comb``, ``factorial``, ``factorial2`` and
+``factorialk``.  All those functions are simple aliases for numpy or
+`scipy.special` functions.
+
 
 Backwards incompatible changes
 ==============================

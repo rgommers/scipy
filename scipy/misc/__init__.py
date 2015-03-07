@@ -41,18 +41,40 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['who', 'source', 'info', 'doccer']
 
-from . import doccer
-from .common import *
-from numpy import who, source, info as _info
-from scipy.special import comb, factorial, factorial2, factorialk
-
 import sys
 
+import numpy as np
 
-def info(object=None,maxwidth=76,output=sys.stdout,toplevel='scipy'):
+from . import doccer
+from .common import *
+
+who = np.deprecate(np.who, message="misc.who is deprecated in Scipy 0.16.0, "
+                                "please use it as numpy.who")
+source = np.deprecate(np.source,
+                      message="misc.source is deprecated in Scipy0.16.0, "
+                              "please use it as numpy.source")
+
+from scipy.special import comb, factorial, factorial2, factorialk
+comb = np.deprecate(comb, message="misc.comb is deprecated in Scipy 0.16.0, "
+                                  "please use it as scipy.special.comb")
+factorial = np.deprecate(factorial,
+                         message="misc.factorial is deprecated in Scipy 0.16.0, "
+                                 "please use it as scipy.special.factorial")
+factorial2 = np.deprecate(factorial2,
+                          message="misc.factorial2 is deprecated in Scipy "
+                                  "0.16.0, please use it as "
+                                  "scipy.special.factorial2")
+factorialk = np.deprecate(factorialk,
+                          message="misc.factorialk is deprecated in Scipy "
+                                  "0.16.0, please use it as "
+                                  "scipy.special.factorialk")
+
+from numpy import info as _info
+def info(object=None, maxwidth=76, output=sys.stdout, toplevel='scipy'):
     return _info(object, maxwidth, output, toplevel)
 info.__doc__ = _info.__doc__
 del sys
+del np
 
 try:
     from .pilutil import *
