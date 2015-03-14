@@ -9,8 +9,9 @@ import warnings
 import numpy as np
 from numpy.random import RandomState
 from numpy.testing import (TestCase, run_module_suite, assert_array_equal,
-                           assert_almost_equal, assert_array_less, assert_array_almost_equal,
-                           assert_raises, assert_, assert_allclose, assert_equal, dec, assert_warns)
+                           assert_almost_equal, assert_array_less,
+                           assert_array_almost_equal, assert_raises, assert_,
+                           assert_allclose, assert_equal, dec, assert_warns)
 
 from scipy import stats
 
