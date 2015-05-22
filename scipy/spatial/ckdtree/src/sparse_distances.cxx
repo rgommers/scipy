@@ -64,21 +64,52 @@ sparse_distance_matrix_traverse(const ckdtree *self,
         lnode1 = node1;
         
         if (node2->split_dim == -1) {  /* 1 & 2 are leaves */
-            lnode2 = node2;
-            
+        
             /* brute-force */
+        
+            const npy_float64 *self_raw_data = self->raw_data;
+            const npy_intp *self_raw_indices = self->raw_indices;
+            const npy_float64 *other_raw_data = other->raw_data;
+            const npy_intp *other_raw_indices = other->raw_indices;
+            const npy_intp m = self->m;
+            
+            lnode2 = node2;
+                        
+            prefetch_datapoint(self_raw_data + 
+                 self_raw_indices[lnode1->start_idx]*m, m);
+            if (lnode1->start_idx < lnode1->end_idx)
+               prefetch_datapoint(self_raw_data + 
+                   self_raw_indices[lnode1->start_idx+1]*m, m);                         
+                        
             for (i = lnode1->start_idx; i < lnode1->end_idx; ++i) {
+            
+                if (i < lnode1->end_idx-2)
+                     prefetch_datapoint(self_raw_data +
+                         self_raw_indices[i+2]*m, m);
+            
                 /* Special care here to avoid duplicate pairs */
                 if (node1 == node2)
                     min_j = i+1;
                 else
                     min_j = lnode2->start_idx;
                     
+                prefetch_datapoint(other_raw_data + 
+                    other_raw_indices[min_j]*m, m);
+                if (min_j < lnode2->end_idx)
+                    prefetch_datapoint(self_raw_data + 
+                        other_raw_indices[min_j+1]*m, m);
+                    
                 for (j = min_j; j < lnode2->end_idx; ++j) {
+                
+                    if (j < lnode2->end_idx-2)
+                        prefetch_datapoint(other_raw_data + 
+                            other_raw_indices[j+2]*m, m);
+                
                     d = _distance_p(
-                        self->raw_data + self->raw_indices[i] * self->m,
-                        other->raw_data + other->raw_indices[j] * self->m,
-                        tracker->p, self->m, tracker->upper_bound);
+                            self_raw_data + self_raw_indices[i] * m,
+                            other_raw_data + other_raw_indices[j] * m,
+                            tracker->p, m, tracker->upper_bound);
+                        
                     if (d <= tracker->upper_bound) {
                         if ((tracker->p != 1) && (tracker->p != infinity))
                             d = std::pow(d, 1. / tracker->p);
