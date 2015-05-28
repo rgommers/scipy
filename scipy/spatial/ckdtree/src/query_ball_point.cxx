@@ -21,9 +21,9 @@
 
 
 static void
-query_ball_point_traverse_no_checking(const ckdtree *self,
-                                        std::vector<npy_intp> *results,
-                                        const ckdtreenode *node)
+traverse_no_checking(const ckdtree *self,
+                     std::vector<npy_intp> *results,
+                     const ckdtreenode *node)
 {                                                    
     const ckdtreenode *lnode;
     npy_intp i;
@@ -34,17 +34,17 @@ query_ball_point_traverse_no_checking(const ckdtree *self,
             results->push_back(self->raw_indices[i]);
     }
     else {
-        query_ball_point_traverse_no_checking(self, results, node->less);
-        query_ball_point_traverse_no_checking(self, results, node->greater);
+        traverse_no_checking(self, results, node->less);
+        traverse_no_checking(self, results, node->greater);
     }
 }
 
 
 static void 
-query_ball_point_traverse_checking(const ckdtree *self,
-                                     std::vector<npy_intp> *results,
-                                     const ckdtreenode *node,
-                                     PointRectDistanceTracker *tracker)
+traverse_checking(const ckdtree *self,
+                  std::vector<npy_intp> *results,
+                  const ckdtreenode *node,
+                  PointRectDistanceTracker *tracker)
 {
     const ckdtreenode *lnode;
     npy_float64 d;
@@ -53,7 +53,7 @@ query_ball_point_traverse_checking(const ckdtree *self,
     if (tracker->min_distance > tracker->upper_bound * tracker->epsfac)
         return;
     else if (tracker->max_distance < tracker->upper_bound / tracker->epsfac)
-        query_ball_point_traverse_no_checking(self, results, node);
+        traverse_no_checking(self, results, node);
     else if (node->split_dim == -1)  { /* leaf node */
         
         /* brute-force */
@@ -73,9 +73,8 @@ query_ball_point_traverse_checking(const ckdtree *self,
             if (i < lnode->end_idx-2)
                 prefetch_datapoint(raw_data+raw_indices[i+2]*m, m);
            
-            d = _distance_p(
-                raw_data + raw_indices[i] * m,
-                tracker->pt, tracker->p, m, tracker->upper_bound);
+            d = _distance_p(raw_data + raw_indices[i] * m,
+                    tracker->pt, tracker->p, m, tracker->upper_bound);
                 
             if (d <= tracker->upper_bound) {
                 results->push_back((npy_intp) raw_indices[i]);
@@ -83,28 +82,21 @@ query_ball_point_traverse_checking(const ckdtree *self,
         }
     }
     else {
-    
         tracker->push_less_of(node);
-        query_ball_point_traverse_checking(
-            self, results, node->less, tracker);
+        traverse_checking(self, results, node->less, tracker);
         tracker->pop();
         
         tracker->push_greater_of(node);
-        query_ball_point_traverse_checking(
-            self, results, node->greater, tracker);
+        traverse_checking(self, results, node->greater, tracker);
         tracker->pop();
     }    
 }
 
         
 extern "C" PyObject*
-query_ball_point(const ckdtree *self,
-                 const npy_float64 *x,
-                 const npy_float64 r,
-                 const npy_float64 p,
-                 const npy_float64 eps,
-                 const npy_intp n_queries,
-                 std::vector<npy_intp> **results)
+query_ball_point(const ckdtree *self, const npy_float64 *x,
+                 const npy_float64 r, const npy_float64 p, const npy_float64 eps,
+                 const npy_intp n_queries, std::vector<npy_intp> **results)
 {
     /* release the GIL */
     NPY_BEGIN_ALLOW_THREADS   
@@ -114,7 +106,7 @@ query_ball_point(const ckdtree *self,
                 const npy_intp m = self->m;
                 Rectangle rect(m, self->raw_mins, self->raw_maxes);             
                 PointRectDistanceTracker tracker(x + i*m, rect, p, eps, r);
-                query_ball_point_traverse_checking(
+                traverse_checking(
                     self, results[i], self->ctree, &tracker);
             }
         } 

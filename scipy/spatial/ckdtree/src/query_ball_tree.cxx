@@ -21,11 +21,9 @@
 
 
 static void
-query_ball_tree_traverse_no_checking(const ckdtree *self,
-                                       const ckdtree *other,
-                                       std::vector<npy_intp> **results,
-                                       const ckdtreenode *node1,
-                                       const ckdtreenode *node2)
+traverse_no_checking(const ckdtree *self, const ckdtree *other,
+                     std::vector<npy_intp> **results, 
+                     const ckdtreenode *node1, const ckdtreenode *node2)
 {
     const ckdtreenode *lnode1;
     const ckdtreenode *lnode2;
@@ -45,28 +43,22 @@ query_ball_tree_traverse_no_checking(const ckdtree *self,
             }
         }
         else {            
-            query_ball_tree_traverse_no_checking(self, other, results, node1, 
-                 node2->less);   
-            query_ball_tree_traverse_no_checking(self, other, results, node1, 
-                 node2->greater);
+            traverse_no_checking(self, other, results, node1, node2->less);   
+            traverse_no_checking(self, other, results, node1, node2->greater);
         }
     }
     else {        
-        query_ball_tree_traverse_no_checking(self, other, results, 
-             node1->less, node2);
-        query_ball_tree_traverse_no_checking(self, other, results,
-             node1->greater, node2);
+        traverse_no_checking(self, other, results, node1->less, node2);
+        traverse_no_checking(self, other, results, node1->greater, node2);
     }
 }
 
 
 static void
-query_ball_tree_traverse_checking(const ckdtree *self,
-                                    const ckdtree *other,
-                                    std::vector<npy_intp> **results,
-                                    const ckdtreenode *node1,
-                                    const ckdtreenode *node2,
-                                    RectRectDistanceTracker *tracker)
+traverse_checking(const ckdtree *self, const ckdtree *other,
+                  std::vector<npy_intp> **results,
+                  const ckdtreenode *node1, const ckdtreenode *node2,
+                  RectRectDistanceTracker *tracker)
 {
     const ckdtreenode *lnode1;
     const ckdtreenode *lnode2;
@@ -77,7 +69,7 @@ query_ball_tree_traverse_checking(const ckdtree *self,
     if (tracker->min_distance > tracker->upper_bound * tracker->epsfac)
         return;
     else if (tracker->max_distance < tracker->upper_bound / tracker->epsfac)
-        query_ball_tree_traverse_no_checking(self, other, results, node1, node2);
+        traverse_no_checking(self, other, results, node1, node2);
     else if (node1->split_dim == -1) { /* 1 is leaf node */
         lnode1 = node1;
         
@@ -122,9 +114,9 @@ query_ball_tree_traverse_checking(const ckdtree *self,
                             + other_raw_indices[j+2]*m, m);
                 
                     d = _distance_p(
-                        self_raw_data + self_raw_indices[i] * m,
-                        other_raw_data + other_raw_indices[j] * m,
-                        tracker->p, m, tracker->max_distance);
+                            self_raw_data + self_raw_indices[i] * m,
+                            other_raw_data + other_raw_indices[j] * m,
+                            tracker->p, m, tracker->max_distance);
         
                     if (d <= tracker->upper_bound)
                         results_i->push_back(other->raw_indices[j]);
@@ -135,12 +127,12 @@ query_ball_tree_traverse_checking(const ckdtree *self,
         else { /* 1 is a leaf node, 2 is inner node */
 
             tracker->push_less_of(2, node2);
-            query_ball_tree_traverse_checking(
+            traverse_checking(
                 self, other, results, node1, node2->less, tracker);
             tracker->pop();
                 
             tracker->push_greater_of(2, node2);            
-            query_ball_tree_traverse_checking(
+            traverse_checking(
                 self, other, results, node1, node2->greater, tracker);
             tracker->pop();
         }
@@ -148,12 +140,12 @@ query_ball_tree_traverse_checking(const ckdtree *self,
     else {  /* 1 is an inner node */
         if (node2->split_dim == -1) { /* 1 is an inner node, 2 is a leaf node */
             tracker->push_less_of(1, node1);
-            query_ball_tree_traverse_checking(
+            traverse_checking(
                 self, other, results, node1->less, node2, tracker);
             tracker->pop();
                 
             tracker->push_greater_of(1, node1);
-            query_ball_tree_traverse_checking(
+            traverse_checking(
                 self, other, results, node1->greater, node2, tracker);
             tracker->pop();
         }    
@@ -161,12 +153,12 @@ query_ball_tree_traverse_checking(const ckdtree *self,
             
             tracker->push_less_of(1, node1);
             tracker->push_less_of(2, node2);
-            query_ball_tree_traverse_checking(
+            traverse_checking(
                 self, other, results, node1->less, node2->less, tracker);
             tracker->pop();
                 
             tracker->push_greater_of(2, node2);
-            query_ball_tree_traverse_checking(
+            traverse_checking(
                 self, other, results, node1->less, node2->greater, tracker);
             tracker->pop();
             tracker->pop();
@@ -174,12 +166,12 @@ query_ball_tree_traverse_checking(const ckdtree *self,
             
             tracker->push_greater_of(1, node1);
             tracker->push_less_of(2, node2);
-            query_ball_tree_traverse_checking(
+            traverse_checking(
                 self, other, results, node1->greater, node2->less, tracker);
             tracker->pop();
                 
             tracker->push_greater_of(2, node2);
-            query_ball_tree_traverse_checking(
+            traverse_checking(
                 self, other, results, node1->greater, node2->greater, tracker);
             tracker->pop();
             tracker->pop();
@@ -189,11 +181,8 @@ query_ball_tree_traverse_checking(const ckdtree *self,
     
     
 extern "C" PyObject*
-query_ball_tree(const ckdtree *self,
-                const ckdtree *other,
-                const npy_float64 r,
-                const npy_float64 p,
-                const npy_float64 eps,
+query_ball_tree(const ckdtree *self, const ckdtree *other, 
+                const npy_float64 r, const npy_float64 p, const npy_float64 eps,
                 std::vector<npy_intp> **results)
 {
 
@@ -206,8 +195,8 @@ query_ball_tree(const ckdtree *self,
             
             RectRectDistanceTracker tracker(r1, r2, p, eps, r);
             
-            query_ball_tree_traverse_checking(
-                self, other, results, self->ctree, other->ctree, &tracker);
+            traverse_checking(self, other, results, self->ctree, other->ctree, 
+                &tracker);
              
         } 
         catch(...) {

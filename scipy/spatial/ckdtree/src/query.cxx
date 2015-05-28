@@ -1,10 +1,4 @@
 /*
- * Nearest neighbor query in C++ for cKDTree
- * Written by Sturla Molden 2015
- * SciPy license
- */
-
-/*
  * This would break SciPy with NumPy 1.6 so just accept the compiler
  * warning for now.
  * #define NPY_NO_DEPRECATED_API NPY_1_9_API_VERSION 
@@ -172,19 +166,19 @@ struct nodeinfo_pool {
 };
 
 
-// k-nearest neighbor search for a single point x
+/* k-nearest neighbor search for a single point x */
 static void 
 query_single_point(const ckdtree *self, 
-                     npy_float64   *result_distances, 
-                     npy_intp      *result_indices, 
-                     const npy_float64  *x, 
-                     const npy_intp     k, 
-                     const npy_float64  eps, 
-                     const npy_float64  p, 
-                     npy_float64  distance_upper_bound,
-                     const npy_float64 infinity)
+                   npy_float64   *result_distances, 
+                   npy_intp      *result_indices, 
+                   const npy_float64  *x, 
+                   const npy_intp     k, 
+                   const npy_float64  eps, 
+                   const npy_float64  p, 
+                   npy_float64  distance_upper_bound,
+                   const npy_float64 infinity)
 {                
-    // memory pool to allocate and automatically reclaim nodeinfo structs
+    /* memory pool to allocate and automatically reclaim nodeinfo structs */
     nodeinfo_pool nipool(self->m);
     
     /*
@@ -219,7 +213,7 @@ query_single_point(const ckdtree *self,
     const ckdtreenode   *near;
     const ckdtreenode   *far;
     
-    // set up first nodeifo
+    /* set up first nodeifo */
     inf = nipool.allocate();
     inf->node = self->ctree;
     
@@ -237,7 +231,7 @@ query_single_point(const ckdtree *self,
             inf->side_distances[i] = std::pow(inf->side_distances[i],p);
     }
     
-    // compute first distance
+    /* compute first distance */
     min_distance = 0.;
     for (i=0; i<m; ++i) {
         if (p == infinity)
@@ -246,7 +240,7 @@ query_single_point(const ckdtree *self,
             min_distance += inf->side_distances[i];
     }
     
-    // fiddle approximation factor
+    /* fiddle approximation factor */
     if (eps == 0.)
         epsfac = 1.;
     else if (p == infinity)
@@ -254,19 +248,16 @@ query_single_point(const ckdtree *self,
     else
         epsfac = 1./std::pow((1+eps),p);
 
-    // internally we represent all distances as distance**p
+    /* internally we represent all distances as distance**p */
     if ((p != infinity) && (distance_upper_bound != infinity))
         distance_upper_bound = std::pow(distance_upper_bound,p);
 
     for(;;) {
         if (inf->node->split_dim == -1) {
-        
-            //npy_intp start_idx = node->start_idx;
-            //npy_intp end_idx = node->end_idx;
-        
+                
             node = inf->node;
 
-            // brute-force
+            /* brute-force */
             {
                 npy_intp start_idx = node->start_idx;
                 npy_intp end_idx = node->end_idx;
@@ -286,22 +277,22 @@ query_single_point(const ckdtree *self,
                             distance_upper_bound);
                         
                     if (d < distance_upper_bound) {
-                        // replace furthest neighbor
+                        /* replace furthest neighbor */
                         if (neighbors.n == k)
                               neighbors.remove();
                         neighbor.priority = -d;
                         neighbor.contents.intdata = self->raw_indices[i];
                         neighbors.push(neighbor);
     
-                        // adjust upper bound for efficiency
+                        /* adjust upper bound for efficiency */
                         if (neighbors.n == k)
                             distance_upper_bound = -neighbors.peek().priority;
                     }
                 }
             }
-            // done with this node, get another                
+            /* done with this node, get another */                
             if (q.n == 0) {
-                // no more nodes to visit
+                /* no more nodes to visit */
                 break;
             } 
             else {
@@ -320,10 +311,10 @@ query_single_point(const ckdtree *self,
              * here even if the cell's too far
              */
             if (min_distance > distance_upper_bound*epsfac) {
-                // since this is the nearest cell, we're done, bail out 
+                /* since this is the nearest cell, we're done, bail out */
                 break;
             }
-            // set up children for searching
+            /* set up children for searching */
             if (x[inode->split_dim] < inode->split) {
                 near = inode->less;
                 far = inode->greater;
@@ -349,7 +340,7 @@ query_single_point(const ckdtree *self,
             
             it2.contents.ptrdata = (void*) inf2;
             
-            // most side distances unchanged
+            /* most side distances unchanged */
             for (i=0; i<m; ++i) {
                 inf2->side_distances[i] = inf->side_distances[i];
             }
@@ -373,30 +364,33 @@ query_single_point(const ckdtree *self,
                 /*
                  * we never use side_distances in the l_infinity case
                  * so skip filling it in
-                 * inf2->side_distances[inode->split_dim] = dabs(inode->split-x[inode->split_dim])
+                 * inf2->side_distances[inode->split_dim] 
+                 *     = dabs(inode->split-x[inode->split_dim])
                  */
-                far_min_distance = dmax(min_distance, dabs(inode->split-x[inode->split_dim]));
+                far_min_distance = dmax(min_distance, 
+                                        dabs(inode->split-x[inode->split_dim]));
             } 
             else if (p == 1.) {
-                inf2->side_distances[inode->split_dim] = dabs(inode->split-x[inode->split_dim]);
+                inf2->side_distances[inode->split_dim] 
+                    = dabs(inode->split-x[inode->split_dim]);
                 far_min_distance = min_distance - 
                     inf->side_distances[inode->split_dim] + 
                         inf2->side_distances[inode->split_dim];
             } 
             else {
-                inf2->side_distances[inode->split_dim] = std::pow(dabs(inode->split - 
-                                                            x[inode->split_dim]),p);
+                inf2->side_distances[inode->split_dim] 
+                    = std::pow(dabs(inode->split - x[inode->split_dim]),p);
                 far_min_distance = min_distance - 
                     inf->side_distances[inode->split_dim] +
                         inf2->side_distances[inode->split_dim];
             }
             it2.priority = far_min_distance;
-            // far child might be too far, if so, don't bother pushing it
+            /* far child might be too far, if so, don't bother pushing it */
             if (far_min_distance<=distance_upper_bound*epsfac)
                 q.push(it2);
         }
     }
-    // fill output arrays with sorted neighbors 
+    /* fill output arrays with sorted neighbors */
     for (i=neighbors.n-1; i>=0; --i) {
         neighbor = neighbors.pop();
         result_indices[i] = neighbor.contents.intdata;
@@ -408,7 +402,7 @@ query_single_point(const ckdtree *self,
 
 }
 
-// Query n points for their k nearest neighbors
+/* Query n points for their k nearest neighbors */
 
 extern "C" PyObject*
 query_knn(const ckdtree      *self, 
@@ -424,7 +418,7 @@ query_knn(const ckdtree      *self,
     npy_intp m = self->m;
     npy_intp i;
     
-    // release the GIL
+    /* release the GIL */
     NPY_BEGIN_ALLOW_THREADS
     {
         try {
@@ -432,21 +426,22 @@ query_knn(const ckdtree      *self,
                 npy_float64 *dd_row = dd + (i*k);
                 npy_intp *ii_row = ii + (i*k);
                 const npy_float64 *xx_row = xx + (i*m);                
-                query_single_point(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity);
+                query_single_point(self, dd_row, ii_row, xx_row, k, 
+                    eps, p, distance_upper_bound, ::infinity);
             }    
         } 
         catch(...) {
             translate_cpp_exception_with_gil();
         }
     }
-    // reacquire the GIL
+    /* reacquire the GIL */
     NPY_END_ALLOW_THREADS
 
     if (PyErr_Occurred()) 
-        // true if a C++ exception was translated
+        /* true if a C++ exception was translated */
         return NULL;
     else {
-        // return None if there were no errors
+        /* return None if there were no errors */
         Py_RETURN_NONE;
     }
 }

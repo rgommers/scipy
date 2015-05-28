@@ -20,15 +20,10 @@
 #include "rectangle.h"
 
 static void
-count_neighbors_traverse(const ckdtree      *self,
-                           const ckdtree      *other,
-                           npy_intp           n_queries,
-                           npy_float64        *r,
-                           npy_intp           *results,
-                           npy_intp           *idx,
-                           const ckdtreenode  *node1,
-                           const ckdtreenode  *node2,
-                           RectRectDistanceTracker *tracker)
+traverse(const ckdtree *self, const ckdtree *other,
+         npy_intp n_queries, npy_float64 *r, npy_intp *results, npy_intp *idx,
+         const ckdtreenode *node1, const ckdtreenode *node2,
+         RectRectDistanceTracker *tracker)
 {
 
     const ckdtreenode *lnode1;
@@ -100,9 +95,9 @@ count_neighbors_traverse(const ckdtree      *self,
                                 + other_raw_indices[j+2]*m, m);
                  
                         d = _distance_p(
-                            self_raw_data + self_raw_indices[i] * m,
-                            other_raw_data + other_raw_indices[j] * m,
-                            tracker->p, m, tracker->max_distance);
+                                self_raw_data + self_raw_indices[i] * m,
+                                other_raw_data + other_raw_indices[j] * m,
+                                tracker->p, m, tracker->max_distance);
                         /*
                          * I think it's usually cheaper to test d against all 
                          * r's than to generate a distance array, sort it, then
@@ -116,14 +111,12 @@ count_neighbors_traverse(const ckdtree      *self,
             }
             else {  /* 1 is a leaf node, 2 is inner node */
                 tracker->push_less_of(2, node2);
-                count_neighbors_traverse(
-                    self, other, n_queries, r, results, idx,
+                traverse(self, other, n_queries, r, results, idx,
                     node1, node2->less, tracker);
                 tracker->pop();
 
                 tracker->push_greater_of(2, node2);
-                count_neighbors_traverse(
-                    self, other, n_queries, r, results, idx,
+                traverse(self, other, n_queries, r, results, idx,
                     node1, node2->greater, tracker);
                 tracker->pop();
             }
@@ -132,42 +125,36 @@ count_neighbors_traverse(const ckdtree      *self,
             if (node2->split_dim == -1) {
                 /* 1 is an inner node, 2 is a leaf node */
                 tracker->push_less_of(1, node1);
-                count_neighbors_traverse(
-                    self, other, n_queries, r, results, idx,
+                traverse(self, other, n_queries, r, results, idx,
                     node1->less, node2, tracker);
                 tracker->pop();
                 
                 tracker->push_greater_of(1, node1);
-                count_neighbors_traverse(
-                    self, other, n_queries, r, results, idx,
+                traverse(self, other, n_queries, r, results, idx,
                     node1->greater, node2, tracker);
                 tracker->pop();
             }
             else { /* 1 and 2 are inner nodes */
                 tracker->push_less_of(1, node1);
                 tracker->push_less_of(2, node2);
-                count_neighbors_traverse(
-                    self, other, n_queries, r, results, idx,
+                traverse(self, other, n_queries, r, results, idx,
                     node1->less, node2->less, tracker);
                 tracker->pop();
                     
                 tracker->push_greater_of(2, node2);
-                count_neighbors_traverse(
-                    self, other, n_queries, r, results, idx,
+                traverse(self, other, n_queries, r, results, idx,
                     node1->less, node2->greater, tracker);
                 tracker->pop();
                 tracker->pop();
                     
                 tracker->push_greater_of(1, node1);
                 tracker->push_less_of(2, node2);
-                count_neighbors_traverse(
-                    self, other, n_queries, r, results, idx,
+                traverse(self, other, n_queries, r, results, idx,
                     node1->greater, node2->less, tracker);
                 tracker->pop();
                     
                 tracker->push_greater_of(2, node2);
-                count_neighbors_traverse(
-                    self, other, n_queries, r, results, idx,
+                traverse(self, other, n_queries, r, results, idx,
                     node1->greater, node2->greater, tracker);
                 tracker->pop();
                 tracker->pop();
@@ -178,13 +165,9 @@ count_neighbors_traverse(const ckdtree      *self,
 
 
 extern "C" PyObject*
-count_neighbors(const ckdtree *self,
-                const ckdtree *other,
-                npy_intp n_queries,
-                npy_float64 *real_r,
-                npy_intp *results,
-                npy_intp *idx,
-                const npy_float64 p)
+count_neighbors(const ckdtree *self, const ckdtree *other,
+                npy_intp n_queries, npy_float64 *real_r, npy_intp *results,
+                npy_intp *idx, const npy_float64 p)
 {
 
     /* release the GIL */
@@ -197,10 +180,8 @@ count_neighbors(const ckdtree *self,
             
             RectRectDistanceTracker tracker(r1, r2, p, 0.0, 0.0);
             
-            count_neighbors_traverse(self, other, n_queries,
-                                       real_r, results, idx,
-                                       self->ctree, other->ctree,
-                                       &tracker);
+            traverse(self, other, n_queries, real_r, results, idx,
+                     self->ctree, other->ctree, &tracker);
         } 
         catch(...) {
             translate_cpp_exception_with_gil();

@@ -22,10 +22,9 @@
 
 
 static void
-query_pairs_traverse_no_checking(const ckdtree *self,
-                                   std::vector<ordered_pair> *results,
-                                   const ckdtreenode *node1,
-                                   const ckdtreenode *node2)
+traverse_no_checking(const ckdtree *self,
+                     std::vector<ordered_pair> *results,
+                     const ckdtreenode *node1, const ckdtreenode *node2)
 {                                            
     const ckdtreenode *lnode1;
     const ckdtreenode *lnode2;
@@ -47,15 +46,13 @@ query_pairs_traverse_no_checking(const ckdtree *self,
                     
                 for (j = min_j; j <  lnode2->end_idx; ++j)
                     add_ordered_pair(results,
-                                         self->raw_indices[i],
-                                           self->raw_indices[j]);
+                                     self->raw_indices[i],
+                                     self->raw_indices[j]);
             }
         }                
         else {
-            query_pairs_traverse_no_checking(self, results, node1, 
-                node2->less);
-            query_pairs_traverse_no_checking(self, results, node1, 
-                node2->greater);
+            traverse_no_checking(self, results, node1, node2->less);
+            traverse_no_checking(self, results, node1, node2->greater);
         }
     }
     else {
@@ -66,29 +63,23 @@ query_pairs_traverse_no_checking(const ckdtree *self,
              * over, which is the source of the complication in the
              * original KDTree.query_pairs)
              */
-            query_pairs_traverse_no_checking(self, results, node1->less, 
-                node2->less);
-            query_pairs_traverse_no_checking(self, results, node1->less, 
-                node2->greater);
-            query_pairs_traverse_no_checking(self, results, node1->greater, 
-                node2->greater);
+            traverse_no_checking(self, results, node1->less, node2->less);
+            traverse_no_checking(self, results, node1->less, node2->greater);
+            traverse_no_checking(self, results, node1->greater, node2->greater);
         }
         else {
-            query_pairs_traverse_no_checking(self, results, node1->less, 
-                node2);
-            query_pairs_traverse_no_checking(self, results, node1->greater, 
-                node2);
+            traverse_no_checking(self, results, node1->less, node2);
+            traverse_no_checking(self, results, node1->greater, node2);
         }
     }
 }    
 
 
 static void
-query_pairs_traverse_checking(const ckdtree *self,
-                                std::vector<ordered_pair> *results,
-                                const ckdtreenode *node1,
-                                const ckdtreenode *node2,
-                                RectRectDistanceTracker *tracker)
+traverse_checking(const ckdtree *self,
+                  std::vector<ordered_pair> *results,
+                  const ckdtreenode *node1, const ckdtreenode *node2,
+                  RectRectDistanceTracker *tracker)
 {
     const ckdtreenode *lnode1;
     const ckdtreenode *lnode2;
@@ -98,7 +89,7 @@ query_pairs_traverse_checking(const ckdtree *self,
     if (tracker->min_distance > tracker->upper_bound * tracker->epsfac)
         return;
     else if (tracker->max_distance < tracker->upper_bound / tracker->epsfac)
-        query_pairs_traverse_no_checking(self, results, node1, node2);
+        traverse_no_checking(self, results, node1, node2);
     else if (node1->split_dim == -1) { /* 1 is leaf node */
         lnode1 = node1;
         
@@ -136,51 +127,46 @@ query_pairs_traverse_checking(const ckdtree *self,
                         prefetch_datapoint(raw_data+raw_indices[j+2]*m, m);
                                         
                     d = _distance_p(
-                        raw_data + raw_indices[i] * m,
-                        raw_data + raw_indices[j] * m,
-                        tracker->p, m, tracker->upper_bound);
+                            raw_data + raw_indices[i] * m,
+                            raw_data + raw_indices[j] * m,
+                            tracker->p, m, tracker->upper_bound);
                 
                     if (d <= tracker->upper_bound)
                         add_ordered_pair(results,
-                                             raw_indices[i],
-                                             raw_indices[j]);
+                                         raw_indices[i],
+                                         raw_indices[j]);
                 }
             }
         }                      
         else {  /* 1 is a leaf node, 2 is inner node */
             tracker->push_less_of(2, node2);
-            query_pairs_traverse_checking(
-                self, results, node1, node2->less, tracker);
+            traverse_checking(self, results, node1, node2->less, tracker);
             tracker->pop();
                 
             tracker->push_greater_of(2, node2);
-            query_pairs_traverse_checking(
-                self, results, node1, node2->greater, tracker);
+            traverse_checking(self, results, node1, node2->greater, tracker);
             tracker->pop();
         }
     }        
     else {  /* 1 is an inner node */
-        if (node2->split_dim == -1) {  /* 1 is an inner node, 2 is a leaf node */
+        if (node2->split_dim == -1) { /* 1 is an inner node, 2 is a leaf node */
             tracker->push_less_of(1, node1);
-            query_pairs_traverse_checking(
-                self, results, node1->less, node2, tracker);
+            traverse_checking(self, results, node1->less, node2, tracker);
             tracker->pop();
             
             tracker->push_greater_of(1, node1);
-            query_pairs_traverse_checking(
-                self, results, node1->greater, node2, tracker);
+            traverse_checking(self, results, node1->greater, node2, tracker);
             tracker->pop();
         }    
         else { /* 1 and 2 are inner nodes */
             tracker->push_less_of(1, node1);
             tracker->push_less_of(2, node2);
-            query_pairs_traverse_checking(
-                self, results, node1->less, node2->less, tracker);
+            traverse_checking(self, results, node1->less, node2->less, tracker);
             tracker->pop();
                 
             tracker->push_greater_of(2, node2);
-            query_pairs_traverse_checking(
-                self, results, node1->less, node2->greater, tracker);
+            traverse_checking(self, results, node1->less, node2->greater, 
+                tracker);
             tracker->pop();
             tracker->pop();
                 
@@ -193,13 +179,13 @@ query_pairs_traverse_checking(const ckdtree *self,
                  * the original KDTree.query_pairs)
                  */
                 tracker->push_less_of(2, node2);
-                query_pairs_traverse_checking(
-                    self, results, node1->greater, node2->less, tracker);
+                traverse_checking(self, results, node1->greater, node2->less, 
+                    tracker);
                 tracker->pop();
             }    
             tracker->push_greater_of(2, node2);
-            query_pairs_traverse_checking(
-                self, results, node1->greater, node2->greater, tracker);
+            traverse_checking(self, results, node1->greater, node2->greater, 
+                tracker);
             tracker->pop();
             tracker->pop();
         }
@@ -211,9 +197,7 @@ query_pairs_traverse_checking(const ckdtree *self,
 
 extern "C" PyObject*
 query_pairs(const ckdtree *self, 
-            const npy_float64 r, 
-            const npy_float64 p, 
-            const npy_float64 eps,
+            const npy_float64 r, const npy_float64 p, const npy_float64 eps,
             std::vector<ordered_pair> *results)
 {
 
@@ -227,8 +211,8 @@ query_pairs(const ckdtree *self,
                                     
             RectRectDistanceTracker tracker(r1, r2, p, eps, r);
             
-            query_pairs_traverse_checking(
-                self, results, self->ctree, self->ctree, &tracker);
+            traverse_checking(self, results, self->ctree, self->ctree, 
+                &tracker);
              
         } 
         catch(...) {

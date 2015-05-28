@@ -45,12 +45,9 @@ struct coo_entries {
 
 
 static void
-sparse_distance_matrix_traverse(const ckdtree *self, 
-                                const ckdtree *other,
-                                coo_entries *results,
-                                const ckdtreenode *node1, 
-                                const ckdtreenode *node2,
-                                RectRectDistanceTracker *tracker)
+traverse(const ckdtree *self, const ckdtree *other, coo_entries *results,
+         const ckdtreenode *node1, const ckdtreenode *node2,
+         RectRectDistanceTracker *tracker)
 {
     const ckdtreenode *lnode1;
     const ckdtreenode *lnode2;
@@ -124,13 +121,11 @@ sparse_distance_matrix_traverse(const ckdtree *self,
         }
         else {  /* 1 is a leaf node, 2 is inner node */
             tracker->push_less_of(2, node2);
-            sparse_distance_matrix_traverse(
-                self, other, results, node1, node2->less, tracker);
+            traverse(self, other, results, node1, node2->less, tracker);
             tracker->pop();
                 
             tracker->push_greater_of(2, node2);
-            sparse_distance_matrix_traverse(
-                self, other, results, node1, node2->greater, tracker);
+            traverse(self, other, results, node1, node2->greater, tracker);
             tracker->pop();
         }
     }        
@@ -138,25 +133,21 @@ sparse_distance_matrix_traverse(const ckdtree *self,
         if (node2->split_dim == -1) {  
             /* 1 is an inner node, 2 is a leaf node*/
             tracker->push_less_of(1, node1);
-            sparse_distance_matrix_traverse(
-                self, other, results, node1->less, node2, tracker);
+            traverse(self, other, results, node1->less, node2, tracker);
             tracker->pop();
             
             tracker->push_greater_of(1, node1);
-            sparse_distance_matrix_traverse(
-                self, other, results, node1->greater, node2, tracker);
+            traverse(self, other, results, node1->greater, node2, tracker);
             tracker->pop();
         }    
         else { /* 1 and 2 are inner nodes */
             tracker->push_less_of(1, node1);
             tracker->push_less_of(2, node2);
-            sparse_distance_matrix_traverse(
-                self, other, results, node1->less, node2->less, tracker);
+            traverse(self, other, results, node1->less, node2->less, tracker);
             tracker->pop();
                 
             tracker->push_greater_of(2, node2);
-            sparse_distance_matrix_traverse(
-                self, other, results, node1->less, node2->greater, tracker);
+            traverse(self, other, results, node1->less, node2->greater, tracker);
             tracker->pop();
             tracker->pop();
                 
@@ -169,13 +160,13 @@ sparse_distance_matrix_traverse(const ckdtree *self,
                  * the original KDTree.sparse_distance_matrix)
                  */
                 tracker->push_less_of(2, node2);
-                sparse_distance_matrix_traverse(
-                    self, other, results, node1->greater, node2->less, tracker);
+                traverse(self, other, results, node1->greater, node2->less, 
+                   tracker);
                 tracker->pop();
             }    
             tracker->push_greater_of(2, node2);
-            sparse_distance_matrix_traverse(
-                self, other, results, node1->greater, node2->greater, tracker);
+            traverse(self, other, results, node1->greater, node2->greater, 
+                tracker);
             tracker->pop();
             tracker->pop();
         }    
@@ -186,8 +177,7 @@ sparse_distance_matrix_traverse(const ckdtree *self,
 
         
 extern "C" PyObject*
-sparse_distance_matrix(const ckdtree *self,
-                       const ckdtree *other,
+sparse_distance_matrix(const ckdtree *self, const ckdtree *other,
                        const npy_float64 p,
                        const npy_float64 max_distance,
                        std::vector<npy_intp> *results_i,
@@ -207,8 +197,8 @@ sparse_distance_matrix(const ckdtree *self,
                     
             coo_entries results(results_i, results_j, results_v);
             
-            sparse_distance_matrix_traverse(
-                self, other, &results, self->ctree, other->ctree, &tracker);
+            traverse(self, other, &results, self->ctree, other->ctree, 
+                &tracker);
                                                
         } 
         catch(...) {
