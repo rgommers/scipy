@@ -12,7 +12,7 @@ import scipy.sparse
 cimport numpy as np
     
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
-from libc.string cimport memset
+from libc.string cimport memset, memcpy
 
 cimport cython
 
@@ -22,13 +22,10 @@ import threading
 cdef extern from "limits.h":
     long LONG_MAX
     
-cdef extern from "query_methods.h":
+cdef extern from "ckdtree_methods.h":
     int number_of_processors
     np.float64_t infinity
-    np.float64_t dmax(np.float64_t x, np.float64_t y)
-    np.float64_t dabs(np.float64_t x)
-    np.float64_t _distance_p(np.float64_t *x, np.float64_t *y,
-                       np.float64_t p, np.intp_t k, np.float64_t upperbound)
+    
 infinity = np.inf
 number_of_processors = cpu_count()
 
@@ -81,82 +78,6 @@ cdef extern from "cpp_utils.h":
     np.float64_t *npy_float64_vector_buf(vector[np.float64_t] *buf)
     ctypedef void *intvector_ptr_t 
 
-
-# Splitting routines for a balanced kd-tree
-# Code originally written by Jake Vanderplas for scikit-learn
-
-cdef inline void index_swap(np.intp_t *arr, np.intp_t i1, np.intp_t i2):
-    """swap the values at index i1 and i2 of arr"""
-    cdef np.intp_t tmp = arr[i1]
-    arr[i1] = arr[i2]
-    arr[i2] = tmp
-
-cdef void partition_node_indices(np.float64_t *data,
-                                np.intp_t *node_indices,
-                                np.intp_t split_dim,
-                                np.intp_t split_index,
-                                np.intp_t n_features,
-                                np.intp_t n_points):
-    """Partition points in the node into two equal-sized groups.
-    
-    Upon return, the values in node_indices will be rearranged such that
-    (assuming numpy-style indexing):
-
-        data[node_indices[0:split_index], split_dim]
-          <= data[node_indices[split_index], split_dim]
-
-    and
-
-        data[node_indices[split_index], split_dim]
-          <= data[node_indices[split_index:n_points], split_dim]
-
-    The algorithm is essentially a partial in-place quicksort around a
-    set pivot.
-    
-    Parameters
-    ----------
-    data : double pointer
-        Pointer to a 2D array of the training data, of shape [N, n_features].
-        N must be greater than any of the values in node_indices.
-    node_indices : int pointer
-        Pointer to a 1D array of length n_points.  This lists the indices of
-        each of the points within the current node.  This will be modified
-        in-place.
-    split_dim : int
-        the dimension on which to split.  This will usually be computed via
-        the routine ``find_node_split_dim``
-    split_index : int
-        the index within node_indices around which to split the points.
-
-    Returns
-    -------
-    status : int
-        integer exit status.  On return, the contents of node_indices are
-        modified as noted above.
-
-    """
-    cdef np.intp_t left, right, midindex, i
-    cdef np.float64_t d1, d2
-    left = 0
-    right = n_points - 1
-    
-    while True:
-        midindex = left
-        for i in range(left, right):
-            d1 = data[node_indices[i] * n_features + split_dim]
-            d2 = data[node_indices[right] * n_features + split_dim]
-            if d1 < d2:
-                index_swap(node_indices, i, midindex)
-                midindex += 1
-        index_swap(node_indices, midindex, right)
-        if midindex == split_index:
-            break
-        elif midindex < split_index:
-            left = midindex + 1
-        else:
-            right = midindex - 1
-    
-    
 
 # Tree structure exposed to Python
 # ================================
@@ -256,10 +177,18 @@ cdef class cKDTreeNode:
 # Main cKDTree class
 # ==================
 
-cdef extern from "query_methods.h":
+cdef extern from "ckdtree_methods.h":
 
-    # External query methods in C++. These will internally
+    # External build and query methods in C++. These will internally
     # release the GIL to avoid locking up the interpreter.
+    
+    object build_ckdtree(ckdtree *self, 
+                         np.intp_t start_idx, 
+                         np.intp_t end_idx,
+                         np.float64_t *maxes, 
+                         np.float64_t *mins, 
+                         int _median, 
+                         int _compact)
        
     object query_knn(const ckdtree *self, 
                      np.float64_t *dd, 
@@ -384,7 +313,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             copy_data=False, balanced_tree=True):
         cdef np.ndarray[np.float64_t, ndim=2] data_arr
         cdef np.float64_t *tmp
-        cdef int _median
+        cdef int _median, _compact
         data_arr = np.ascontiguousarray(data, dtype=np.float64)
         if copy_data and (data_arr is data):
             data_arr = data_arr.copy()
@@ -404,6 +333,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         self.raw_mins = <np.float64_t*> np.PyArray_DATA(self.mins)
         self.raw_indices = <np.intp_t*> np.PyArray_DATA(self.indices)
 
+        _compact = 1 if compact_nodes else 0
         _median = 1 if balanced_tree else 0
         if _median:
             self._median_workspace = np.zeros(self.n)
@@ -411,15 +341,16 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         self.tree_buffer = NULL
         self.tree_buffer = new vector[ckdtreenode]()
         
-        if not compact_nodes:
-             self.__build(0, self.n, self.raw_maxes, self.raw_mins, _median)
-        else:
-            try:
-                tmp = <np.float64_t*> PyMem_Malloc(self.m*2*sizeof(np.float64_t))
-                if tmp == NULL: raise MemoryError()
-                self.__build_compact(0, self.n, tmp, tmp+self.m, _median)
-            finally:
-                PyMem_Free(tmp)
+        try:
+            tmp = <np.float64_t*> PyMem_Malloc(self.m*2*sizeof(np.float64_t))
+            if tmp == NULL: raise MemoryError()            
+            memcpy(tmp, self.raw_maxes, self.m*sizeof(np.float64_t))
+            memcpy(tmp + self.m, self.raw_mins, self.m*sizeof(np.float64_t))
+            build_ckdtree(<ckdtree*> self, 0, self.n, tmp, tmp + self.m, 
+                _median, _compact)
+        finally:
+            PyMem_Free(tmp)
+                
         self._median_workspace = None
         
         # set up the tree structure pointers
@@ -454,292 +385,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         if self.tree_buffer != NULL:
             del self.tree_buffer
 
-
-    @cython.cdivision(True)
-    cdef np.intp_t __build(cKDTree self, np.intp_t start_idx, np.intp_t end_idx,
-                       np.float64_t *maxes, np.float64_t *mins, int _median)\
-                       except -1:
-        cdef:
-            ckdtreenode new_node
-            np.intp_t   node_index
-            np.intp_t   _less, _greater
-            ckdtreenode *n
-            ckdtreenode *root
-            
-            np.intp_t i, j, t, p, q, d
-            np.float64_t size, split, minval, maxval
-            np.float64_t *mids
-            np.float64_t *tmp_data_point
-        
-        # put a new node into the node stack
-        self.tree_buffer.push_back(new_node)
-        node_index = self.tree_buffer.size() - 1
-        root = tree_buffer_root(self.tree_buffer)
-        n = root + node_index
-                    
-        if end_idx-start_idx <= self.leafsize:
-            # below brute force limit
-            # return leafnode
-            n.split_dim = -1
-            n.children = end_idx - start_idx
-            n.start_idx = start_idx
-            n.end_idx = end_idx
-            return node_index
-        else:
-            d = 0 
-            size = 0
-            for i in range(self.m):
-                if maxes[i]-mins[i] > size:
-                    d = i
-                    size =  maxes[i]-mins[i]
-            maxval = maxes[d]
-            minval = mins[d]
-            if maxval==minval:
-                # all points are identical; warn user?
-                # return leafnode
-                n.split_dim = -1
-                n.children = end_idx - start_idx
-                n.start_idx = start_idx
-                n.end_idx = end_idx
-                return node_index
-                
-            # construct new inner node
-            if _median:
-                # split on median to create a balanced tree
-                # adopted from scikit-learn
-                i = (end_idx-start_idx) // 2
-                partition_node_indices(self.raw_data,
-                                self.raw_indices + start_idx,
-                                d,
-                                i,
-                                self.m,
-                                end_idx-start_idx)               
-                p = start_idx + i
-                split = self.raw_data[self.raw_indices[p]*self.m+d]
-
-            else:
-                # split with the sliding midpoint rule
-                # this is the default
-                split = (maxval+minval)/2
-    
-            p = start_idx
-            q = end_idx - 1
-            while p <= q:
-                if self.raw_data[self.raw_indices[p]*self.m+d] < split:
-                    p += 1
-                elif self.raw_data[self.raw_indices[q]*self.m+d] >= split:
-                    q -= 1
-                else:
-                    t = self.raw_indices[p]
-                    self.raw_indices[p] = self.raw_indices[q]
-                    self.raw_indices[q] = t
-                    p += 1
-                    q -= 1
-
-            # slide midpoint if necessary
-            if p == start_idx:
-                # no points less than split
-                j = start_idx
-                split = self.raw_data[self.raw_indices[j]*self.m+d]
-                for i in range(start_idx+1, end_idx):
-                    if self.raw_data[self.raw_indices[i]*self.m+d] < split:
-                        j = i
-                        split = self.raw_data[self.raw_indices[j]*self.m+d]
-                t = self.raw_indices[start_idx]
-                self.raw_indices[start_idx] = self.raw_indices[j]
-                self.raw_indices[j] = t
-                p = start_idx + 1
-                q = start_idx
-            elif p == end_idx:
-                # no points greater than split
-                j = end_idx - 1
-                split = self.raw_data[self.raw_indices[j]*self.m+d]
-                for i in range(start_idx, end_idx-1):
-                    if self.raw_data[self.raw_indices[i]*self.m+d] > split:
-                        j = i
-                        split = self.raw_data[self.raw_indices[j]*self.m+d]
-                t = self.raw_indices[end_idx-1]
-                self.raw_indices[end_idx-1] = self.raw_indices[j]
-                self.raw_indices[j] = t
-                p = end_idx - 1
-                q = end_idx - 2
-
-            try:
-                mids = <np.float64_t*> PyMem_Malloc(sizeof(np.float64_t)*self.m)
-                if mids == <np.float64_t*> NULL:
-                    raise MemoryError
-                        
-                for i in range(self.m):
-                    mids[i] = maxes[i]
-                mids[d] = split
-                _less = self.__build(start_idx, p, mids, mins, _median)
-                
-                for i in range(self.m):
-                    mids[i] = mins[i]
-                mids[d] = split
-                _greater = self.__build(p, end_idx, maxes, mids, _median)
-                
-                root = tree_buffer_root(self.tree_buffer)
-                # recompute n because std::vector can
-                # reallocate its internal buffer
-                n = root + node_index
-                # fill in entries
-                n._less = _less 
-                n._greater = _greater
-                n.less = root + _less
-                n.greater = root + _greater
-                n.children = n.less.children + n.greater.children                
-                n.split_dim = d
-                n.split = split
-            
-            finally:
-                PyMem_Free(mids)
-
-            return node_index
-
-
-    @cython.cdivision(True)
-    cdef np.intp_t __build_compact(cKDTree self, np.intp_t start_idx, 
-            np.intp_t end_idx, np.float64_t *mins, np.float64_t *maxes, 
-              int _median) except -1:
-
-        cdef: 
-            ckdtreenode new_node
-            np.intp_t   node_index
-            np.intp_t   _less, _greater
-            ckdtreenode *n
-            ckdtreenode *root
-            
-            np.intp_t i, j, t, p, q, d
-            np.float64_t size, split, minval, maxval
-            np.float64_t tmp
-            np.float64_t *tmp_data_point
-                
-        # put a new node into the node stack
-        self.tree_buffer.push_back(new_node)
-        node_index = self.tree_buffer.size() - 1
-        root = tree_buffer_root(self.tree_buffer)
-        n = root + node_index        
-        
-        if end_idx-start_idx <= self.leafsize:
-            # below brute force limit
-            # return leafnode
-            n.split_dim = -1
-            n.children = end_idx - start_idx
-            n.start_idx = start_idx
-            n.end_idx = end_idx
-            return node_index
-        else:
-            d = 0 
-            size = 0
-            # Recompute hyperrectangle bounds. This should lead to a more 
-            # compact kd-tree but comes at the expense of larger construction
-            # time. However, construction time is usually dwarfed by the
-            # query time by orders of magnitude.
-            tmp_data_point = self.raw_data + self.raw_indices[start_idx]*self.m
-            for i in range(self.m):
-                maxes[i] = tmp_data_point[i]
-                mins[i] = tmp_data_point[i]
-            for j in range(start_idx+1, end_idx):
-                tmp_data_point = self.raw_data + self.raw_indices[j]*self.m
-                for i in range(self.m):
-                    tmp = tmp_data_point[i]
-                    maxes[i] = maxes[i] if (maxes[i] > tmp) else tmp
-                    mins[i] = mins[i] if (mins[i] < tmp) else tmp
-            # split on the dimension with largest spread        
-            for i in range(self.m):
-                if maxes[i]-mins[i] > size:
-                    d = i
-                    size = maxes[i] - mins[i]
-            maxval = maxes[d]
-            minval = mins[d]
-            if maxval == minval:
-                # all points are identical; warn user?
-                # return leafnode
-                n.split_dim = -1
-                n.children = end_idx - start_idx
-                n.start_idx = start_idx
-                n.end_idx = end_idx
-                return node_index
-                
-            # construct new inner node
-            
-            if _median:  
-                # split on median to create a balanced tree
-                # adopted from scikit-learn
-                i = (end_idx-start_idx) // 2
-                partition_node_indices(self.raw_data,
-                                self.raw_indices + start_idx,
-                                d,
-                                i,
-                                self.m,
-                                end_idx-start_idx)               
-                p = start_idx + i
-                split = self.raw_data[self.raw_indices[p]*self.m+d]
-             
-            else:
-                # split with sliding midpoint rule
-                split = (maxval+minval) / 2
-    
-            p = start_idx
-            q = end_idx - 1
-            while p<=q:
-                if self.raw_data[self.raw_indices[p]*self.m+d] < split:
-                    p += 1
-                elif self.raw_data[self.raw_indices[q]*self.m+d] >= split:
-                    q -= 1
-                else:
-                    t = self.raw_indices[p]
-                    self.raw_indices[p] = self.raw_indices[q]
-                    self.raw_indices[q] = t
-                    p += 1
-                    q -= 1
-    
-            # slide midpoint if necessary
-            if p == start_idx:
-                # no points less than split
-                j = start_idx
-                split = self.raw_data[self.raw_indices[j]*self.m+d]
-                for i in range(start_idx+1, end_idx):
-                    if self.raw_data[self.raw_indices[i]*self.m+d] < split:
-                        j = i
-                        split = self.raw_data[self.raw_indices[j]*self.m+d]
-                t = self.raw_indices[start_idx]
-                self.raw_indices[start_idx] = self.raw_indices[j]
-                self.raw_indices[j] = t
-                p = start_idx + 1
-                q = start_idx
-            elif p == end_idx:
-                # no points greater than split
-                j = end_idx - 1
-                split = self.raw_data[self.raw_indices[j]*self.m+d]
-                for i in range(start_idx, end_idx-1):
-                    if self.raw_data[self.raw_indices[i]*self.m+d] > split:
-                        j = i
-                        split = self.raw_data[self.raw_indices[j]*self.m+d]
-                t = self.raw_indices[end_idx-1]
-                self.raw_indices[end_idx-1] = self.raw_indices[j]
-                self.raw_indices[j] = t
-                p = end_idx - 1
-                q = end_idx - 2
-
-            _less = self.__build_compact(start_idx, p, mins, maxes, _median)
-            _greater = self.__build_compact(p, end_idx, mins, maxes, _median)
-                        
-            root = tree_buffer_root(self.tree_buffer)
-            # recompute n because std::vector can reallocate
-            # its internal buffer
-            n = root + node_index
-            # fill in entries
-            n._less = _less
-            n._greater = _greater
-            n.less = root + _less
-            n.greater = root + _greater
-            n.children = n.less.children + n.greater.children                
-            n.split_dim = d
-            n.split = split
-            
-            return node_index
 
     # -----
     # query

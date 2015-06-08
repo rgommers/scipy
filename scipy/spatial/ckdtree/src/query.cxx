@@ -23,7 +23,7 @@
 #define CKDTREE_METHODS_IMPL
 #include "ckdtree_decl.h"
 #include "ordered_pair.h"
-#include "query_methods.h"
+#include "ckdtree_methods.h"
 #include "cpp_exc.h"
 
 /*

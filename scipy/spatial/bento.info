@@ -4,6 +4,7 @@ Library:
     Extension: ckdtree
         Sources: 
             ckdtree/ckdtree.cxx,
+            ckdtree/src/build.cxx,
             ckdtree/src/query.cxx,
             ckdtree/src/globals.cxx,
             ckdtree/src/cpp_exc.cxx,
