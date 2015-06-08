@@ -29,25 +29,29 @@ traverse_no_checking(const ckdtree *self,
     const ckdtreenode *lnode1;
     const ckdtreenode *lnode2;
     npy_intp i, j, min_j;
+    const npy_intp *indices = self->raw_indices;
     
     if (node1->split_dim == -1) { /* leaf node */
         lnode1 = node1;
         
         if (node2->split_dim == -1) { /* leaf node */
             lnode2 = node2;
+            
+            const npy_intp start1 = lnode1->start_idx;
+            const npy_intp start2 = lnode2->start_idx;
+            const npy_intp end1 = lnode1->end_idx;
+            const npy_intp end2 = lnode2->end_idx;
 
-            for (i = lnode1->start_idx; i < lnode1->end_idx; ++i) {
+            for (i = start1; i < end1; ++i) {
             
                 /* Special care here to avoid duplicate pairs */
                 if (node1 == node2)
                     min_j = i + 1;
                 else
-                    min_j = lnode2->start_idx;
+                    min_j = start2;
                     
-                for (j = min_j; j <  lnode2->end_idx; ++j)
-                    add_ordered_pair(results,
-                                     self->raw_indices[i],
-                                     self->raw_indices[j]);
+                for (j = min_j; j < end2; ++j)
+                    add_ordered_pair(results, indices[i], indices[j]);
             }
         }                
         else {
@@ -97,44 +101,47 @@ traverse_checking(const ckdtree *self,
             lnode2 = node2;
             
             /* brute-force */
-            
-            const npy_float64 *raw_data = self->raw_data;
-            const npy_intp *raw_indices = self->raw_indices;
+            const npy_float64 p = tracker->p;
+            const npy_float64 tub = tracker->upper_bound;
+            const npy_float64 *data = self->raw_data;
+            const npy_intp *indices = self->raw_indices;
             const npy_intp m = self->m;
+            const npy_intp start1 = lnode1->start_idx;
+            const npy_intp start2 = lnode2->start_idx;
+            const npy_intp end1 = lnode1->end_idx;
+            const npy_intp end2 = lnode2->end_idx;
             
-            prefetch_datapoint(raw_data+raw_indices[lnode1->start_idx]*m, m);
-            if (lnode1->start_idx < lnode1->end_idx)
-               prefetch_datapoint(raw_data+raw_indices[lnode1->start_idx+1]*m, m);
+            prefetch_datapoint(data+indices[start1]*m, m);
+            if (start1 < end1)
+               prefetch_datapoint(data+indices[start1+1]*m, m);
             
-            for(i = lnode1->start_idx; i < lnode1->end_idx; ++i) {
+            for(i = start1; i < end1; ++i) {
             
-                if (i < lnode1->end_idx-2)
-                     prefetch_datapoint(raw_data+raw_indices[i+2]*m, m);
+                if (i < end1-2)
+                     prefetch_datapoint(data+indices[i+2]*m, m);
                                
                 /* Special care here to avoid duplicate pairs */
                 if (node1 == node2)
                     min_j = i + 1;
                 else
-                    min_j = lnode2->start_idx;
+                    min_j = start2;
                                
-                prefetch_datapoint(raw_data+raw_indices[min_j]*m, m);
-                if (min_j < lnode2->end_idx)
-                    prefetch_datapoint(raw_data+raw_indices[min_j+1]*m, m);
+                prefetch_datapoint(data+indices[min_j]*m, m);
+                if (min_j < end2)
+                    prefetch_datapoint(data+indices[min_j+1]*m, m);
                             
-                for (j = min_j; j < lnode2->end_idx; ++j) {
+                for (j = min_j; j < end2; ++j) {
                                         
-                    if (j < lnode2->end_idx-2)
-                        prefetch_datapoint(raw_data+raw_indices[j+2]*m, m);
+                    if (j < end2-2)
+                        prefetch_datapoint(data+indices[j+2]*m, m);
                                         
                     d = _distance_p(
-                            raw_data + raw_indices[i] * m,
-                            raw_data + raw_indices[j] * m,
-                            tracker->p, m, tracker->upper_bound);
+                            data + indices[i] * m,
+                            data + indices[j] * m,
+                            p, m, tub);
                 
-                    if (d <= tracker->upper_bound)
-                        add_ordered_pair(results,
-                                         raw_indices[i],
-                                         raw_indices[j]);
+                    if (d <= tub)
+                        add_ordered_pair(results, indices[i], indices[j]);
                 }
             }
         }                      

@@ -60,44 +60,43 @@ traverse(const ckdtree *self, const ckdtree *other,
             lnode1 = node1;
             if (node2->split_dim == -1) {  /* 1 & 2 are leaves */
                 lnode2 = node2;
-                                
-                const npy_float64 *self_raw_data = self->raw_data;
-                const npy_intp *self_raw_indices = self->raw_indices;
-                const npy_float64 *other_raw_data = other->raw_data;
-                const npy_intp *other_raw_indices = other->raw_indices;
+                const npy_float64 p = tracker->p;
+                const npy_float64 tmd = tracker->max_distance;                
+                const npy_float64 *sdata = self->raw_data;
+                const npy_intp *sindices = self->raw_indices;
+                const npy_float64 *odata = other->raw_data;
+                const npy_intp *oindices = other->raw_indices;
                 const npy_intp m = self->m;
+                const npy_intp start1 = lnode1->start_idx;
+                const npy_intp start2 = lnode2->start_idx;
+                const npy_intp end1 = lnode1->end_idx;
+                const npy_intp end2 = lnode2->end_idx;
                 
-                prefetch_datapoint(self_raw_data 
-                    + self_raw_indices[lnode1->start_idx]*m, m);
+                prefetch_datapoint(sdata + sindices[start1] * m, m);
                 
-                if (lnode1->start_idx < lnode1->end_idx)
-                    prefetch_datapoint(self_raw_data
-                      + self_raw_indices[lnode1->start_idx+1]*m, m);
+                if (start1 < end1)
+                    prefetch_datapoint(sdata + sindices[start1+1] * m, m);
                                         
                 /* brute-force */
-                for (i = lnode1->start_idx; i < lnode1->end_idx; ++i) {
+                for (i = start1; i < end1; ++i) {
                     
-                    if (i < lnode1->end_idx-2)
-                        prefetch_datapoint(self_raw_data
-                           +  self_raw_indices[i+2]*m, m);
+                    if (i < end1-2)
+                        prefetch_datapoint(sdata + sindices[i+2] * m, m);
                                       
-                    prefetch_datapoint(other_raw_data 
-                        + other_raw_indices[lnode2->start_idx]*m, m);
+                    prefetch_datapoint(odata + oindices[start2] * m, m);
                         
-                    if (lnode2->start_idx < lnode2->end_idx)
-                        prefetch_datapoint(other_raw_data 
-                            + other_raw_indices[lnode2->start_idx+1]*m, m);
+                    if (start2 < end2)
+                        prefetch_datapoint(odata + oindices[start2+1] * m, m);
                   
-                    for (j = lnode2->start_idx; j < lnode2->end_idx; ++j) {
+                    for (j = start2; j < end2; ++j) {
                      
-                        if (j < lnode2->end_idx-2)
-                            prefetch_datapoint(other_raw_data
-                                + other_raw_indices[j+2]*m, m);
+                        if (j < end2-2)
+                            prefetch_datapoint(odata + oindices[j+2] * m, m);
                  
                         d = _distance_p(
-                                self_raw_data + self_raw_indices[i] * m,
-                                other_raw_data + other_raw_indices[j] * m,
-                                tracker->p, m, tracker->max_distance);
+                                sdata + sindices[i] * m,
+                                odata + oindices[j] * m,
+                                p, m, tmd);
                         /*
                          * I think it's usually cheaper to test d against all 
                          * r's than to generate a distance array, sort it, then

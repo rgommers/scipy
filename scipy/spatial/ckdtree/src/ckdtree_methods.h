@@ -19,6 +19,7 @@ extern int number_of_processors;
 #include <cmath>
 #include <vector>
 #include "ordered_pair.h"
+#include "coo_entries.h"
 
 #if defined(__GNUC__)
 
@@ -228,9 +229,7 @@ sparse_distance_matrix(const ckdtree *self,
                        const ckdtree *other,
                        const npy_float64 p,
                        const npy_float64 max_distance,
-                       std::vector<npy_intp> *results_i,
-                       std::vector<npy_intp> *results_j,
-                       std::vector<npy_float64> *results_v);
+                       std::vector<coo_entry> *results);
 
                   
 #endif

@@ -227,29 +227,41 @@ query_single_point(const ckdtree *self,
             if (t > inf->side_distances[i])
                 inf->side_distances[i] = t;
         }
-        if ((p != 1) &&  (p != infinity))
+        if (NPY_LIKELY(p == 2.0)) {
+            npy_float64 tmp = inf->side_distances[i];
+            inf->side_distances[i] = tmp*tmp;       
+        }
+        else if ((p != 1) &&  (p != infinity))
             inf->side_distances[i] = std::pow(inf->side_distances[i],p);
     }
     
     /* compute first distance */
     min_distance = 0.;
     for (i=0; i<m; ++i) {
-        if (p == infinity)
+        if (NPY_UNLIKELY(p == infinity))
             min_distance = dmax(min_distance,inf->side_distances[i]);
         else
             min_distance += inf->side_distances[i];
     }
     
     /* fiddle approximation factor */
-    if (eps == 0.)
+    if (NPY_LIKELY(p == 2.0)) {
+        npy_float64 tmp = 1. + eps;
+        epsfac = 1. / (tmp*tmp);
+    }
+    else if (eps == 0.)
         epsfac = 1.;
     else if (p == infinity)
-        epsfac = 1./(1+eps);
+        epsfac = 1. / (1. + eps);
     else
-        epsfac = 1./std::pow((1+eps),p);
+        epsfac = 1. / std::pow((1. + eps), p);
 
     /* internally we represent all distances as distance**p */
-    if ((p != infinity) && (distance_upper_bound != infinity))
+    if (NPY_LIKELY(p == 2.0)) {
+        npy_float64 tmp = distance_upper_bound;
+        distance_upper_bound = tmp*tmp;
+    }
+    else if ((p != infinity) && (distance_upper_bound != infinity))
         distance_upper_bound = std::pow(distance_upper_bound,p);
 
     for(;;) {
@@ -259,21 +271,21 @@ query_single_point(const ckdtree *self,
 
             /* brute-force */
             {
-                npy_intp start_idx = node->start_idx;
-                npy_intp end_idx = node->end_idx;
-                const npy_float64 *raw_data = self->raw_data;
-                const npy_intp *raw_indices = self->raw_indices;
+                const npy_intp start_idx = node->start_idx;
+                const npy_intp end_idx = node->end_idx;
+                const npy_float64 *data = self->raw_data;
+                const npy_intp *indices = self->raw_indices;
                 
-                prefetch_datapoint(raw_data+raw_indices[start_idx]*m, m);
+                prefetch_datapoint(data+indices[start_idx]*m, m);
                 if (start_idx < end_idx)
-                    prefetch_datapoint(raw_data+raw_indices[start_idx+1]*m, m);
+                    prefetch_datapoint(data+indices[start_idx+1]*m, m);
                 
                 for (i=start_idx; i<end_idx; ++i) {
                        
                     if (i < end_idx-2)
-                        prefetch_datapoint(raw_data+raw_indices[i+2]*m, m);
+                        prefetch_datapoint(data+indices[i+2]*m, m);
                 
-                    d = _distance_p(raw_data+raw_indices[i]*m, x, p, m, 
+                    d = _distance_p(data+indices[i]*m, x, p, m, 
                             distance_upper_bound);
                         
                     if (d < distance_upper_bound) {
@@ -281,7 +293,7 @@ query_single_point(const ckdtree *self,
                         if (neighbors.n == k)
                               neighbors.remove();
                         neighbor.priority = -d;
-                        neighbor.contents.intdata = self->raw_indices[i];
+                        neighbor.contents.intdata = indices[i];
                         neighbors.push(neighbor);
     
                         /* adjust upper bound for efficiency */
@@ -349,7 +361,7 @@ query_single_point(const ckdtree *self,
              * one side distance changes
              * we can adjust the minimum distance without recomputing
              */
-            if (NPY_LIKELY(p==2.)) {
+            if (NPY_LIKELY(p == 2.)) {
                 /* 
                  * Euclidian distances is the more likely, so speed up
                  * access to this option
@@ -394,7 +406,9 @@ query_single_point(const ckdtree *self,
     for (i=neighbors.n-1; i>=0; --i) {
         neighbor = neighbors.pop();
         result_indices[i] = neighbor.contents.intdata;
-        if ((p==1.) || (p==infinity))
+        if (NPY_LIKELY(p == 2.0))
+            result_distances[i] = std::sqrt(-neighbor.priority);
+        else if ((p == 1.) || (p == infinity))
             result_distances[i] = -neighbor.priority;
         else
             result_distances[i] = std::pow((-neighbor.priority),(1./p));

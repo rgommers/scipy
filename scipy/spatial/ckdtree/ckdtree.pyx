@@ -59,6 +59,13 @@ cdef extern from "ckdtree_decl.h":
 # C++ helper functions
 # ====================
 
+cdef extern from "coo_entries.h":
+
+    struct coo_entry:
+        np.intp_t i
+        np.intp_t j
+        np.float64_t v
+
 cdef extern from "ordered_pair.h":
 
     struct ordered_pair:
@@ -73,6 +80,7 @@ cdef extern from "cpp_utils.h":
     object unpickle_tree_buffer(vector[ckdtreenode] *buf, object src)
     ckdtreenode *tree_buffer_root(vector[ckdtreenode] *buf)
     ordered_pair *ordered_pair_vector_buf(vector[ordered_pair] *buf)
+    coo_entry *coo_entry_vector_buf(vector[coo_entry] *buf)
     void *tree_buffer_pointer(vector[ckdtreenode] *buf)
     np.intp_t *npy_intp_vector_buf(vector[np.intp_t] *buf)
     np.float64_t *npy_float64_vector_buf(vector[np.float64_t] *buf)
@@ -233,9 +241,7 @@ cdef extern from "ckdtree_methods.h":
                                   const ckdtree *other,
                                   const np.float64_t p,
                                   const np.float64_t max_distance,
-                                  vector[np.intp_t] *results_i,
-                                  vector[np.intp_t] *results_j,
-                                  vector[np.float64_t] *results_v)                     
+                                  vector[coo_entry] *results)                    
                       
                       
 cdef public class cKDTree [object ckdtree, type ckdtree_type]:
@@ -680,6 +686,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                         t.join()
                                                                 
                 else:
+                
                     query_ball_point(<ckdtree*>self, &vxx[0,0], r, p, eps, 
                         n, vvres)
                 
@@ -987,20 +994,16 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         """
         
         cdef:
-            vector[np.intp_t] *res_i
-            vector[np.intp_t] *res_j
-            vector[np.float64_t] *res_v
+            vector[coo_entry] *res
             np.ndarray res_arr
             dict res_dict
             np.intp_t i, j, k, n, s
             np.intp_t *pi 
             np.intp_t *pj
-            np.intp_t *pvi 
-            np.intp_t *pvj
+            coo_entry *pr
             char *cur
             np.float64_t v
             np.float64_t *pv
-            np.float64_t *pvv
             
         # Make sure trees are compatible
         if self.m != other.m:
@@ -1010,36 +1013,27 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         # check output type:
         if not output_type in ('dok_matrix', 'coo_matrix', 'dict', 'recarray'):
             raise ValueError('Invalid output_type')
-                                     
-        res_i = NULL
-        res_j = NULL
-        res_v = NULL
+
+        res = NULL
         
         try:
-        
-            res_i = new vector[np.intp_t]()
-            res_j = new vector[np.intp_t]()
-            res_v = new vector[np.float64_t]()
+            res = new vector[coo_entry]()
             
             sparse_distance_matrix(
-                <ckdtree*> self, <ckdtree*> other, p, max_distance, 
-                res_i, res_j, res_v)
-                
+                <ckdtree*> self, <ckdtree*> other, p, max_distance, res)
+            pr = coo_entry_vector_buf(res)
+            n = <np.intp_t> (res.size())
+            
             if output_type == 'dict':
-                res_dict = dict()
-                n = <np.intp_t> (res_i.size())
-                pvi = npy_intp_vector_buf(res_i)
-                pvj = npy_intp_vector_buf(res_j)
-                pvv = npy_float64_vector_buf(res_v)
-                for k in range(n):
-                    i = pvi[k]
-                    j = pvj[k]
-                    v = pvv[k]
+                res_dict = dict()           
+                for k in range(n):                    
+                    i = pr[k].i
+                    j = pr[k].j
+                    v = pr[k].v                    
                     res_dict[(i,j)] = v
                 result = res_dict
                 
             else:
-                n = <np.intp_t> (res_i.size())
                 res_dtype = np.dtype(
                    [('i', np.intp), 
                     ('j', np.intp), 
@@ -1047,16 +1041,14 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 res_arr = np.empty(n, dtype=res_dtype)
                 s = res_arr.strides[0]
                 cur = <char*> np.PyArray_DATA(res_arr)
-                pvi = npy_intp_vector_buf(res_i)
-                pvj = npy_intp_vector_buf(res_j)
-                pvv = npy_float64_vector_buf(res_v)
+                
                 for k in range(n):
                     pi = <np.intp_t*> cur
                     pj = <np.intp_t*> (cur + sizeof(np.intp_t))
                     pv = <np.float64_t*> (cur + 2*sizeof(np.intp_t))
-                    i = pvi[k]
-                    j = pvj[k]
-                    v = pvv[k]
+                    i = pr[k].i
+                    j = pr[k].j
+                    v = pr[k].v
                     pi[0] = i
                     pj[0] = j
                     pv[0] = v 
@@ -1072,15 +1064,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         
         finally:
         
-            if res_i != NULL: 
-                del res_i
-            
-            if res_j != NULL: 
-                del res_j
-                
-            if res_v != NULL: 
-                del res_v
-                
+            if res != NULL:
+                del res
                 
         if output_type != 'dok_matrix':
             return result

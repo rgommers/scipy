@@ -19,33 +19,11 @@
 #include "ckdtree_methods.h"
 #include "cpp_exc.h"
 #include "rectangle.h"
-
-
-struct coo_entries {
-
-    std::vector<npy_intp> *pi;
-    std::vector<npy_intp> *pj;
-    std::vector<npy_float64> *pv;
-        
-    coo_entries(std::vector<npy_intp> *_pi, 
-                std::vector<npy_intp> *_pj, 
-                std::vector<npy_float64> *_pv) {                
-        pi = _pi;
-        pj = _pj;
-        pv = _pv;
-    };
-        
-    inline void
-    add(npy_intp i, npy_intp j, npy_float64 v) {
-        pi->push_back(i);
-        pj->push_back(j);
-        pv->push_back(v);
-    };
-};
-
+#include "coo_entries.h"
 
 static void
-traverse(const ckdtree *self, const ckdtree *other, coo_entries *results,
+traverse(const ckdtree *self, const ckdtree *other, 
+         std::vector<coo_entry> *results,
          const ckdtreenode *node1, const ckdtreenode *node2,
          RectRectDistanceTracker *tracker)
 {
@@ -61,60 +39,64 @@ traverse(const ckdtree *self, const ckdtree *other, coo_entries *results,
         lnode1 = node1;
         
         if (node2->split_dim == -1) {  /* 1 & 2 are leaves */
-        
-            /* brute-force */
-        
-            const npy_float64 *self_raw_data = self->raw_data;
-            const npy_intp *self_raw_indices = self->raw_indices;
-            const npy_float64 *other_raw_data = other->raw_data;
-            const npy_intp *other_raw_indices = other->raw_indices;
-            const npy_intp m = self->m;
-            
             lnode2 = node2;
-                        
-            prefetch_datapoint(self_raw_data + 
-                 self_raw_indices[lnode1->start_idx]*m, m);
-            if (lnode1->start_idx < lnode1->end_idx)
-               prefetch_datapoint(self_raw_data + 
-                   self_raw_indices[lnode1->start_idx+1]*m, m);                         
-                        
-            for (i = lnode1->start_idx; i < lnode1->end_idx; ++i) {
             
-                if (i < lnode1->end_idx-2)
-                     prefetch_datapoint(self_raw_data +
-                         self_raw_indices[i+2]*m, m);
+            /* brute-force */
+            const npy_float64 p = tracker->p;
+            const npy_float64 tub = tracker->upper_bound;
+            const npy_float64 *sdata = self->raw_data;
+            const npy_intp *sindices = self->raw_indices;
+            const npy_float64 *odata = other->raw_data;
+            const npy_intp *oindices = other->raw_indices;
+            const npy_intp m = self->m;
+            const npy_intp start1 = lnode1->start_idx;
+            const npy_intp start2 = lnode2->start_idx;
+            const npy_intp end1 = lnode1->end_idx;
+            const npy_intp end2 = lnode2->end_idx;
+                        
+            prefetch_datapoint(sdata + sindices[start1] * m, m);
+            if (start1 < end1)
+               prefetch_datapoint(sdata + sindices[start1+1] * m, m);                         
+                        
+            for (i = start1; i < end1; ++i) {
+            
+                if (i < end1-2)
+                     prefetch_datapoint(sdata + sindices[i+2] * m, m);
             
                 /* Special care here to avoid duplicate pairs */
                 if (node1 == node2)
                     min_j = i+1;
                 else
-                    min_j = lnode2->start_idx;
+                    min_j = start2;
                     
-                prefetch_datapoint(other_raw_data + 
-                    other_raw_indices[min_j]*m, m);
-                if (min_j < lnode2->end_idx)
-                    prefetch_datapoint(self_raw_data + 
-                        other_raw_indices[min_j+1]*m, m);
+                prefetch_datapoint(odata + oindices[min_j] * m, m);
+                if (min_j < end2)
+                    prefetch_datapoint(sdata + oindices[min_j+1] * m, m);
                     
-                for (j = min_j; j < lnode2->end_idx; ++j) {
+                for (j = min_j; j < end2; ++j) {
                 
-                    if (j < lnode2->end_idx-2)
-                        prefetch_datapoint(other_raw_data + 
-                            other_raw_indices[j+2]*m, m);
+                    if (j < end2-2)
+                        prefetch_datapoint(odata + oindices[j+2] * m, m);
                 
                     d = _distance_p(
-                            self_raw_data + self_raw_indices[i] * m,
-                            other_raw_data + other_raw_indices[j] * m,
-                            tracker->p, m, tracker->upper_bound);
+                            sdata + sindices[i] * m,
+                            odata + oindices[j] * m,
+                            p, m, tub);
                         
-                    if (d <= tracker->upper_bound) {
-                        if ((tracker->p != 1) && (tracker->p != infinity))
-                            d = std::pow(d, 1. / tracker->p);
-                        results->add(self->raw_indices[i],
-                                     other->raw_indices[j], d);
-                        if (node1 == node2)
-                            results->add(self->raw_indices[j],
-                                        other->raw_indices[i], d);
+                    if (d <= tub) {
+                        if (NPY_LIKELY(p == 2.0))
+                            d = std::sqrt(d);
+                        else if ((p != 1) && (p != infinity))
+                            d = std::pow(d, 1. / p);
+                         
+                        coo_entry e = {sindices[i], oindices[j], d};
+                        results->push_back(e);
+                        
+                        if (node1 == node2) {
+                            coo_entry e = {sindices[j], oindices[i], d};
+                            results->push_back(e);
+                        }
+                            
                     }
                 }
             }
@@ -180,9 +162,7 @@ extern "C" PyObject*
 sparse_distance_matrix(const ckdtree *self, const ckdtree *other,
                        const npy_float64 p,
                        const npy_float64 max_distance,
-                       std::vector<npy_intp> *results_i,
-                       std::vector<npy_intp> *results_j,
-                       std::vector<npy_float64> *results_v)
+                       std::vector<coo_entry> *results)
 {
 
     /* release the GIL */
@@ -191,14 +171,10 @@ sparse_distance_matrix(const ckdtree *self, const ckdtree *other,
         try {
         
             Rectangle r1(self->m, self->raw_mins, self->raw_maxes);
-            Rectangle r2(other->m, other->raw_mins, other->raw_maxes); 
-            
+            Rectangle r2(other->m, other->raw_mins, other->raw_maxes);             
             RectRectDistanceTracker tracker(r1, r2, p, 0, max_distance);
-                    
-            coo_entries results(results_i, results_j, results_v);
             
-            traverse(self, other, &results, self->ctree, other->ctree, 
-                &tracker);
+            traverse(self, other, results, self->ctree, other->ctree, &tracker);
                                                
         } 
         catch(...) {

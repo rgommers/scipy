@@ -25,13 +25,16 @@ traverse_no_checking(const ckdtree *self,
                      std::vector<npy_intp> *results,
                      const ckdtreenode *node)
 {                                                    
+    const npy_intp *indices = self->raw_indices;
     const ckdtreenode *lnode;
     npy_intp i;
     
     if (node->split_dim == -1) {  /* leaf node */
         lnode = node;
-        for (i = lnode->start_idx; i < lnode->end_idx; ++i)
-            results->push_back(self->raw_indices[i]);
+        const npy_intp start = lnode->start_idx;
+        const npy_intp end = lnode->end_idx;
+        for (i = start; i < end; ++i)
+            results->push_back(indices[i]);
     }
     else {
         traverse_no_checking(self, results, node->less);
@@ -57,27 +60,29 @@ traverse_checking(const ckdtree *self,
     else if (node->split_dim == -1)  { /* leaf node */
         
         /* brute-force */
-                
-        const npy_float64 *raw_data = self->raw_data;
-        const npy_intp *raw_indices = self->raw_indices;
-        const npy_intp m = self->m;
-        
         lnode = node;
+        const npy_float64 p = tracker->p;
+        const npy_float64 tub = tracker->upper_bound;
+        const npy_float64 *tpt = tracker->pt;        
+        const npy_float64 *data = self->raw_data;
+        const npy_intp *indices = self->raw_indices;
+        const npy_intp m = self->m;
+        const npy_intp start = lnode->start_idx;
+        const npy_intp end = lnode->end_idx;
             
-        prefetch_datapoint(raw_data+raw_indices[lnode->start_idx]*m, m);
-        if (lnode->start_idx < lnode->end_idx)
-            prefetch_datapoint(raw_data+raw_indices[lnode->start_idx+1]*m, m);
+        prefetch_datapoint(data + indices[start] * m, m);
+        if (start < end)
+            prefetch_datapoint(data + indices[start+1] * m, m);
                 
-        for (i = lnode->start_idx; i < lnode->end_idx; ++i) {
+        for (i = start; i < end; ++i) {
             
-            if (i < lnode->end_idx-2)
-                prefetch_datapoint(raw_data+raw_indices[i+2]*m, m);
+            if (i < end-2)
+                prefetch_datapoint(data + indices[i+2] * m, m);
            
-            d = _distance_p(raw_data + raw_indices[i] * m,
-                    tracker->pt, tracker->p, m, tracker->upper_bound);
+            d = _distance_p(data + indices[i] * m, tpt, p, m, tub);
                 
-            if (d <= tracker->upper_bound) {
-                results->push_back((npy_intp) raw_indices[i]);
+            if (d <= tub) {
+                results->push_back((npy_intp) indices[i]);
             }
         }
     }

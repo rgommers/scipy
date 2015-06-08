@@ -51,7 +51,8 @@ def configuration(parent_package='', top_path=None):
                        'cpp_utils.h',
                        'rectangle.h',
                        'ordered_pair.h',
-                       'partial_sort.h']
+                       'partial_sort.h',
+                       'coo_entries.h']
                        
     ckdtree_headers = [join('ckdtree', 'src', x) for x in ckdtree_headers]
         
