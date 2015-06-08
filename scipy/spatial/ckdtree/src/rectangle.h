@@ -10,6 +10,14 @@
 #include <cstring>
 
 
+#ifndef NPY_UNLIKELY
+#define NPY_UNLIKELY(x) (x)
+#endif
+
+#ifndef NPY_LIKELY
+#define NPY_LIKELY(x) (x)
+#endif
+
 extern npy_float64 infinity;
 
 /* Interval arithmetic

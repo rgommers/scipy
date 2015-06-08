@@ -16,6 +16,10 @@ extern int number_of_processors;
 #define NPY_LIKELY(x) (x)
 #endif
 
+#ifndef NPY_UNLIKELY
+#define NPY_UNLIKELY(x) (x)
+#endif
+
 #include <cmath>
 #include <vector>
 #include "ordered_pair.h"
