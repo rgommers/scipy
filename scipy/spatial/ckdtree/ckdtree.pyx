@@ -835,47 +835,17 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         """
                  
-        cdef: 
-            vector[ordered_pair] *vres
-            set results
-            np.intp_t i, n
-            ordered_pair *pair
-            np.ndarray array_res
-        
-        if output_type not in ('set', 'ndarray'):
-            raise ValueError("output type must be set or ndarray")
-        
-        vres = NULL
-        results = set()
-        try:
-            vres = new vector[ordered_pair]()
-            query_pairs(<ckdtree*> self, r, p, eps, vres)
-            n = vres.size()
-            pair = ordered_pair_vector_buf(vres)
-            
-            if output_type == 'set':
-                if sizeof(long) < sizeof(np.intp_t):
-                    # Needed for Python 2.x on Win64
-                    for i in range(n):
-                        results.add((int(pair.i), int(pair.j)))
-                        pair += 1 
-                else:
-                    # other platforms
-                    for i in range(n):
-                        results.add((pair.i, pair.j))
-                        pair += 1
-            else:
-                array_res = np.zeros((n,2), dtype=np.intp)
-                string.memcpy(np.PyArray_DATA(array_res), <void*> pair, 
-                                  n*2*sizeof(np.intp_t))
-        finally:
-            if vres != NULL:
-                del vres
+        cdef ordered_pairs c
+
+        results = ordered_pairs()
+        query_pairs(<ckdtree*> self, r, p, eps, results.buf)
         
         if output_type == 'set':
-            return results
-        else:           
-            return array_res
+            return results.set()
+        elif output_type == 'ndarray':
+            return results.ndarray()
+        else:
+            raise ValueError("Invalid output type") 
 
 
     # ---------------
@@ -982,97 +952,40 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         
         output_type : string, optional
             Which container to use for output data. Options: 'dok_matrix',
-            'coo_matrix', 'dict', or 'recarray'. Default: 'dok_matrix'.
+            'coo_matrix', 'dict', or 'ndarray'. Default: 'dok_matrix'.
 
         Returns
         -------
         result : dok_matrix, coo_matrix, dict or ndarray
             Sparse matrix representing the results in "dictionary of keys" 
             format. If a dict is returned the keys are (i,j) tuples of indices.
-            If output_type is 'recarray' a record array with fields 'i', 'j',
+            If output_type is 'ndarray' a record array with fields 'i', 'j',
             and 'k' is returned,
         """
         
-        cdef:
-            vector[coo_entry] *res
-            np.ndarray res_arr
-            dict res_dict
-            np.intp_t i, j, k, n, s
-            np.intp_t *pi 
-            np.intp_t *pj
-            coo_entry *pr
-            char *cur
-            np.float64_t v
-            np.float64_t *pv
-            
+        cdef coo_entries res
+        
         # Make sure trees are compatible
         if self.m != other.m:
             raise ValueError("Trees passed to sparse_distance_matrix have "
-                             "different dimensionality")
-                             
-        # check output type:
-        if not output_type in ('dok_matrix', 'coo_matrix', 'dict', 'recarray'):
-            raise ValueError('Invalid output_type')
-
-        res = NULL
-        
-        try:
-            res = new vector[coo_entry]()
-            
-            sparse_distance_matrix(
-                <ckdtree*> self, <ckdtree*> other, p, max_distance, res)
-            pr = coo_entry_vector_buf(res)
-            n = <np.intp_t> (res.size())
-            
-            if output_type == 'dict':
-                res_dict = dict()           
-                for k in range(n):                    
-                    i = pr[k].i
-                    j = pr[k].j
-                    v = pr[k].v                    
-                    res_dict[(i,j)] = v
-                result = res_dict
+                             "different dimensionality")                                      
+        # do the query
+        res = coo_entries()
+        sparse_distance_matrix(
+                <ckdtree*> self, <ckdtree*> other, p, max_distance, res.buf)
                 
-            else:
-                res_dtype = np.dtype(
-                   [('i', np.intp), 
-                    ('j', np.intp), 
-                    ('v',np.float64)])
-                res_arr = np.empty(n, dtype=res_dtype)
-                s = res_arr.strides[0]
-                cur = <char*> np.PyArray_DATA(res_arr)
-                
-                for k in range(n):
-                    pi = <np.intp_t*> cur
-                    pj = <np.intp_t*> (cur + sizeof(np.intp_t))
-                    pv = <np.float64_t*> (cur + 2*sizeof(np.intp_t))
-                    i = pr[k].i
-                    j = pr[k].j
-                    v = pr[k].v
-                    pi[0] = i
-                    pj[0] = j
-                    pv[0] = v 
-                    cur += s
-                result = res_arr
-                
-                if output_type != 'recarray':
-                    result = scipy.sparse.coo_matrix(
-                       (res_arr['v'], (res_arr['i'], res_arr['j'])),
-                                       shape=(self.n,other.n))
-                else:
-                    result = res_arr
-        
-        finally:
-        
-            if res != NULL:
-                del res
-                
-        if output_type != 'dok_matrix':
-            return result
+        if output_type == 'dict':
+            return res.dict()
+        elif output_type == 'ndarray':
+            return res.ndarray()
+        elif output_type == 'coo_matrix':
+            return res.coo_matrix(self.n, other.n)            
+        elif output_type == 'dok_matrix':
+            return res.dok_matrix(self.n, other.n)
         else:
-            return result.todok()
-                             
-         
+            raise ValueError('Invalid output type')
+
+
     # ----------------------
     # pickle
     # ----------------------    
