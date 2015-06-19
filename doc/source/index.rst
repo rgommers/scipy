@@ -15,8 +15,9 @@ science, and engineering.
 .. toctree::
    :maxdepth: 1
 
-   hacking
+   contributing
    api
+   roadmap
    release
 
 Reference
