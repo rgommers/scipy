@@ -52,7 +52,7 @@ C
               ELSE
                  CALL GAIH(VA0,GA0)
                  PD=DSQRT(PI)/(2.0D0**(-.5D0*N)*GA0)
-                 CDN=CMPLX(PD,0.0D0)
+                 CDN = DCMPLX(PD, 0.0D0)
               ENDIF
            ELSE
               XN=-N
@@ -60,7 +60,7 @@ C
               CB0=2.0D0**(-0.5D0*N-1.0D0)*CA0/G1
               VT=-.5D0*N
               CALL GAIH(VT,G0)
-              CDN=CMPLX(G0,0.0D0)
+              CDN = DCMPLX(G0, 0.0D0)
               CR=(1.0D0,0.0D0)
               DO 10 M=1,250
                  VM=.5D0*(M-N)
@@ -174,7 +174,7 @@ C
            QM(0,0)=Q0
            QM(0,1)=X*Q0-1.0D0
            QM(1,0)=-1.0D0/XQ
-           QM(1,1)=-XQ*(Q0+X/(1.0D0-X*X))
+           QM(1,1)=-LS*XQ*(Q0+X/(1.0D0-X*X))
            DO 15 I=0,1
            DO 15 J=2,N
               QM(I,J)=((2.0D0*J-1.0D0)*X*QM(I,J-1)
@@ -233,17 +233,18 @@ C
 
 C       **********************************
 
-        SUBROUTINE CLPMN(MM,M,N,X,Y,CPM,CPD)
+        SUBROUTINE CLPMN(MM,M,N,X,Y,NTYPE,CPM,CPD)
 C
 C       =========================================================
 C       Purpose: Compute the associated Legendre functions Pmn(z)
 C                and their derivatives Pmn'(z) for a complex
 C                argument
-C       Input :  x  --- Real part of z
-C                y  --- Imaginary part of z
-C                m  --- Order of Pmn(z),  m = 0,1,2,...,n
-C                n  --- Degree of Pmn(z), n = 0,1,2,...,N
-C                mm --- Physical dimension of CPM and CPD
+C       Input :  x     --- Real part of z
+C                y     --- Imaginary part of z
+C                m     --- Order of Pmn(z),  m = 0,1,2,...,n
+C                n     --- Degree of Pmn(z), n = 0,1,2,...,N
+C                mm    --- Physical dimension of CPM and CPD
+C                ntype --- type of cut, either 2 or 3
 C       Output:  CPM(m,n) --- Pmn(z)
 C                CPD(m,n) --- Pmn'(z)
 C       =========================================================
@@ -251,7 +252,7 @@ C
         IMPLICIT DOUBLE PRECISION (D,X,Y)
         IMPLICIT COMPLEX*16 (C,Z)
         DIMENSION CPM(0:MM,0:N),CPD(0:MM,0:N)
-        Z=CMPLX(X,Y)
+        Z = DCMPLX(X, Y)
         DO 10 I=0,N
         DO 10 J=0,M
            CPM(J,I)=(0.0D0,0.0D0)
@@ -272,12 +273,20 @@ C
 20         CONTINUE
            RETURN
         ENDIF
+        if (NTYPE.EQ.2) THEN
+C       sqrt(1 - z^2) with branch cut on |x|>1
+           ZS=(1.0D0-Z*Z)
+           ZQ=-CDSQRT(ZS)
+           LS=-1
+        ELSE
 C       sqrt(z^2 - 1) with branch cut between [-1, 1]
-        ZQ=CDSQRT(Z*Z-1.0D0)
-        IF (X.LT.0D0) THEN
-           ZQ=-ZQ
+           ZS=(Z*Z-1.0D0)
+           ZQ=CDSQRT(ZS)
+           IF (X.LT.0D0) THEN
+              ZQ=-ZQ
+           END IF
+           LS=1
         END IF
-        ZS=(Z*Z-1.0D0)
         DO 25 I=1,M
 C       DLMF 14.7.15
 25         CPM(I,I)=(2.0D0*I-1.0D0)*ZQ*CPM(I-1,I-1)
@@ -293,12 +302,13 @@ C       DLMF 14.10.3
         CPD(0,0)=(0.0D0,0.0D0)
         DO 40 J=1,N
 C       DLMF 14.10.5
-40         CPD(0,J)=J*(Z*CPM(0,J)-CPM(0,J-1))/ZS
+40         CPD(0,J)=LS*J*(Z*CPM(0,J)-CPM(0,J-1))/ZS
         DO 45 I=1,M
         DO 45 J=I,N
-C       derivative of DLMF 14.7.11 & DLMF 14.10.6
-           CPD(I,J)=-I*Z*CPM(I,J)/ZS+(J+I)*(J-I+1.0D0)
-     &              /ZQ*CPM(I-1,J)
+C       derivative of DLMF 14.7.11 & DLMF 14.10.6 for type 3
+C       derivative of DLMF 14.7.8 & DLMF 14.10.1 for type 2
+           CPD(I,J)=LS*(-I*Z*CPM(I,J)/ZS+(J+I)*(J-I+1.0D0)
+     &                  /ZQ*CPM(I-1,J))
 45      CONTINUE
         RETURN
         END
@@ -1815,7 +1825,7 @@ C       ==========================================================
 35            W2=EI2
 40         ERI=EI1+C0*EI2
         ENDIF
-        CER=CMPLX(ERR,ERI)
+        CER = DCMPLX(ERR, ERI)
         CDER=2.0D0/DSQRT(PI)*CDEXP(-Z*Z)
         RETURN
         END
@@ -2233,7 +2243,7 @@ C
         IMPLICIT DOUBLE PRECISION (X,Y)
         IMPLICIT COMPLEX*16 (C,Z)
         DIMENSION CQN(0:N),CQD(0:N)
-        Z=CMPLX(X,Y)
+        Z = DCMPLX(X, Y)
         IF (Z.EQ.1.0D0) THEN
            DO 10 K=0,N
               CQN(K)=(1.0D+300,0.0D0)
@@ -2349,66 +2359,81 @@ C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         DIMENSION XA(NT),XB(NT),XC(NT),XD(NT)
         PI=3.141592653589793D0
-        RT0=0.0D0
         RT=0.0D0
         DO 15 I=1,NT
+           RT0=0D0
            IF (KF.EQ.1) THEN
-              U=3.0*PI*(4.0*I-1)/8.0D0
+              U=3.0D0*PI*(4.0D0*I-1)/8.0D0
               U1=1/(U*U)
-              RT0=-(U*U)**(1.0/3.0)*((((-15.5902*U1+.929844)*U1
-     &            -.138889)*U1+.10416667D0)*U1+1.0D0)
            ELSE IF (KF.EQ.2) THEN
               IF (I.EQ.1) THEN
-                 RT0=-1.17371
+                 RT0=-1.17371D0
               ELSE
-                 U=3.0*PI*(4.0*I-3.0)/8.0
-                 U1=1.0D0/(U*U)
-                 RT0=-(U*U)**(1.0/3.0)*((((-15.5902*U1+.929844)*U1
-     &               -.138889)*U1+.10416667)*U1+1.0)
+                 U=3.0D0*PI*(4.0D0*I-3.0D0)/8.0D0
+                 U1=1/(U*U)
               ENDIF
+           ENDIF
+           IF (RT0.EQ.0) THEN
+C             DLMF 9.9.18
+              RT0=-(U*U)**(1.0D0/3.0D0)*(
+     &            + 1D0
+     &            + U1*(5D0/48D0
+     &            + U1*(-5D0/36D0
+     &            + U1*(77125D0/82944D0
+     &            + U1*(-108056875D0/6967296D0)))))
            ENDIF
 10         X=RT0
            CALL AIRYB(X,AI,BI,AD,BD)
            IF (KF.EQ.1) RT=RT0-AI/AD
            IF (KF.EQ.2) RT=RT0-BI/BD
-           IF (DABS((RT-RT0)/RT).GT.1.D-9) THEN
+           ERR=DABS((RT-RT0)/RT)
+           IF (ERR.GT.1.D-12) THEN
               RT0=RT
               GOTO 10
            ELSE
               XA(I)=RT
+              IF (ERR.GT.1D-14) CALL AIRYB(RT,AI,BI,AD,BD)
               IF (KF.EQ.1) XD(I)=AD
               IF (KF.EQ.2) XD(I)=BD
            ENDIF
 15      CONTINUE
         DO 25 I=1,NT
+           RT0=0D0
            IF (KF.EQ.1) THEN
               IF (I.EQ.1) THEN
-                 RT0=-1.01879
+                 RT0=-1.01879D0
               ELSE
-                 U=3.0*PI*(4.0*I-3.0)/8.0
+                 U=3.0D0*PI*(4.0D0*I-3.0D0)/8.0D0
                  U1=1/(U*U)
-                 RT0=-(U*U)**(1.0/3.0)*((((15.0168*U1-.873954)
-     &            *U1+.121528)*U1-.145833D0)*U1+1.0D0)
               ENDIF
            ELSE IF (KF.EQ.2) THEN
               IF (I.EQ.1) THEN
-                 RT0=-2.29444
+                 RT0=-2.29444D0
               ELSE
-                 U=3.0*PI*(4.0*I-1.0)/8.0
-                 U1=1.0/(U*U)
-                 RT0=-(U*U)**(1.0/3.0)*((((15.0168*U1-.873954)
-     &               *U1+.121528)*U1-.145833)*U1+1.0)
+                 U=3.0D0*PI*(4.0D0*I-1.0D0)/8.0D0
+                 U1=1/(U*U)
               ENDIF
            ENDIF
+           IF (RT0.EQ.0) THEN
+C             DLMF 9.9.19
+              RT0=-(U*U)**(1.0D0/3.0D0)*(
+     &            + 1D0
+     &            + U1*(-7D0/48D0
+     &            + U1*(+35D0/288D0
+     &            + U1*(-181223D0/207360D0
+     &            + U1*(18683371D0/1244160D0)))))
+           END IF
 20         X=RT0
            CALL AIRYB(X,AI,BI,AD,BD)
            IF (KF.EQ.1) RT=RT0-AD/(AI*X)
            IF (KF.EQ.2) RT=RT0-BD/(BI*X)
-           IF (DABS((RT-RT0)/RT).GT.1.0D-9) THEN
+           ERR=DABS((RT-RT0)/RT)
+           IF (ERR.GT.1.0D-12) THEN
               RT0=RT
               GOTO 20
            ELSE
               XB(I)=RT
+              IF (ERR.GT.1D-14) CALL AIRYB(RT,AI,BI,AD,BD)
               IF (KF.EQ.1) XC(I)=AI
               IF (KF.EQ.2) XC(I)=BI
            ENDIF
@@ -3084,7 +3109,8 @@ C
      &          .152746185967848D-01, .126781664768159D-01,
      &          .100475571822880D-01, .738993116334531D-02,
      &          .471272992695363D-02, .202681196887362D-02/
-        ID=7
+        ID=9
+C       DLMF 13.4.4, integration up to C=12/X
         A1=A-1.0D0
         B1=B-A-1.0D0
         C=12.0D0/X
@@ -3105,11 +3131,13 @@ C
               HU1=HU1+S*G
               D=D+2.0D0*G
 15         CONTINUE
-           IF (DABS(1.0D0-HU0/HU1).LT.1.0D-7) GO TO 25
+           IF (DABS(1.0D0-HU0/HU1).LT.1.0D-9) GO TO 25
            HU0=HU1
 20      CONTINUE
 25      CALL GAMMA2(A,GA)
         HU1=HU1/GA
+C       DLMF 13.4.4 with substitution t=C/(1-u)
+C       integration u from 0 to 1, i.e. t from C=12/X to infinity
         DO 40 M=2,10,2
            HU2=0.0D0
            G=0.5D0/M
@@ -3128,7 +3156,7 @@ C
               HU2=HU2+S*G
               D=D+2.0D0*G
 35         CONTINUE
-           IF (DABS(1.0D0-HU0/HU2).LT.1.0D-7) GO TO 45
+           IF (DABS(1.0D0-HU0/HU2).LT.1.0D-9) GO TO 45
            HU0=HU2
 40      CONTINUE
 45      CALL GAMMA2(A,GA)
@@ -4853,7 +4881,7 @@ C
            PV=PI*DSQRT(2.0D0*NR-0.25D0)
            PX=0.5*PU-0.5*DLOG(PV)/PU
            PY=0.5*PU+0.5*DLOG(PV)/PU
-           Z=CMPLX(PX,PY)
+           Z = DCMPLX(PX, PY)
            IT=0
 15         IT=IT+1
            CALL CERF(Z,ZF,ZD)
@@ -4972,20 +5000,20 @@ C
         IF (B.NE.INT(B)) THEN
            CALL CHGUS(A,B,X,HU,ID1)
            MD=1
-           IF (ID1.GE.6) RETURN
+           IF (ID1.GE.9) RETURN
            HU1=HU
         ENDIF
         IF (IL1.OR.IL2.OR.IL3) THEN
            CALL CHGUL(A,B,X,HU,ID)
            MD=2
-           IF (ID.GE.6) RETURN
+           IF (ID.GE.9) RETURN
            IF (ID1.GT.ID) THEN
               MD=1
               ID=ID1
               HU=HU1
            ENDIF
         ENDIF
-        IF (A.GE.0.0) THEN
+        IF (A.GE.1.0) THEN
            IF (BN.AND.(BL1.OR.BL2.OR.BL3)) THEN
               CALL CHGUBI(A,B,X,HU,ID)
               MD=3
@@ -5240,7 +5268,7 @@ C
         IMPLICIT DOUBLE PRECISION (X,Y)
         IMPLICIT COMPLEX *16 (C,Z)
         DIMENSION CPN(0:N),CPD(0:N)
-        Z=CMPLX(X,Y)
+        Z = DCMPLX(X, Y)
         CPN(0)=(1.0D0,0.0D0)
         CPN(1)=Z
         CPD(0)=(0.0D0,0.0D0)
@@ -5654,10 +5682,11 @@ C       Input  : a  --- Parameter
 C                b  --- Parameter ( b <> 0,-1,-2,... )
 C                x  --- Argument
 C       Output:  HG --- M(a,b,x)
-C       Routine called: GAMMA2 for computing Г(x)
+C       Routine called: CGAMA for computing complex ln[Г(x)]
 C       ===================================================
 C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        IMPLICIT DOUBLE PRECISION (A-B,D-H,O-Z)
+        IMPLICIT COMPLEX*16 (C)
         PI=3.141592653589793D0
         A0=A
         A1=A
@@ -5709,10 +5738,16 @@ C
                  IF (HG.NE.0D0.AND.DABS(RG/HG).LT.1.0D-15) GO TO 25
 15            CONTINUE
            ELSE
-              CALL GAMMA2(A,TA)
-              CALL GAMMA2(B,TB)
+              Y=0.0D0
+              CALL CGAMA(A,Y,0,TAR,TAI)
+              CTA = DCMPLX(TAR, TAI)
+              Y=0.0D0
+              CALL CGAMA(B,Y,0,TBR,TBI)
+              CTB = DCMPLX(TBR, TBI)
               XG=B-A
-              CALL GAMMA2(XG,TBA)
+              Y=0.0D0
+              CALL CGAMA(XG,Y,0,TBAR,TBAI)
+              CTBA = DCMPLX(TBAR, TBAI)
               SUM1=1.0D0
               SUM2=1.0D0
               R1=1.0D0
@@ -5722,8 +5757,8 @@ C
                  R2=-R2*(B-A+I-1.0D0)*(A-I)/(X*I)
                  SUM1=SUM1+R1
 20               SUM2=SUM2+R2
-              HG1=TB/TBA*X**(-A)*DCOS(PI*A)*SUM1
-              HG2=TB/TA*DEXP(X)*X**(A-B)*SUM2
+              HG1=DBLE(CDEXP(CTB-CTBA))*X**(-A)*DCOS(PI*A)*SUM1
+              HG2=DBLE(CDEXP(CTB-CTA+X))*X**(A-B)*SUM2
               HG=HG1+HG2
            ENDIF
 25         IF (N.EQ.0) Y0=HG
@@ -5998,7 +6033,7 @@ C       Input :  a --- Parameter
 C                b --- Parameter
 C                z --- Complex argument
 C       Output:  CHG --- M(a,b,z)
-C       Routine called: GAMMA2 for computing gamma function
+C       Routine called: CGAMA for computing complex ln[Г(x)]
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A,B,D-H,O-Y)
@@ -6054,10 +6089,16 @@ C
                     CHW=CHG
 15               CONTINUE
               ELSE
-                 CALL GAMMA2(A,G1)
-                 CALL GAMMA2(B,G2)
+                 Y=0.0D0
+                 CALL CGAMA(A,Y,0,G1R,G1I)
+                 CG1 = DCMPLX(G1R, G1I)
+                 Y=0.0D0
+                 CALL CGAMA(B,Y,0,G2R,G2I)
+                 CG2 = DCMPLX(G2R,G2I)
                  BA=B-A
-                 CALL GAMMA2(BA,G3)
+                 Y=0.0D0
+                 CALL CGAMA(BA,Y,0,G3R,G3I)
+                 CG3 = DCMPLX(G3R, G3I)
                  CS1=(1.0D0,0.0D0)
                  CS2=(1.0D0,0.0D0)
                  CR1=(1.0D0,0.0D0)
@@ -6080,8 +6121,8 @@ C
                  IF (PHI.GT.-1.5*PI.AND.PHI.LE.-0.5*PI) NS=-1
                  CFAC=CDEXP(NS*CI*PI*A)
                  IF (Y.EQ.0.0D0) CFAC=DCOS(PI*A)
-                 CHG1=G2/G3*Z**(-A)*CFAC*CS1
-                 CHG2=G2/G1*CDEXP(Z)*Z**(A-B)*CS2
+                 CHG1=CDEXP(CG2-CG3)*Z**(-A)*CFAC*CS1
+                 CHG2=CDEXP(CG2-CG1+Z)*Z**(A-B)*CS2
                  CHG=CHG1+CHG2
               ENDIF
 25            IF (N.EQ.0) CY0=CHG
@@ -7434,7 +7475,7 @@ C                BD --- Bi'(x)
 C       =======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        DIMENSION CK(41),DK(41)
+        DIMENSION CK(51),DK(51)
         EPS=1.0D-15
         PI=3.141592653589793D0
         C1=0.355028053887817D0
@@ -7485,20 +7526,34 @@ C
 45         AD=C1*DF-C2*DG
            BD=SR3*(C1*DF+C2*DG)
         ELSE
+           KM=INT(24.5-XA)
+           IF (XA.LT.6.0) KM=14
+           IF (XA.GT.15.0) KM=10
+           IF (X.GT.0.0D0) THEN
+              KMAX=KM
+           ELSE
+C             Choose cutoffs so that the remainder term in asymptotic
+C             expansion is epsilon size. The X<0 branch needs to be fast
+C             in order to make AIRYZO efficient
+              IF (XA.GT.70.0) KM=3
+              IF (XA.GT.500.0) KM=2
+              IF (XA.GT.1000.0) KM=1
+              KM2=KM
+              IF (XA.GT.150.0) KM2=1
+              IF (XA.GT.3000.0) KM2=0
+              KMAX=2*KM+1
+           ENDIF
            XE=XA*XQ/1.5D0
            XR1=1.0D0/XE
            XAR=1.0D0/XQ
            XF=DSQRT(XAR)
            RP=0.5641895835477563D0
            R=1.0D0
-           DO 50 K=1,40
+           DO 50 K=1,KMAX
               R=R*(6.0D0*K-1.0D0)/216.0D0*(6.0D0*K-3.0D0)
      &          /K*(6.0D0*K-5.0D0)/(2.0D0*K-1.0D0)
               CK(K)=R
 50            DK(K)=-(6.0D0*K+1.0D0)/(6.0D0*K-1.0D0)*CK(K)
-           KM=INT(24.5-XA)
-           IF (XA.LT.6.0) KM=14
-           IF (XA.GT.15.0) KM=10
            IF (X.GT.0.0D0) THEN
               SAI=1.0D0
               SAD=1.0D0
@@ -7533,7 +7588,7 @@ C
               SSB=CK(1)*XR1
               SDB=DK(1)*XR1
               R=XR1
-              DO 70 K=1,KM
+              DO 70 K=1,KM2
                  R=-R*XR2
                  SSB=SSB+CK(2*K+1)*R
 70               SDB=SDB+DK(2*K+1)*R
@@ -7749,7 +7804,7 @@ C
            IF (KF.EQ.2) PSQ=2.0D0*NR**(0.5)
            PX=PSQ-DLOG(PI*PSQ)/(PI*PI*PSQ**3.0)
            PY=DLOG(PI*PSQ)/(PI*PSQ)
-           Z=CMPLX(PX,PY)
+           Z = DCMPLX(PX, PY)
            IF (KF.EQ.2) THEN
               IF (NR.EQ.2) Z=(2.8334,0.2443)
               IF (NR.EQ.3) Z=(3.4674,0.2185)
@@ -8113,6 +8168,9 @@ C       Output:  HU --- U(a,b,x)
 C                ID --- Estimated number of significant digits
 C       Routine called: GAMMA2 for computing gamma function
 C       ======================================================
+C
+C       DLMF 13.2.42 with prefactors rewritten according to
+C       DLMF 5.5.3, M(a, b, x) with DLMF 13.2.2
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         ID=-100
@@ -9329,6 +9387,8 @@ C
         NM=0
         IF (IL1) NM=ABS(A)
         IF (IL2) NM=ABS(AA)
+C       IL1: DLMF 13.2.7 with k=-s-a
+C       IL2: DLMF 13.2.8
         IF (IL1.OR.IL2) THEN
            HU=1.0D0
            R=1.0D0
@@ -9339,6 +9399,7 @@ C
            HU=X**(-A)*HU
            ID=10
         ELSE
+C       DLMF 13.7.3
            HU=1.0D0
            R=1.0D0
            DO 15 K=1,25
@@ -9952,7 +10013,7 @@ C       ===========================================================
         ENDIF
         IF (KF.EQ.1) X=-0.503
         IF (KF.EQ.2) X=0.577
-        ZERO=CMPLX(X,Y)
+        ZERO = DCMPLX(X, Y)
         Z=ZERO
         W=0.0D0
         DO 35 NR=1,NT
@@ -10206,7 +10267,7 @@ C
            CDI(1)=0.3333333333333333D0
            RETURN
         ENDIF
-        CI=CMPLX(0.0D0,1.0D0)
+        CI = DCMPLX(0.0D0, 1.0D0)
         CSINH=CDSIN(CI*Z)/CI
         CCOSH=CDCOS(CI*Z)
         CSI0=CSINH/Z
@@ -10641,10 +10702,12 @@ C       2) iterate
         IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 10
 C       3) initial guess for j_{N,L+1}
-        IF (L.GE.1 .AND. X.LE.RJ0(L)+0.5) THEN
-           X=XGUESS+PI
-           XGUESS=X
-           GO TO 10
+        IF (L.GE.1)THEN
+           IF (X.LE.RJ0(L)+0.5) THEN
+              X=XGUESS+PI
+              XGUESS=X
+              GO TO 10
+           ENDIF
         END IF
         L=L+1
         RJ0(L)=X
@@ -10666,10 +10729,12 @@ C       -- Newton method for j_{N,L}'
         IF (X-X0.LT.-1) X=X0-1
         IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 15
-        IF (L.GE.1 .AND. X.LE.RJ1(L)+0.5) THEN
-           X=XGUESS+PI
-           XGUESS=X
-           GO TO 15
+        IF (L.GE.1)THEN
+           IF (X.LE.RJ1(L)+0.5) THEN
+              X=XGUESS+PI
+              XGUESS=X
+              GO TO 15
+           ENDIF
         END IF
         L=L+1
         RJ1(L)=X
@@ -10690,10 +10755,12 @@ C       -- Newton method for y_{N,L}
         IF (X-X0.LT.-1) X=X0-1
         IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 20
-        IF (L.GE.1 .AND. X.LE.RY0(L)+0.5) THEN
-           X=XGUESS+PI
-           XGUESS=X
-           GO TO 20
+        IF (L.GE.1)THEN
+           IF (X.LE.RY0(L)+0.5) THEN
+              X=XGUESS+PI
+              XGUESS=X
+              GO TO 20
+           END IF
         END IF
         L=L+1
         RY0(L)=X
@@ -10712,10 +10779,12 @@ C       -- Newton method for y_{N,L}'
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-DYN/FYN
         IF (DABS(X-X0).GT.1.0D-11) GO TO 25
-        IF (L.GE.1 .AND. X.LE.RY1(L)+0.5) THEN
-           X=XGUESS+PI
-           XGUESS=X
-           GO TO 25
+        IF (L.GE.1) THEN
+           IF (X.LE.RY1(L)+0.5) THEN
+              X=XGUESS+PI
+              XGUESS=X
+              GO TO 25
+           END IF
         END IF
         L=L+1
         RY1(L)=X
@@ -12140,7 +12209,7 @@ C
         IMPLICIT DOUBLE PRECISION (X,Y)
         IMPLICIT COMPLEX*16 (C,Z)
         DIMENSION CQM(0:MM,0:N),CQD(0:MM,0:N)
-        Z=CMPLX(X,Y)
+        Z = DCMPLX(X, Y)
         IF (DABS(X).EQ.1.0D0.AND.Y.EQ.0.0D0) THEN
            DO 10 I=0,M
            DO 10 J=0,N
@@ -12284,7 +12353,9 @@ C
                     GO TO 35
                  ENDIF
 30            CONTINUE
-35            IF (K.NE.1.AND.H(K).LT.H(K-1)) H(K)=H(K-1)
+35            IF (K.NE.1) THEN
+                 IF(H(K).LT.H(K-1)) H(K)=H(K-1)
+              ENDIF
 40            X1=(B(K)+H(K))/2.0D0
               CV0(K)=X1
               IF (DABS((B(K)-H(K))/X1).LT.1.0D-14) GO TO 50

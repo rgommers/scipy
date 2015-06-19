@@ -2,8 +2,11 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal, run_module_suite
-from scipy.stats import \
-    binned_statistic, binned_statistic_2d, binned_statistic_dd
+from scipy.stats import (binned_statistic, binned_statistic_2d,
+                         binned_statistic_dd)
+
+from scipy._lib.six import u
+from common_tests import check_named_results
 
 
 class TestBinnedStatistic(object):
@@ -25,6 +28,14 @@ class TestBinnedStatistic(object):
 
         assert_array_almost_equal(count1, count2)
         assert_array_almost_equal(edges1, edges2)
+
+    def test_1d_result_attributes(self):
+        x = self.x
+        v = self.v
+
+        res = binned_statistic(x, v, 'count', bins=10)
+        attributes = ('statistic', 'bin_edges', 'binnumber')
+        check_named_results(res, attributes)
 
     def test_1d_sum(self):
         x = self.x
@@ -79,6 +90,21 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(bc, bc2)
         assert_array_almost_equal(bcount, count1)
 
+    def test_1d_range_keyword(self):
+        # Regression test for gh-3063, range can be (min, max) or [(min, max)]
+        np.random.seed(9865)
+        x = np.arange(30)
+        data = np.random.random(30)
+
+        mean, bins, _ = binned_statistic(x[:15], data[:15])
+        mean_range, bins_range, _ = binned_statistic(x, data, range=[(0, 14)])
+        mean_range2, bins_range2, _ = binned_statistic(x, data, range=(0, 14))
+
+        assert_array_almost_equal(mean, mean_range)
+        assert_array_almost_equal(bins, bins_range)
+        assert_array_almost_equal(mean, mean_range2)
+        assert_array_almost_equal(bins, bins_range2)
+
     def test_2d_count(self):
         x = self.x
         y = self.y
@@ -90,6 +116,15 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(count1, count2)
         assert_array_almost_equal(binx1, binx2)
         assert_array_almost_equal(biny1, biny2)
+
+    def test_2d_result_attributes(self):
+        x = self.x
+        y = self.y
+        v = self.v
+
+        res = binned_statistic_2d(x, y, v, 'count', bins=5)
+        attributes = ('statistic', 'x_edge', 'y_edge', 'binnumber')
+        check_named_results(res, attributes)
 
     def test_2d_sum(self):
         x = self.x
@@ -111,6 +146,16 @@ class TestBinnedStatistic(object):
         stat1, binx1, biny1, bc = binned_statistic_2d(x, y, v, 'mean', bins=5)
         stat2, binx2, biny2, bc = binned_statistic_2d(x, y, v, np.mean, bins=5)
 
+        assert_array_almost_equal(stat1, stat2)
+        assert_array_almost_equal(binx1, binx2)
+        assert_array_almost_equal(biny1, biny2)
+
+    def test_2d_mean_unicode(self):
+        x = self.x
+        y = self.y
+        v = self.v
+        stat1, binx1, biny1, bc = binned_statistic_2d(x, y, v, u('mean'), bins=5)
+        stat2, binx2, biny2, bc = binned_statistic_2d(x, y, v, np.mean, bins=5)
         assert_array_almost_equal(stat1, stat2)
         assert_array_almost_equal(binx1, binx2)
         assert_array_almost_equal(biny1, biny2)
@@ -163,6 +208,14 @@ class TestBinnedStatistic(object):
 
         assert_array_almost_equal(count1, count2)
         assert_array_almost_equal(edges1, edges2)
+
+    def test_dd_result_attributes(self):
+        X = self.X
+        v = self.v
+
+        res = binned_statistic_dd(X, v, 'count', bins=3)
+        attributes = ('statistic', 'bin_edges', 'binnumber')
+        check_named_results(res, attributes)
 
     def test_dd_sum(self):
         X = self.X

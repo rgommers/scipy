@@ -389,6 +389,7 @@ import numpy as np
 _DTYPE_ERROR = ValueError("invalid input dtype (input must be float64 or complex128)")
 _TYPE_ERROR = TypeError("invalid input type (must be array or LinearOperator)")
 
+
 def _is_real(A):
     try:
         if A.dtype == np.complex128:
@@ -757,7 +758,7 @@ def estimate_spectral_norm(A, its=20):
     A : :class:`scipy.sparse.linalg.LinearOperator`
         Matrix given as a :class:`scipy.sparse.linalg.LinearOperator` with the
         `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
-    its : int
+    its : int, optional
         Number of power method iterations.
 
     Returns
@@ -793,7 +794,7 @@ def estimate_spectral_norm_diff(A, B, its=20):
     B : :class:`scipy.sparse.linalg.LinearOperator`
         Second matrix given as a :class:`scipy.sparse.linalg.LinearOperator` with
         the `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
-    its : int
+    its : int, optional
         Number of power method iterations.
 
     Returns

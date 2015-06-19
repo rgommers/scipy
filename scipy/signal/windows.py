@@ -1,14 +1,17 @@
 """The suite of window functions."""
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 from scipy import special, linalg
 from scipy.fftpack import fft
+from scipy._lib.six import string_types
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
            'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
-           'slepian', 'cosine', 'hann', 'get_window']
+           'slepian', 'cosine', 'hann', 'exponential', 'tukey', 'get_window']
 
 
 def boxcar(M, sym=True):
@@ -247,10 +250,10 @@ def blackman(M, sym=True):
     r"""
     Return a Blackman window.
 
-    The Blackman window is a taper formed by using the the first three
-    terms of a summation of cosines. It was designed to have close to the
-    minimal leakage possible.  It is close to optimal, only slightly worse
-    than a Kaiser window.
+    The Blackman window is a taper formed by using the first three terms of
+    a summation of cosines. It was designed to have close to the minimal
+    leakage possible.  It is close to optimal, only slightly worse than a
+    Kaiser window.
 
     Parameters
     ----------
@@ -537,7 +540,7 @@ def bartlett(M, sym=True):
     -------
     w : ndarray
         The triangular window, with the first and last samples equal to zero
-        and the maximum value normalized to 1 (though the value 1 does not 
+        and the maximum value normalized to 1 (though the value 1 does not
         appear if `M` is even and `sym` is True).
 
     Notes
@@ -642,7 +645,7 @@ def hann(M, sym=True):
     .. math::  w(n) = 0.5 - 0.5 \cos\left(\frac{2\pi{n}}{M-1}\right)
                \qquad 0 \leq n \leq M-1
 
-    The window was named for Julius van Hann, an Austrian meterologist. It is
+    The window was named for Julius von Hann, an Austrian meteorologist. It is
     also known as the Cosine Bell. It is sometimes erroneously referred to as
     the "Hanning" window, from the use of "hann" as a verb in the original
     paper and confusion with the very similar Hamming window.
@@ -704,6 +707,95 @@ def hann(M, sym=True):
     return w
 
 hanning = hann
+
+
+def tukey(M, alpha=0.5, sym=True):
+    r"""Return a Tukey window, also known as a tapered cosine window.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    alpha : float, optional
+        Shape parameter of the Tukey window, representing the faction of the
+        window inside the cosine tapered region.
+        If zero, the Tukey window is equivalent to a rectangular window.
+        If one, the Tukey window is equivalent to a Hann window.
+    sym : bool, optional
+        When True (default), generates a symmetric window, for use in filter
+        design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if `M` is even and `sym` is True).
+
+    References
+    ----------
+    .. [1] Harris, Fredric J. (Jan 1978). "On the use of Windows for Harmonic
+           Analysis with the Discrete Fourier Transform". Proceedings of the
+           IEEE 66 (1): 51-83. doi:10.1109/PROC.1978.10837
+    .. [2] Wikipedia, "Window function",
+           http://en.wikipedia.org/wiki/Window_function#Tukey_window
+
+    Examples
+    --------
+    Plot the window and its frequency response:
+
+    >>> from scipy import signal
+    >>> from scipy.fftpack import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = signal.tukey(51)
+    >>> plt.plot(window)
+    >>> plt.title("Tukey window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+    >>> plt.ylim([0, 1.1])
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the Tukey window")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+
+    """
+    if M < 1:
+        return np.array([])
+    if M == 1:
+        return np.ones(1, 'd')
+
+    if alpha <= 0:
+        return np.ones(M, 'd')
+    elif alpha >= 1.0:
+        return hann(M, sym=sym)
+
+    odd = M % 2
+    if not sym and not odd:
+        M = M + 1
+
+    n = np.arange(0, M)
+    width = int(np.floor(alpha*(M-1)/2.0))
+    n1 = n[0:width+1]
+    n2 = n[width+1:M-width-1]
+    n3 = n[M-width-1:]
+
+    w1 = 0.5 * (1 + np.cos(np.pi * (-1 + 2.0*n1/alpha/(M-1))))
+    w2 = np.ones(n2.shape)
+    w3 = 0.5 * (1 + np.cos(np.pi * (-2.0/alpha + 1 + 2.0*n3/alpha/(M-1))))
+
+    w = np.concatenate((w1, w2, w3))
+
+    if not sym and not odd:
+        w = w[:-1]
+    return w
 
 
 def barthann(M, sym=True):
@@ -1155,9 +1247,9 @@ def chebwin(M, at, sym=True):
               \cosh^{-1}(10^\frac{A}{20}) \right ]
 
     and 0 <= abs(k) <= M-1. A is the attenuation in decibels (`at`).
-    
-    The time domain window is then generated using the IFFT, so 
-    power-of-two `M` are the fastest to generate, and prime number `M` are 
+
+    The time domain window is then generated using the IFFT, so
+    power-of-two `M` are the fastest to generate, and prime number `M` are
     the slowest.
 
     The equiripple condition in the frequency domain creates impulses in the
@@ -1200,6 +1292,13 @@ def chebwin(M, at, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    if np.abs(at) < 45:
+        warnings.warn("This window is not suitable for spectral analysis "
+                      "for attenuation values lower than about 45dB because "
+                      "the equivalent noise bandwidth of a Chebyshev window "
+                      "does not grow monotonically with increasing sidelobe "
+                      "attenuation when the attenuation is smaller than "
+                      "about 45 dB.")
     if M < 1:
         return np.array([])
     if M == 1:
@@ -1227,14 +1326,14 @@ def chebwin(M, at, sym=True):
     if M % 2:
         w = np.real(fft(p))
         n = (M + 1) // 2
-        w = w[:n] / w[0]
+        w = w[:n]
         w = np.concatenate((w[n - 1:0:-1], w))
     else:
         p = p * np.exp(1.j * np.pi / M * np.r_[0:M])
         w = np.real(fft(p))
         n = M // 2 + 1
-        w = w / w[1]
         w = np.concatenate((w[n - 1:0:-1], w[1:n]))
+    w = w / max(w)
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -1288,9 +1387,6 @@ def slepian(M, width, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if (M * width > 27.38):
-        raise ValueError("Cannot reliably obtain Slepian sequences for"
-              " M*width > 27.38.")
     if M < 1:
         return np.array([])
     if M == 1:
@@ -1299,26 +1395,25 @@ def slepian(M, width, sym=True):
     if not sym and not odd:
         M = M + 1
 
-    twoF = width / 2.0
-    alpha = (M - 1) / 2.0
-    m = np.arange(0, M) - alpha
-    n = m[:, np.newaxis]
-    k = m[np.newaxis, :]
-    AF = twoF * special.sinc(twoF * (n - k))
-    [lam, vec] = linalg.eig(AF)
-    ind = np.argmax(abs(lam), axis=-1)
-    w = np.abs(vec[:, ind])
-    w = w / max(w)
+    # our width is the full bandwidth
+    width = width / 2
+    # to match the old version
+    width = width / 2
+    m = np.arange(M, dtype='d')
+    H = np.zeros((2, M))
+    H[0, 1:] = m[1:] * (M - m[1:]) / 2
+    H[1, :] = ((M - 1 - 2 * m) / 2)**2 * np.cos(2 * np.pi * width)
+
+    _, win = linalg.eig_banded(H, select='i', select_range=(M-1, M-1))
+    win = win.ravel() / win.max()
 
     if not sym and not odd:
-        w = w[:-1]
-    return w
+        win = win[:-1]
+    return win
 
 
 def cosine(M, sym=True):
     """Return a window with a simple cosine shape.
-
-    .. versionadded:: 0.13.0
 
     Parameters
     ----------
@@ -1335,6 +1430,11 @@ def cosine(M, sym=True):
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if `M` is even and `sym` is True).
+
+    Notes
+    -----
+
+    .. versionadded:: 0.13.0
 
     Examples
     --------
@@ -1377,6 +1477,137 @@ def cosine(M, sym=True):
     return w
 
 
+def exponential(M, center=None, tau=1., sym=True):
+    r"""Return an exponential (or Poisson) window.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    center : float, optional
+        Parameter defining the center location of the window function.
+        The default value if not given is ``center = (M-1) / 2``.  This
+        parameter must take its default value for symmetric windows.
+    tau : float, optional
+        Parameter defining the decay.  For ``center = 0`` use
+        ``tau = -(M-1) / ln(x)`` if ``x`` is the fraction of the window
+        remaining at the end.
+    sym : bool, optional
+        When True (default), generates a symmetric window, for use in filter
+        design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if `M` is even and `sym` is True).
+
+    Notes
+    -----
+    The Exponential window is defined as
+
+    .. math::  w(n) = e^{-|n-center| / \tau}
+
+    References
+    ----------
+    S. Gade and H. Herlufsen, "Windows to FFT analysis (Part I)",
+    Technical Review 3, Bruel & Kjaer, 1987.
+
+    Examples
+    --------
+    Plot the symmetric window and its frequency response:
+
+    >>> from scipy import signal
+    >>> from scipy.fftpack import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> M = 51
+    >>> tau = 3.0
+    >>> window = signal.exponential(M, tau=tau)
+    >>> plt.plot(window)
+    >>> plt.title("Exponential Window (tau=3.0)")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -35, 0])
+    >>> plt.title("Frequency response of the Exponential window (tau=3.0)")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+
+    This function can also generate non-symmetric windows:
+
+    >>> tau2 = -(M-1) / np.log(0.01)
+    >>> window2 = signal.exponential(M, 0, tau2, False)
+    >>> plt.figure()
+    >>> plt.plot(window2)
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+    """
+    if sym and center is not None:
+        raise ValueError("If sym==True, center must be None.")
+    if M < 1:
+        return np.array([])
+    if M == 1:
+        return np.ones(1, 'd')
+    odd = M % 2
+    if not sym and not odd:
+        M = M + 1
+    if center is None:
+        center = (M-1) / 2
+
+    n = np.arange(0, M)
+    w = np.exp(-np.abs(n-center) / tau)
+    if not sym and not odd:
+        w = w[:-1]
+
+    return w
+
+
+_win_equiv_raw = {
+    ('barthann', 'brthan', 'bth'): (barthann, False),
+    ('bartlett', 'bart', 'brt'): (bartlett, False),
+    ('blackman', 'black', 'blk'): (blackman, False),
+    ('blackmanharris', 'blackharr', 'bkh'): (blackmanharris, False),
+    ('bohman', 'bman', 'bmn'): (bohman, False),
+    ('boxcar', 'box', 'ones',
+        'rect', 'rectangular'): (boxcar, False),
+    ('chebwin', 'cheb'): (chebwin, True),
+    ('cosine', 'halfcosine'): (cosine, False),
+    ('exponential', 'poisson'): (exponential, True),
+    ('flattop', 'flat', 'flt'): (flattop, False),
+    ('gaussian', 'gauss', 'gss'): (gaussian, True),
+    ('general gaussian', 'general_gaussian',
+        'general gauss', 'general_gauss', 'ggs'): (general_gaussian, True),
+    ('hamming', 'hamm', 'ham'): (hamming, False),
+    ('hanning', 'hann', 'han'): (hann, False),
+    ('kaiser', 'ksr'): (kaiser, True),
+    ('nuttall', 'nutl', 'nut'): (nuttall, False),
+    ('parzen', 'parz', 'par'): (parzen, False),
+    ('slepian', 'slep', 'optimal', 'dpss', 'dss'): (slepian, True),
+    ('triangle', 'triang', 'tri'): (triang, False),
+    ('tukey', 'tuk'): (tukey, True),
+}
+
+# Fill dict with all valid window name strings
+_win_equiv = {}
+for k, v in _win_equiv_raw.items():
+    for key in k:
+        _win_equiv[key] = v[0]
+
+# Keep track of which windows need additional parameters
+_needs_param = set()
+for k, v in _win_equiv_raw.items():
+    if v[1]:
+        _needs_param.update(k)
+
+
 def get_window(window, Nx, fftbins=True):
     """
     Return a window.
@@ -1400,12 +1631,11 @@ def get_window(window, Nx, fftbins=True):
     -----
     Window types:
 
-        boxcar, triang, blackman, hamming, hann, bartlett, flattop,
-        parzen, bohman, blackmanharris, nuttall, barthann,
-        kaiser (needs beta), gaussian (needs std),
-        general_gaussian (needs power, width),
+        boxcar, triang, blackman, hamming, hann, bartlett, flattop, parzen,
+        bohman, blackmanharris, nuttall, barthann, kaiser (needs beta),
+        gaussian (needs std), general_gaussian (needs power, width),
         slepian (needs width), chebwin (needs attenuation)
-
+        exponential (needs decay scale), tukey (needs taper fraction)
 
     If the window requires no parameters, then `window` can be a string.
 
@@ -1442,55 +1672,19 @@ def get_window(window, Nx, fftbins=True):
             winstr = window[0]
             if len(window) > 1:
                 args = window[1:]
-        elif isinstance(window, str):
-            if window in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
-                        'general gaussian', 'general_gaussian',
-                        'general gauss', 'general_gauss', 'ggs',
-                        'slepian', 'optimal', 'slep', 'dss',
-                        'chebwin', 'cheb']:
+        elif isinstance(window, string_types):
+            if window in _needs_param:
                 raise ValueError("The '" + window + "' window needs one or "
-                                    "more parameters  -- pass a tuple.")
+                                 "more parameters -- pass a tuple.")
             else:
                 winstr = window
-
-        if winstr in ['blackman', 'black', 'blk']:
-            winfunc = blackman
-        elif winstr in ['triangle', 'triang', 'tri']:
-            winfunc = triang
-        elif winstr in ['hamming', 'hamm', 'ham']:
-            winfunc = hamming
-        elif winstr in ['bartlett', 'bart', 'brt']:
-            winfunc = bartlett
-        elif winstr in ['hanning', 'hann', 'han']:
-            winfunc = hann
-        elif winstr in ['blackmanharris', 'blackharr', 'bkh']:
-            winfunc = blackmanharris
-        elif winstr in ['parzen', 'parz', 'par']:
-            winfunc = parzen
-        elif winstr in ['bohman', 'bman', 'bmn']:
-            winfunc = bohman
-        elif winstr in ['nuttall', 'nutl', 'nut']:
-            winfunc = nuttall
-        elif winstr in ['barthann', 'brthan', 'bth']:
-            winfunc = barthann
-        elif winstr in ['flattop', 'flat', 'flt']:
-            winfunc = flattop
-        elif winstr in ['kaiser', 'ksr']:
-            winfunc = kaiser
-        elif winstr in ['gaussian', 'gauss', 'gss']:
-            winfunc = gaussian
-        elif winstr in ['general gaussian', 'general_gaussian',
-                        'general gauss', 'general_gauss', 'ggs']:
-            winfunc = general_gaussian
-        elif winstr in ['boxcar', 'box', 'ones', 'rect', 'rectangular']:
-            winfunc = boxcar
-        elif winstr in ['slepian', 'slep', 'optimal', 'dpss', 'dss']:
-            winfunc = slepian
-        elif winstr in ['cosine', 'halfcosine']:
-            winfunc = cosine
-        elif winstr in ['chebwin', 'cheb']:
-            winfunc = chebwin
         else:
+            raise ValueError("%s as window type is not supported." %
+                             str(type(window)))
+
+        try:
+            winfunc = _win_equiv[winstr]
+        except KeyError:
             raise ValueError("Unknown window type.")
 
         params = (Nx,) + args + (sym,)

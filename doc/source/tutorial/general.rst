@@ -16,7 +16,7 @@ The additional benefit of basing SciPy on Python is that this also makes a
 powerful programming language available for use in developing
 sophisticated programs and specialized applications. Scientific
 applications using SciPy benefit from the development of
-additional modules in numerous niche's of the software landscape by
+additional modules in numerous niches of the software landscape by
 developers across the world. Everything from parallel programming to
 web and data-base subroutines and classes have been made available to
 the Python programmer. All of this power is available in addition to
@@ -32,7 +32,6 @@ For brevity and convenience, we will often assume that the main
 packages (numpy, scipy, and matplotlib) have been imported as::
 
     >>> import numpy as np
-    >>> import scipy as sp
     >>> import matplotlib as mpl
     >>> import matplotlib.pyplot as plt
 
@@ -106,11 +105,11 @@ signature, and documentation string.
 
 The pydoc method of ``help`` is sophisticated but uses a pager to display
 the text. Sometimes this can interfere with the terminal you are
-running the interactive session within. A scipy-specific help system
-is also available under the command ``sp.info``. The signature and
+running the interactive session within. A numpy/scipy-specific help system
+is also available under the command ``numpy.info``. The signature and
 documentation string for the object passed to the ``help`` command are
 printed to standard output (or to a writeable object passed as the
-third argument). The second keyword argument of ``sp.info`` defines
+third argument). The second keyword argument of ``numpy.info`` defines
 the maximum width of the line for printing. If a module is passed as
 the argument to help than a list of the functions and classes defined
 in that module is printed. For example:

@@ -10,8 +10,6 @@ List the authors who contributed within a given revision interval.
 
 from __future__ import division, print_function, absolute_import
 
-from subprocess import Popen, PIPE, call
-import tempfile
 import optparse
 import re
 import sys
@@ -19,7 +17,7 @@ import os
 import subprocess
 
 try:
-    from scipy.lib.six import u, PY3
+    from scipy._lib.six import u, PY3
 except ImportError:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__),
                                     os.pardir, 'scipy', 'lib'))
@@ -29,13 +27,22 @@ if PY3:
 else:
     stdout_b = sys.stdout
 
+
 NAME_MAP = {
     u('87'): u('Han Genuit'),
     u('aarchiba'): u('Anne Archibald'),
     u('alex'): u('Alex Griffing'),
+    u('aman-thakral'): u('Aman Thakral'),
+    u('andbo'): u('Anders Bech Borchersen'),
+    u('Andreea_G'): u('Andreea Georgescu'),
+    u('Andreas H'): u('Andreas Hilboll'),
     u('argriffing'): u('Alex Griffing'),
     u('arichar6'): u('Steve Richardson'),
     u('ArmstrongJ'): u('Jeff Armstrong'),
+    u('axiru'): u('@axiru'),
+    u('Benny'): u('Benny Malengier'),
+    u('bewithaman'): u('Aman Singh'),
+    u('brettrmurphy'): u('Brett R. Murphy'),
     u('cgholke'): u('Christoph Gohlke'),
     u('cgohlke'): u('Christoph Gohlke'),
     u('chris.burns'): u('Chris Burns'),
@@ -43,7 +50,9 @@ NAME_MAP = {
     u('ckuster'): u('Christopher Kuster'),
     u('Collin Stocks'): u('Collin RM Stocks'),
     u('cnovak'): u('Clemens Novak'),
+    u('ctokheim'): u('Collin Tokheim'),
     u('Daniel Smith'): u('Daniel B. Smith'),
+    u('Dapid'): u('David Menendez Hurtado'),
     u('dellsystem'): u('Wendy Liu'),
     u('Derek Homeir'): u('Derek Homeier'),
     u('Derek Homier'): u('Derek Homeier'),
@@ -51,30 +60,62 @@ NAME_MAP = {
     u('dhuard'): u('David Huard'),
     u('dsimcha'): u('David Simcha'),
     u('edschofield'): u('Ed Schofield'),
+    u('endolith'): u('@endolith'),
+    u('Endolith'): u('@endolith'),
+    u('e-q'): u('Eric Quintero'),
+    u('Eric89GXL'): u('Eric Larson'),
     u('Gael varoquaux'): u('Gaël Varoquaux'),
     u('gotgenes'): u('Chris Lasher'),
     u('Han'): u('Han Genuit'),
+    u('Helder'): u('Helder Cesar'),
+    u('HelmutAIT'): u('Helmut Toplitzer'),
+    u('honnorat'): u('Marc Honnorat'),
+    u('Horta'): u('Danilo Horta'),
+    u('I--P'): u('Irvin Probst'),
     u('Jake Vanderplas'): u('Jacob Vanderplas'),
+    u('jamestwebber'): u('James T. Webber'),
+    u('jaimefrio'): u('Jaime Fernandez del Rio'),
+    u('janani'): u('Janani Padmanabhan'),
+    u('Janani'): u('Janani Padmanabhan'),
+    u('jesseengel'): u('Jesse Engel'),
     u('josef'): u('Josef Perktold'),
     u('josef-pktd'): u('Josef Perktold'),
     u('kat'): u('Kat Huang'),
+    u('kshramt'): u('Amato Kasahara'),
+    u('Lars'): u('Lars Buitinck'),
+    u('ldamewood'): u('Liam Damewood'),
+    u('levelfour'): u('Fukumu Tsutsumi'),
+    u('lmwang'): u('Liming Wang'),
+    u('loluengo'): u('Lorenzo Luengo'),
+    u('manns'): u('Martin Manns'),
     u('Mark'): u('Mark Wiebe'),
     u('mdroe'): u('Michael Droettboom'),
+    u('maniteja123'): u('Maniteja Nandana'),
+    u('Matteo Visconti dOC'): u('Matteo Visconti'),
+    u('newman101'): u('Juha Remes'),
+    u('nicola montecchio'): u('Nicola Montecchio'),
+    u('nmoya'): u('Nikolas Moya'),
+    u('patricksnape'): u('Patrick Snape'),
     u('pbrod'): u('Per Brodtkorb'),
+    u('Perry'): u('Perry Lee'),
     u('pierregm'): u('Pierre GM'),
+    u('plafl'): u('Pedro López-Adeva Fernández-Layos'),
+    u('polyatail'): u('Andrew Sczesnak'),
     u('rgommers'): u('Ralf Gommers'),
+    u('RoyalTS'): u('Tobias Schmidt'),
+    u('Rupak'): u('Rupak Das'),
     u('sebhaase'): u('Sebastian Haase'),
     u('SytseK'): u('Sytse Knypstra'),
     u('Takuya OSHIMA'): u('Takuya Oshima'),
+    u('terrycojones'): u('Terry Jones'),
+    u('tiagopereira'): u('Tiago M.D. Pereira'),
     u('tonysyu'): u('Tony S. Yu'),
     u('Travis E. Oliphant'): u('Travis Oliphant'),
+    u('ubuntu'): u('Aldrian Obaja'),
+    u('wa03'): u('Josh Lawrence'),
     u('warren.weckesser'): u('Warren Weckesser'),
     u('weathergod'): u('Benjamin Root'),
-    u('Andreas H'): u('Andreas Hilboll'),
-    u('honnorat'): u('Marc Honnorat'),
-    u('lmwang'): u('Liming Wang'),
-    u('wa03'): u('Josh Lawrence'),
-    u('loluengo'): u('Lorenzo Luengo'),
+    u('wiredfool'): u('Eric Soroos'),
     u('Zhenya'): u('Evgeni Burovski'),
 }
 
@@ -159,9 +200,6 @@ def main():
 Authors
 =======
 
-This release contains work by the following people (contributed at least
-one patch to this release, names in alphabetical order):
-
 """)
 
     for author in authors:
@@ -173,6 +211,7 @@ one patch to this release, names in alphabetical order):
     stdout_b.write(("""
 A total of %(count)d people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
 
 """ % dict(count=len(authors))).encode('utf-8'))
 

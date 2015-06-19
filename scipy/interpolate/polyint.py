@@ -1,15 +1,16 @@
 from __future__ import division, print_function, absolute_import
 
-import numpy as np
-from scipy.misc import factorial
+import warnings
 
-from scipy.lib.six import xrange
+import numpy as np
+from scipy.special import factorial
+
+from scipy._lib.six import xrange
 
 
 __all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator",
            "barycentric_interpolate", "PiecewisePolynomial",
-           "piecewise_polynomial_interpolate", "approximate_taylor_polynomial",
-           "PchipInterpolator", "pchip_interpolate", "pchip"]
+           "piecewise_polynomial_interpolate", "approximate_taylor_polynomial"]
 
 
 def _isscalar(x):
@@ -25,7 +26,31 @@ class _Interpolator1D(object):
     actual interpolator can assume the y-data is of shape (n, r) where
     `n` is the number of x-points, and `r` the number of variables,
     and use self.dtype as the y-data type.
+
+    Attributes
+    ----------
+    _y_axis
+        Axis along which the interpolation goes in the original array
+    _y_extra_shape
+        Additional trailing shape of the input arrays, excluding
+        the interpolation axis.
+    dtype
+        Dtype of the y-data arrays. Can be set via set_dtype, which
+        forces it to be float or complex.
+
+    Methods
+    -------
+    __call__
+    _prepare_x
+    _finish_y
+    _reshape_yi
+    _set_yi
+    _set_dtype
+    _evaluate
+
     """
+
+    __slots__ = ('_y_axis', '_y_extra_shape', 'dtype')
 
     def __init__(self, xi=None, yi=None, axis=None):
         self._y_axis = axis
@@ -40,12 +65,12 @@ class _Interpolator1D(object):
 
         Parameters
         ----------
-        x : array-like
+        x : array_like
             Points to evaluate the interpolant at.
 
         Returns
         -------
-        y : array-like
+        y : array_like
             Interpolated values. Shape is determined by replacing
             the interpolation axis in the original array with the shape of x.
 
@@ -54,9 +79,18 @@ class _Interpolator1D(object):
         y = self._evaluate(x)
         return self._finish_y(y, x_shape)
 
+    def _evaluate(self, x):
+        """
+        Actually evaluate the value of the interpolator.
+        """
+        raise NotImplementedError()
+
     def _prepare_x(self, x):
         """Reshape input x array to 1-D"""
         x = np.asarray(x)
+        if not np.issubdtype(x.dtype, np.inexact):
+            # Cast integers etc to floats
+            x = x.astype(float)
         x_shape = x.shape
         return x.ravel(), x_shape
 
@@ -117,10 +151,9 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
 
         Parameters
         ----------
-        x : array-like
+        x : array_like
             Point or points at which to evaluate the derivatives
-
-        der : None or integer
+        der : int or None, optional
             How many derivatives to extract; None for all potentially
             nonzero derivatives (that is a number equal to the number
             of points). This number includes the function value as 0th
@@ -162,7 +195,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
 
         Parameters
         ----------
-        x : array-like
+        x : array_like
             Point or points at which to evaluate the derivatives
 
         der : integer, optional
@@ -203,9 +236,9 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
 
     Parameters
     ----------
-    xi : array-like, length N
+    xi : array_like, length N
         Known x-coordinates. Must be sorted in increasing order.
-    yi : array-like
+    yi : array_like
         Known y-coordinates. When an xi occurs two or more times in
         a row, the corresponding yi's represent derivative values.
     axis : int, optional
@@ -321,7 +354,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
         return cn[:der]
 
 
-def krogh_interpolate(xi,yi,x,der=0,axis=0):
+def krogh_interpolate(xi, yi, x, der=0, axis=0):
     """
     Convenience function for polynomial interpolation.
 
@@ -336,7 +369,7 @@ def krogh_interpolate(xi,yi,x,der=0,axis=0):
         vectors of length R, or scalars if R=1.
     x : array_like
         Point or points at which to evaluate the derivatives.
-    der : int or list
+    der : int or list, optional
         How many derivatives to extract; None for all potentially
         nonzero derivatives (that is a number equal to the number
         of points), or a list of derivatives to extract. This number
@@ -442,10 +475,10 @@ class BarycentricInterpolator(_Interpolator1D):
 
     Parameters
     ----------
-    xi : array-like
+    xi : array_like
         1-d array of x coordinates of the points the polynomial
         should pass through
-    yi : array-like
+    yi : array_like, optional
         The y coordinates of the points the polynomial should pass through.
         If None, the y values will be supplied later via the `set_y` method.
     axis : int, optional
@@ -547,12 +580,12 @@ class BarycentricInterpolator(_Interpolator1D):
 
         Parameters
         ----------
-        x : array-like
+        x : array_like
             Points to evaluate the interpolant at.
 
         Returns
         -------
-        y : array-like
+        y : array_like
             Interpolated values. Shape is determined by replacing
             the interpolation axis in the original array with the shape of x.
 
@@ -645,34 +678,41 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
 
     Parameters
     ----------
-    xi : array-like
-        a sorted 1-d array of x-coordinates
-    yi : array-like or list of array-likes
-        yi[i][j] is the j-th derivative known at xi[i]   (for axis=0)
-    orders : list of integers, or integer
-        a list of polynomial orders, or a single universal order
-    direction : {None, 1, -1}
-        indicates whether the xi are increasing or decreasing
-        +1 indicates increasing
-        -1 indicates decreasing
-        None indicates that it should be deduced from the first two xi
+    xi : array_like
+        A sorted 1-d array of x-coordinates.
+    yi : array_like or list of array_likes
+        ``yi[i][j]`` is the j-th derivative known at ``xi[i]`` (for ``axis=0``).
+    orders : list of int, or int, optional
+        A list of polynomial orders, or a single universal order.
+    direction : {None, 1, -1}, optional
+        Indicates whether the `xi` are increasing or decreasing:
+
+          +1 : increasing values
+
+          -1 : decreasing values
+
+          None : direction will be deduced from the first two elements of `xi`
+
     axis : int, optional
-        Axis in the yi array corresponding to the x-coordinate values.
+        Axis in the `yi` array corresponding to the x-coordinate values.
 
     Notes
     -----
-    If orders is None, or orders[i] is None, then the degree of the
-    polynomial segment is exactly the degree required to match all i
-    available derivatives at both endpoints. If orders[i] is not None,
+    If orders is None, or ``orders[i]`` is None, then the degree of the
+    polynomial segment is exactly the degree required to match all ``i``
+    available derivatives at both endpoints.  If ``orders[i]`` is not None,
     then some derivatives will be ignored. The code will try to use an
     equal number of derivatives from each end; if the total number of
     derivatives needed is odd, it will prefer the rightmost endpoint. If
     not enough derivatives are available, an exception is raised.
 
     """
-
     def __init__(self, xi, yi, orders=None, direction=None, axis=0):
         _Interpolator1DWithDerivatives.__init__(self, axis=axis)
+
+        warnings.warn('PiecewisePolynomial is deprecated in scipy 0.14. '
+                      'Use BPoly.from_derivatives instead.',
+                category=DeprecationWarning)
 
         if axis != 0:
             try:
@@ -716,7 +756,10 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
         n2 = min(n-n1,len(y2))
         n1 = min(n-n2,len(y1))
         if n1+n2 != n:
-            raise ValueError("Point %g has %d derivatives, point %g has %d derivatives, but order %d requested" % (x1, len(y1), x2, len(y2), order))
+            raise ValueError("Point %g has %d derivatives, point %g has %d "
+                             "derivatives, but order %d requested" % (x1,
+                             len(y1), x2, len(y2), order))
+
         if not (n1 <= len(y1) and n2 <= len(y2)):
             raise ValueError("`order` input incompatible with length y1 or y2.")
 
@@ -737,12 +780,12 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
         Parameters
         ----------
         xi : float
-            Input
+            Point to add.
         yi : array_like
-            `yi` is the list of derivatives known at `xi`
-        order : integer or None
-            a polynomial order, or instructions to use the highest
-            possible order
+            `yi` is the list of derivatives known at `xi`.
+        order : int or None, optional
+            A polynomial order, or instructions to use the highest possible
+            order.
 
         """
         yi = self._reshape_yi(yi, check=True)
@@ -751,7 +794,8 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
         if self.direction is None:
             self.direction = np.sign(xi-self.xi[-1])
         elif (xi-self.xi[-1])*self.direction < 0:
-            raise ValueError("x coordinates must be in the %d direction: %s" % (self.direction, self.xi))
+            raise ValueError("x coordinates must be in the %d direction: %s" % (
+                             self.direction, self.xi))
 
         self.xi.append(xi)
         self.yi.append(yi)
@@ -780,16 +824,8 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
         yi : list of lists of length N1
             ``yi[i]`` (if ``axis == 0``) is the list of derivatives known
             at ``xi[i]``.
-        orders : int or list of ints
+        orders : int or list of ints, optional
             A list of polynomial orders, or a single universal order.
-        direction : {None, 1, -1}
-            Indicates whether the `xi` are increasing or decreasing.
-
-                +1 indicates increasing
-
-                -1 indicates decreasing
-
-            None indicates that it should be deduced from the first two `xi`.
 
         """
         if self._y_axis == 0:
@@ -838,7 +874,7 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
         return y
 
 
-def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0,axis=0):
+def piecewise_polynomial_interpolate(xi, yi, x, orders=None, der=0, axis=0):
     """
     Convenience function for piecewise polynomial interpolation.
 
@@ -852,7 +888,7 @@ def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0,axis=0):
         Coordinates at which to evalualte the polynomial.
     orders : int or list of ints, optional
         A list of polynomial orders, or a single universal order.
-    der : int or list
+    der : int or list, optional
         How many derivatives to extract; None for all potentially
         nonzero derivatives (that is a number equal to the number
         of points), or a list of derivatives to extract. This number
@@ -893,139 +929,3 @@ def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0,axis=0):
         return P.derivative(x,der=der)
     else:
         return P.derivatives(x,der=np.amax(der)+1)[der]
-
-
-class PchipInterpolator(PiecewisePolynomial):
-    """PCHIP 1-d monotonic cubic interpolation
-
-    x and y are arrays of values used to approximate some function f,
-    with ``y = f(x)``.  The interpolant uses monotonic cubic splines
-    to find the value of new points.
-
-    Parameters
-    ----------
-    x : ndarray
-        A 1-D array of monotonically increasing real values.  `x` cannot
-        include duplicate values (otherwise f is overspecified)
-    y : ndarray
-        A 1-D array of real values.  `y`'s length along the interpolation
-        axis must be equal to the length of `x`.
-    axis : int, optional
-        Axis in the yi array corresponding to the x-coordinate values.
-
-    Notes
-    -----
-    Assumes x is sorted in monotonic order (e.g. ``x[1] > x[0]``).
-
-    """
-    def __init__(self, x, y, axis=0):
-        x = np.asarray(x)
-        y = np.asarray(y)
-
-        axis = axis % y.ndim
-
-        xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
-        yp = np.rollaxis(y, axis)
-
-        data = np.empty((yp.shape[0], 2) + yp.shape[1:], y.dtype)
-        data[:,0] = yp
-        data[:,1] = PchipInterpolator._find_derivatives(xp, yp)
-
-        s = list(range(2, y.ndim + 1))
-        s.insert(axis, 1)
-        s.insert(axis, 0)
-        data = data.transpose(s)
-
-        PiecewisePolynomial.__init__(self, x, data, orders=3, direction=None,
-                                     axis=axis)
-
-    @staticmethod
-    def _edge_case(m0, d1, out):
-        m0 = np.atleast_1d(m0)
-        d1 = np.atleast_1d(d1)
-        mask = (d1 != 0) & (m0 != 0)
-        out[mask] = 1.0/(1.0/m0[mask]+1.0/d1[mask])
-
-    @staticmethod
-    def _find_derivatives(x, y):
-        # Determine the derivatives at the points y_k, d_k, by using
-        #  PCHIP algorithm is:
-        # We choose the derivatives at the point x_k by
-        # Let m_k be the slope of the kth segment (between k and k+1)
-        # If m_k=0 or m_{k-1}=0 or sgn(m_k) != sgn(m_{k-1}) then d_k == 0
-        # else use weighted harmonic mean:
-        #   w_1 = 2h_k + h_{k-1}, w_2 = h_k + 2h_{k-1}
-        #   1/d_k = 1/(w_1 + w_2)*(w_1 / m_k + w_2 / m_{k-1})
-        #   where h_k is the spacing between x_k and x_{k+1}
-
-        y_shape = y.shape
-        if y.ndim == 1:
-            # So that _edge_case doesn't end up assigning to scalars
-            x = x[:,None]
-            y = y[:,None]
-
-        hk = x[1:] - x[:-1]
-        mk = (y[1:] - y[:-1]) / hk
-        smk = np.sign(mk)
-        condition = ((smk[1:] != smk[:-1]) | (mk[1:] == 0) | (mk[:-1] == 0))
-
-        w1 = 2*hk[1:] + hk[:-1]
-        w2 = hk[1:] + 2*hk[:-1]
-        # values where division by zero occurs will be excluded
-        # by 'condition' afterwards
-        with np.errstate(divide='ignore'):
-            whmean = 1.0/(w1+w2)*(w1/mk[1:] + w2/mk[:-1])
-        dk = np.zeros_like(y)
-        dk[1:-1][condition] = 0.0
-        dk[1:-1][~condition] = 1.0/whmean[~condition]
-
-        # For end-points choose d_0 so that 1/d_0 = 1/m_0 + 1/d_1 unless
-        #  one of d_1 or m_0 is 0, then choose d_0 = 0
-        PchipInterpolator._edge_case(mk[0],dk[1], dk[0])
-        PchipInterpolator._edge_case(mk[-1],dk[-2], dk[-1])
-
-        return dk.reshape(y_shape)
-
-
-def pchip_interpolate(xi, yi, x, der=0, axis=0):
-    """
-    Convenience function for pchip interpolation.
-
-    See `PchipInterpolator` for details.
-
-    Parameters
-    ----------
-    xi : array_like
-        A sorted list of x-coordinates, of length N.
-    yi : list of lists
-        yi[i] is the list of derivatives known at xi[i]. Of length N.
-    x : scalar or array_like
-        Of length M.
-    der : integer or list
-        How many derivatives to extract; None for all potentially
-        nonzero derivatives (that is a number equal to the number
-        of points), or a list of derivatives to extract. This number
-        includes the function value as 0th derivative.
-    axis : int, optional
-        Axis in the yi array corresponding to the x-coordinate values.
-
-    See Also
-    --------
-    PchipInterpolator
-
-    Returns
-    -------
-    y : scalar or array_like
-        The result, of length R or length M or M by R,
-
-    """
-    P = PchipInterpolator(xi, yi, axis=axis)
-    if der == 0:
-        return P(x)
-    elif _isscalar(der):
-        return P.derivative(x,der=der)
-    else:
-        return P.derivatives(x,der=np.amax(der)+1)[der]
-
-# Backwards compatibility
-pchip = PchipInterpolator

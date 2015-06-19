@@ -60,14 +60,15 @@ We can list all methods and properties of the distribution with
 ``dir(norm)``.  As it turns out, some of the methods are private
 methods although they are not named as such (their name does not start
 with a leading underscore), for example ``veccdf``, are only available
-for internal calculation.
+for internal calculation (those methods will give warnings when one tries to
+use them, and will be removed at some point).
 
 To obtain the `real` main methods, we list the methods of the frozen
 distribution. (We explain the meaning of a `frozen` distribution
 below).
 
     >>> rv = norm()
-    >>> dir(rv) #reformatted
+    >>> dir(rv)  # reformatted
         ['__class__', '__delattr__', '__dict__', '__doc__', '__getattribute__',
         '__hash__', '__init__', '__module__', '__new__', '__reduce__', '__reduce_ex__',
         '__repr__', '__setattr__', '__str__', '__weakref__', 'args', 'cdf', 'dist',
@@ -132,7 +133,8 @@ function ``ppf``, which is the inverse of the ``cdf``:
     >>> norm.ppf(0.5)
     0.0
 
-To generate a set of random variates: 
+To generate a sequence of random variates, use the ``size`` keyword
+argument:
 
     >>> norm.rvs(size=5)
     array([-0.35687759,  1.34347647, -0.11710531, -1.00725181, -0.51275702])
@@ -142,7 +144,10 @@ Don't think that ``norm.rvs(5)`` generates 5 variates:
     >>> norm.rvs(5)
     7.131624370075814
 
-This brings us, in fact, to the topic of the next subsection.
+Here, ``5`` with no keyword is being interpreted as the first possible
+keyword argument, ``loc``, which is the first of a pair of keyword arguments
+taken by all continuous distributions.
+This brings us to the topic of the next subsection.
 
 
 Shifting and Scaling
@@ -151,12 +156,12 @@ Shifting and Scaling
 All continuous distributions take ``loc`` and ``scale`` as keyword
 parameters to adjust the location and scale of the distribution,
 e.g. for the standard normal distribution the location is the mean and
-the scale is the standard deviation. 
+the scale is the standard deviation.
 
     >>> norm.stats(loc = 3, scale = 4, moments = "mv")
     (array(3.0), array(16.0))
 
-In general the standardized distribution for a random variable ``X``
+In many cases the standardized distribution for a random variable ``X``
 is obtained through the transformation ``(X - loc) / scale``.  The
 default values are ``loc = 0`` and ``scale = 1``.
 
@@ -173,13 +178,22 @@ By applying the scaling rule above, it can be seen that by
 taking ``scale  = 1./lambda`` we get the proper scale.
 
     >>> from scipy.stats import expon
-    >>> expon.mean(scale = 3.)
+    >>> expon.mean(scale=3.)
     3.0
+
+.. note:: Distributions that take shape parameters may
+   require more than simple application of ``loc`` and/or
+   ``scale`` to achieve the desired form.  For example, the
+   distribution of 2-D vector lengths given a constant vector
+   of length :math:`R` perturbed by independent N(0, :math:`\sigma^2`)
+   deviations in each component is
+   rice(:math:`R/\sigma`, scale= :math:`\sigma`).  The first argument
+   is a shape parameter that needs to be scaled along with :math:`x`.
 
 The uniform distribution is also interesting:
 
     >>> from scipy.stats import uniform
-    >>> uniform.cdf([0,1,2,3,4,5], loc = 1, scale = 4)
+    >>> uniform.cdf([0, 1, 2, 3, 4, 5], loc = 1, scale = 4)
     array([ 0.  ,  0.  ,  0.25,  0.5 ,  0.75,  1.  ])
 
 
@@ -192,27 +206,27 @@ to set the ``loc`` parameter. Let's see:
     4.983550784784704
 
 Thus, to explain the output of the example of the last section:
-``norm.rvs(5)` generates a normally distributed random variate with
-mean ``loc=5``.
+``norm.rvs(5)`` generates a single normally distributed random variate with
+mean ``loc=5``, because of the default ``size=1``.
 
-I prefer to set the ``loc`` and ``scale`` parameter explicitly, by
-passing the values as keywords rather than as arguments. This is less
-of a hassle as it may seem. We clarify this below when we explain the
-topic of `freezing a RV`.
+We recommend that you set ``loc`` and ``scale`` parameters explicitly, by
+passing the values as keywords rather than as arguments. Repetition
+can be minimized when calling more than one method of a given RV by
+using the technique of `Freezing a Distribution`_, as explained below.
 
 
 Shape Parameters
 ^^^^^^^^^^^^^^^^
 
 While a general continuous random variable can be shifted and scaled
-with the ``loc`` and ``scale`` parameters, some distributions require 
+with the ``loc`` and ``scale`` parameters, some distributions require
 additional shape parameters. For instance, the gamma distribution, with density
 
 .. math::
 
-    \gamma(x,n) = \frac{\lambda (\lambda x)^{n-1}}{\Gamma(n)} e^{-\lambda x}\;,
- 
-requires the shape parameter :math:`n`. Observe that setting
+    \gamma(x, a) = \frac{\lambda (\lambda x)^{a-1}}{\Gamma(a)} e^{-\lambda x}\;,
+
+requires the shape parameter :math:`a`. Observe that setting
 :math:`\lambda` can be obtained by setting the ``scale`` keyword to
 :math:`1/\lambda`.
 
@@ -243,7 +257,7 @@ Freezing a Distribution
 
 Passing the ``loc`` and ``scale`` keywords time and again can become
 quite bothersome. The concept of `freezing` a RV is used to
-solve such problems. 
+solve such problems.
 
     >>> rv = gamma(1, scale=2.)
 
@@ -256,7 +270,7 @@ instance of the distribution. Let us check this:
     >>> rv.mean(), rv.std()
     (2.0, 2.0)
 
-This is indeed what we should get. 
+This is indeed what we should get.
 
 
 Broadcasting
@@ -306,7 +320,7 @@ of continuous distribution the cumulative distribution function is in
 most standard cases strictly monotonic increasing in the bounds (a,b)
 and has therefore a unique inverse. The cdf of a discrete
 distribution, however, is a step function, hence the inverse cdf,
-i.e., the percent point function, requires a different definition: 
+i.e., the percent point function, requires a different definition:
 
 ::
 
@@ -337,9 +351,9 @@ cdf values, we get the initial integers back, for example
 If we use values that are not at the kinks of the cdf step function, we get
 the next higher integer back:
 
-    >>> hypergeom.ppf(prb+1e-8, M, n, N)
+    >>> hypergeom.ppf(prb + 1e-8, M, n, N)
     array([ 1.,  3.,  5.,  7.])
-    >>> hypergeom.ppf(prb-1e-8, M, n, N)
+    >>> hypergeom.ppf(prb - 1e-8, M, n, N)
     array([ 0.,  2.,  4.,  6.])
 
 
@@ -390,9 +404,6 @@ Remaining Issues
 The distributions in ``scipy.stats`` have recently been corrected and improved
 and gained a considerable test suite, however a few issues remain:
 
-* skew and kurtosis, 3rd and 4th moments and entropy are not thoroughly
-  tested and some coarse testing indicates that there are still some
-  incorrect results left.
 * the distributions have been tested over some range of parameters,
   however in some corner ranges, a few incorrect results may remain.
 * the maximum likelihood estimation in `fit` does not work with
@@ -413,12 +424,12 @@ tests.
 Making a Continuous Distribution, i.e., Subclassing ``rv_continuous``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Making continuous distributions is fairly simple. 
+Making continuous distributions is fairly simple.
 
     >>> from scipy import stats
     >>> class deterministic_gen(stats.rv_continuous):
-    ...     def _cdf(self, x ):
-    ...         return np.where(x<0, 0., 1.)
+    ...     def _cdf(self, x):
+    ...         return np.where(x < 0, 0., 1.)
     ...     def _stats(self):
     ...         return 0., 0., 0., 0.
 
@@ -446,9 +457,9 @@ information about the distribution. Thus, as a cautionary example:
     (4.163336342344337e-13, 0.0)
 
 But this is not correct: the integral over this pdf should be 1. Let's make the
-integration interval smaller: 
+integration interval smaller:
 
-    >>> quad(deterministic.pdf, -1e-3, 1e-3) # warning removed
+    >>> quad(deterministic.pdf, -1e-3, 1e-3)  # warning removed
     (1.000076872229173, 0.0010625571718182458)
 
 This looks better. However, the problem originated from the fact that
@@ -465,7 +476,7 @@ intervals centered around the integers.
 
 **General Info**
 
-From the docstring of rv_discrete, i.e., 
+From the docstring of rv_discrete, i.e.,
 
     >>> from scipy.stats import rv_discrete
     >>> help(rv_discrete)
@@ -481,8 +492,8 @@ Next to this, there are some further requirements for this approach to
 work:
 
 * The keyword `name` is required.
-* The support points of the distribution xk have to be integers. 
-* The number of significant digits (decimals) needs to be specified. 
+* The support points of the distribution xk have to be integers.
+* The number of significant digits (decimals) needs to be specified.
 
 In fact, if the last two requirements are not satisfied an exception
 may be raised or the resulting numbers may be incorrect.
@@ -893,7 +904,7 @@ is called a rug plot):
     >>> ax.plot(x1, np.zeros(x1.shape), 'b+', ms=20)  # rug plot
     >>> x_eval = np.linspace(-10, 10, num=200)
     >>> ax.plot(x_eval, kde1(x_eval), 'k-', label="Scott's Rule")
-    >>> ax.plot(x_eval, kde1(x_eval), 'r-', label="Silverman's Rule")
+    >>> ax.plot(x_eval, kde2(x_eval), 'r-', label="Silverman's Rule")
 
     >>> plt.show()
 

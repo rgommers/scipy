@@ -55,10 +55,17 @@ def _is_safe_size(n):
     Composite numbers of 2, 3, and 5 are accepted, as FFTPACK has those
     """
     n = int(n)
-    for c in (2, 3, 5):
+
+    if n == 0:
+        return True
+
+    # Divide by 3 until you can't, then by 5 until you can't
+    for c in (3, 5):
         while n % c == 0:
-            n /= c
-    return (n <= 1)
+            n //= c
+
+    # Return True if the remainder is a power of 2
+    return not n & (n-1)
 
 
 def _fake_crfft(x, n, *a, **kw):
@@ -123,7 +130,7 @@ def _asfarray(x):
         # We cannot use asfarray directly because it converts sequences of
         # complex to sequence of real
         ret = numpy.asarray(x)
-        if not ret.dtype.char in numpy.typecodes["AllFloat"]:
+        if ret.dtype.char not in numpy.typecodes["AllFloat"]:
             return numpy.asfarray(x)
         return ret
 
@@ -152,6 +159,11 @@ def _raw_fft(x, n, axis, direction, overwrite_x, work_function):
     elif n != x.shape[axis]:
         x, copy_made = _fix_shape(x,n,axis)
         overwrite_x = overwrite_x or copy_made
+
+    if n < 1:
+        raise ValueError("Invalid number of FFT data points "
+                         "(%d) specified." % n)
+
     if axis == -1 or axis == len(x.shape)-1:
         r = work_function(x,n,direction,overwrite_x=overwrite_x)
     else:
@@ -218,12 +230,12 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
 
     This function is most efficient when `n` is a power of two, and least
     efficient when `n` is prime.
-    
+
     If the data type of `x` is real, a "real FFT" algorithm is automatically
     used, which roughly halves the computation time.  To increase efficiency
-    a little further, use `rfft`, which does the same calculation, but only 
-    outputs half of the symmetrical spectrum.  If the data is both real and 
-    symmetrical, the `dct` can again double the efficiency, by generating 
+    a little further, use `rfft`, which does the same calculation, but only
+    outputs half of the symmetrical spectrum.  If the data is both real and
+    symmetrical, the `dct` can again double the efficiency, by generating
     half of the spectrum from half of the signal.
 
     Examples
@@ -251,6 +263,10 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
     elif n != tmp.shape[axis]:
         tmp, copy_made = _fix_shape(tmp,n,axis)
         overwrite_x = overwrite_x or copy_made
+
+    if n < 1:
+        raise ValueError("Invalid number of FFT data points "
+                         "(%d) specified." % n)
 
     if axis == -1 or axis == len(tmp.shape) - 1:
         return work_function(tmp,n,1,0,overwrite_x)
@@ -295,10 +311,10 @@ def ifft(x, n=None, axis=-1, overwrite_x=False):
     -----
     This function is most efficient when `n` is a power of two, and least
     efficient when `n` is prime.
-    
+
     If the data type of `x` is real, a "real IFFT" algorithm is automatically
     used, which roughly halves the computation time.
-    
+
     """
     tmp = _asfarray(x)
 
@@ -317,6 +333,10 @@ def ifft(x, n=None, axis=-1, overwrite_x=False):
     elif n != tmp.shape[axis]:
         tmp, copy_made = _fix_shape(tmp,n,axis)
         overwrite_x = overwrite_x or copy_made
+
+    if n < 1:
+        raise ValueError("Invalid number of FFT data points "
+                         "(%d) specified." % n)
 
     if axis == -1 or axis == len(tmp.shape) - 1:
         return work_function(tmp,n,-1,1,overwrite_x)
@@ -349,15 +369,15 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
     -------
     z : real ndarray
         The returned real array contains::
-    
+
           [y(0),Re(y(1)),Im(y(1)),...,Re(y(n/2))]              if n is even
           [y(0),Re(y(1)),Im(y(1)),...,Re(y(n/2)),Im(y(n/2))]   if n is odd
-    
+
         where::
-    
+
           y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k*2*pi/n)
           j = 0..n-1
-    
+
         Note that ``y(-j) == y(n-j).conjugate()``.
 
     See Also
@@ -367,9 +387,10 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
     Notes
     -----
     Within numerical accuracy, ``y == rfft(irfft(y))``.
-    
+
     Examples
     --------
+    >>> from scipy.fftpack import fft, rfft
     >>> a = [9, -9, 1, 3]
     >>> fft(a)
     array([  4. +0.j,   8.+12.j,  16. +0.j,   8.-12.j])
@@ -480,7 +501,8 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
 
     for dim in s:
         if dim < 1:
-            raise ValueError("Invalid number of FFT data points (%d) specified." % s)
+            raise ValueError("Invalid number of FFT data points "
+                             "(%s) specified." % (s,))
 
     # No need to swap axes, array is in C order
     if noaxes:
@@ -562,6 +584,7 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
 
     Examples
     --------
+    >>> from scipy.fftpack import fftn, ifftn
     >>> y = (-np.arange(16), 8 - np.arange(16), np.arange(16))
     >>> np.allclose(y, fftn(ifftn(y)))
     True

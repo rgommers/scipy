@@ -11,8 +11,13 @@ from . import common_info
 from numpy.core.multiarray import _get_ndarray_c_version
 ndarray_api_version = '/* NDARRAY API VERSION %x */' % (_get_ndarray_c_version(),)
 
+
 # not an easy way for the user_path_list to come in here.
 # the PYTHONCOMPILED environment variable offers the most hope.
+# If the user sets ``os.environ['PYTHONCOMPILED']``, that path will
+# be used to compile the extension in.  Note that .cpp and .so files
+# will remain in that directory.  See the docstring of ``catalog.catalog``
+# for more details.
 
 function_catalog = catalog.catalog()
 
@@ -197,7 +202,7 @@ def inline(code,arg_names=[],local_dict=None, global_dict=None,
         On Unix, it'll probably use the same compiler that was used when
         compiling Python. Cygwin's behavior should be similar.
     verbose : {0,1,2}, optional
-        Specifies how much much information is printed during the compile
+        Specifies how much information is printed during the compile
         phase of inlining code.  0 is silent (except on windows with msvc
         where it still prints some garbage). 1 informs you when compiling
         starts, finishes, and how long it took.  2 prints out the command

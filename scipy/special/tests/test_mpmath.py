@@ -5,17 +5,17 @@ Test Scipy functions versus mpmath, if available.
 from __future__ import division, print_function, absolute_import
 
 import sys
-import os
 import time
 
 from distutils.version import LooseVersion
 
 import numpy as np
-from numpy.testing import dec
+from numpy.testing import dec, run_module_suite, assert_
 from numpy import pi
 
 import scipy.special as sc
-from scipy.lib.six import reraise, with_metaclass
+from scipy._lib.six import reraise, with_metaclass
+from scipy._lib._testutils import knownfailure_overridable
 from scipy.special._testutils import FuncData, assert_func_equal
 
 try:
@@ -496,21 +496,6 @@ def nonfunctional_tooslow(func):
     return dec.skipif(True, "    Test not yet functional (too slow), needs more work.")(func)
 
 
-def knownfailure_overridable(msg=None):
-    if not msg:
-        msg = "Undiagnosed issues (corner cases, wrong comparison values, or otherwise)"
-    msg = msg + " [Set environment variable SCIPY_XFAIL=1 to run this test nevertheless.]"
-
-    def deco(func):
-        try:
-            if bool(os.environ['SCIPY_XFAIL']):
-                return func
-        except (ValueError, KeyError):
-            pass
-        return dec.knownfailureif(True, msg)(func)
-    return deco
-
-
 class _SystematicMeta(type):
     """
     Metaclass which decorates all of the test_* methods with
@@ -920,9 +905,10 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_ci(self):
         def ci(x):
             return sc.sici(x)[1]
+        # oscillating function: limit range
         assert_mpmath_equal(ci,
                             mpmath.ci,
-                            [Arg()])
+                            [Arg(-1e8, 1e8)])
 
     def test_digamma(self):
         assert_mpmath_equal(sc.digamma,
@@ -941,6 +927,16 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(sc.exp1,
                             mpmath.e1,
                             [Arg()])
+
+    def test_exprel(self):
+        assert_mpmath_equal(sc.exprel,
+                            lambda x: mpmath.expm1(x)/x if x != 0 else mpmath.mpf('1.0'),
+                            [Arg(a=-np.log(np.finfo(np.double).max), b=np.log(np.finfo(np.double).max))])
+        assert_mpmath_equal(sc.exprel,
+                            lambda x: mpmath.expm1(x)/x if x != 0 else mpmath.mpf('1.0'),
+                            np.array([1e-12, 1e-24, 0, 1e12, 1e24, np.inf]), rtol=1e-11)
+        assert_(np.isinf(sc.exprel(np.inf)))
+        assert_(sc.exprel(-np.inf) == 0)
 
     def test_e1_complex(self):
         # E_1 oscillates as Im[z] -> +- inf, so limit range
@@ -978,13 +974,27 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_ellipe(self):
         assert_mpmath_equal(sc.ellipe,
                             mpmath.ellipe,
-                            [Arg()])
+                            [Arg(b=1.0)])
 
-    @knownfailure_overridable("insufficient accuracy from Cephes at phi < 0, or for extremely large m")
+    def test_ellipeinc(self):
+        assert_mpmath_equal(sc.ellipeinc,
+                            mpmath.ellipe,
+                            [Arg(-1e3, 1e3), Arg(b=1.0)])
+
+    def test_ellipeinc_largephi(self):
+        assert_mpmath_equal(sc.ellipeinc,
+                            mpmath.ellipe,
+                            [Arg(), Arg()])
+
     def test_ellipf(self):
         assert_mpmath_equal(sc.ellipkinc,
                             mpmath.ellipf,
-                            [Arg(), Arg(b=1.0)])
+                            [Arg(-1e3, 1e3), Arg()])
+
+    def test_ellipf_largephi(self):
+        assert_mpmath_equal(sc.ellipkinc,
+                            mpmath.ellipf,
+                            [Arg(), Arg()])
 
     def test_ellipk(self):
         assert_mpmath_equal(sc.ellipk,
@@ -994,6 +1004,22 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             lambda m: mpmath.ellipk(1 - m),
                             [Arg(a=0.0)],
                             dps=400)
+
+    def test_ellipkinc(self):
+        def ellipkinc(phi, m):
+            return mpmath.ellippi(0, phi, m)
+        assert_mpmath_equal(sc.ellipkinc,
+                            ellipkinc,
+                            [Arg(-1e3, 1e3), Arg(b=1.0)],
+                            ignore_inf_sign=True)
+
+    def test_ellipkinc_largephi(self):
+        def ellipkinc(phi, m):
+            return mpmath.ellippi(0, phi, m)
+        assert_mpmath_equal(sc.ellipkinc,
+                            ellipkinc,
+                            [Arg(), Arg(b=1.0)],
+                            ignore_inf_sign=True)
 
     def test_ellipfun_sn(self):
         # Oscillating function --- limit range of first argument; the
@@ -1381,10 +1407,34 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             legenp,
                             [IntArg(-100, 100), Arg(-100, 100), Arg(-1, 1)])
 
-    def test_legenp_complex(self):
+    def test_legenp_complex_2(self):
         def clpnm(n, m, z):
             try:
-                return sc.clpmn(m.real, n.real, z)[0][-1,-1]
+                return sc.clpmn(m.real, n.real, z, type=2)[0][-1,-1]
+            except ValueError:
+                return np.nan
+
+        def legenp(n, m, z):
+            if abs(z) < 1e-15:
+                # mpmath has bad performance here
+                return np.nan
+            return _exception_to_nan(mpmath.legenp)(int(n.real), int(m.real), z, type=2)
+
+        # mpmath is quite slow here
+        x = np.array([-2, -0.99, -0.5, 0, 1e-5, 0.5, 0.99, 20, 2e3])
+        y = np.array([-1e3, -0.5, 0.5, 1.3])
+        z = (x[:,None] + 1j*y[None,:]).ravel()
+
+        assert_mpmath_equal(clpnm,
+                            legenp,
+                            [FixedArg([-2, -1, 0, 1, 2, 10]), FixedArg([-2, -1, 0, 1, 2, 10]), FixedArg(z)],
+                            rtol=1e-6,
+                            n=500)
+
+    def test_legenp_complex_3(self):
+        def clpnm(n, m, z):
+            try:
+                return sc.clpmn(m.real, n.real, z, type=3)[0][-1,-1]
             except ValueError:
                 return np.nan
 
@@ -1546,3 +1596,42 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(mpmath.zeta),
                             [Arg(a=1, b=1e10, inclusive_a=False),
                              Arg(a=0, inclusive_a=False)])
+
+    def test_boxcox(self):
+
+        def mp_boxcox(x, lmbda):
+            x = mpmath.mp.mpf(x)
+            lmbda = mpmath.mp.mpf(lmbda)
+            if lmbda == 0:
+                return mpmath.mp.log(x)
+            else:
+                return mpmath.mp.powm1(x, lmbda) / lmbda
+
+        assert_mpmath_equal(sc.boxcox,
+                            _exception_to_nan(mp_boxcox),
+                            [Arg(a=0, inclusive_a=False), Arg()],
+                            n=200,
+                            dps=60,
+                            rtol=1e-13)
+
+    def test_boxcox1p(self):
+
+        def mp_boxcox1p(x, lmbda):
+            x = mpmath.mp.mpf(x)
+            lmbda = mpmath.mp.mpf(lmbda)
+            one = mpmath.mp.mpf(1)
+            if lmbda == 0:
+                return mpmath.mp.log(one + x)
+            else:
+                return mpmath.mp.powm1(one + x, lmbda) / lmbda
+
+        assert_mpmath_equal(sc.boxcox1p,
+                            _exception_to_nan(mp_boxcox1p),
+                            [Arg(a=-1, inclusive_a=False), Arg()],
+                            n=200,
+                            dps=60,
+                            rtol=1e-13)
+
+
+if __name__ == "__main__":
+    run_module_suite()

@@ -243,8 +243,6 @@ class TestRecurrence(object):
                    param_ranges=[], x_range=[0, 100])
 
     def test_hermite(self):
-        v =  orth.eval_hermite(70, 1.0)
-        a = -1.457076485701412e60 
+        v = orth.eval_hermite(70, 1.0)
+        a = -1.457076485701412e60
         assert_allclose(v,a)
-
-        

@@ -14,13 +14,10 @@ __all__ = ['expm', 'inv']
 
 import math
 
-from numpy import asarray, dot, eye, ceil, log2
-from numpy import matrix as mat
 import numpy as np
 
 import scipy.misc
-from scipy.linalg.misc import norm
-from scipy.linalg.basic import solve, solve_triangular, inv
+from scipy.linalg.basic import solve, solve_triangular
 
 from scipy.sparse.base import isspmatrix
 from scipy.sparse.construct import eye as speye
@@ -38,8 +35,6 @@ def inv(A):
     """
     Compute the inverse of a sparse matrix
 
-    .. versionadded:: 0.12.0
-
     Parameters
     ----------
     A : (M,M) ndarray or sparse matrix
@@ -55,6 +50,8 @@ def inv(A):
     This computes the sparse inverse of `A`.  If the inverse of `A` is expected
     to be non-sparse, it will likely be faster to convert `A` to dense and use
     scipy.linalg.inv.
+
+    .. versionadded:: 0.12.0
 
     """
     I = speye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
@@ -121,7 +118,7 @@ def _count_nonzero(A):
     if isspmatrix(A):
         return np.sum(A.toarray() != 0)
     else:
-        return np.sum(A != 0)
+        return np.count_nonzero(A)
 
 
 def _is_upper_triangular(A):
@@ -190,20 +187,23 @@ class MatrixPowerOperator(LinearOperator):
         self._A = A
         self._p = p
         self._structure = structure
+        self.dtype = A.dtype
         self.ndim = A.ndim
         self.shape = A.shape
 
-    def matvec(self, x):
+    def _matvec(self, x):
         for i in range(self._p):
             x = self._A.dot(x)
         return x
 
-    def rmatvec(self, x):
+    def _rmatvec(self, x):
+        A_T = self._A.T
+        x = x.ravel()
         for i in range(self._p):
-            x = x.dot(self._A)
+            x = A_T.dot(x)
         return x
 
-    def matmat(self, X):
+    def _matmat(self, X):
         for i in range(self._p):
             X = _smart_matrix_product(self._A, X, structure=self._structure)
         return X
@@ -235,19 +235,21 @@ class ProductOperator(LinearOperator):
                                 'must all have the same shape.')
             self.shape = (n, n)
             self.ndim = len(self.shape)
+        self.dtype = np.find_common_type([x.dtype for x in args], [])
         self._operator_sequence = args
 
-    def matvec(self, x):
+    def _matvec(self, x):
         for A in reversed(self._operator_sequence):
             x = A.dot(x)
         return x
 
-    def rmatvec(self, x):
+    def _rmatvec(self, x):
+        x = x.ravel()
         for A in self._operator_sequence:
-            x = x.dot(A)
+            x = A.T.dot(x)
         return x
 
-    def matmat(self, X):
+    def _matmat(self, X):
         for A in reversed(self._operator_sequence):
             X = _smart_matrix_product(A, X, structure=self._structure)
         return X
@@ -319,6 +321,9 @@ def _onenormest_product(operator_seq,
         Request a norm-maximizing linear operator input vector if True.
     compute_w : bool, optional
         Request a norm-maximizing linear operator output vector if True.
+    structure : str, optional
+        A string describing the structure of all operators.
+        Only `upper_triangular` is currently supported.
 
     Returns
     -------
@@ -347,38 +352,147 @@ class _ExpmPadeHelper(object):
     other properties of the matrix.
 
     """
-    def __init__(self, A, structure=None):
+    def __init__(self, A, structure=None, use_exact_onenorm=False):
+        """
+        Initialize the object.
+
+        Parameters
+        ----------
+        A : a dense or sparse square numpy matrix or ndarray
+            The matrix to be exponentiated.
+        structure : str, optional
+            A string describing the structure of matrix `A`.
+            Only `upper_triangular` is currently supported.
+        use_exact_onenorm : bool, optional
+            If True then only the exact one-norm of matrix powers and products
+            will be used. Otherwise, the one-norm of powers and products
+            may initially be estimated.
+        """
         self.A = A
         self._A2 = None
         self._A4 = None
         self._A6 = None
         self._A8 = None
+        self._A10 = None
+        self._d4_exact = None
+        self._d6_exact = None
+        self._d8_exact = None
+        self._d10_exact = None
+        self._d4_approx = None
+        self._d6_approx = None
+        self._d8_approx = None
+        self._d10_approx = None
         self.ident = _ident_like(A)
         self.structure = structure
+        self.use_exact_onenorm = use_exact_onenorm
+
     @property
     def A2(self):
         if self._A2 is None:
             self._A2 = _smart_matrix_product(
                     self.A, self.A, structure=self.structure)
         return self._A2
+
     @property
     def A4(self):
         if self._A4 is None:
             self._A4 = _smart_matrix_product(
                     self.A2, self.A2, structure=self.structure)
         return self._A4
+
     @property
     def A6(self):
         if self._A6 is None:
             self._A6 = _smart_matrix_product(
                     self.A4, self.A2, structure=self.structure)
         return self._A6
+
     @property
     def A8(self):
         if self._A8 is None:
             self._A8 = _smart_matrix_product(
                     self.A6, self.A2, structure=self.structure)
         return self._A8
+
+    @property
+    def A10(self):
+        if self._A10 is None:
+            self._A10 = _smart_matrix_product(
+                    self.A4, self.A6, structure=self.structure)
+        return self._A10
+
+    @property
+    def d4_tight(self):
+        if self._d4_exact is None:
+            self._d4_exact = _onenorm(self.A4)**(1/4.)
+        return self._d4_exact
+
+    @property
+    def d6_tight(self):
+        if self._d6_exact is None:
+            self._d6_exact = _onenorm(self.A6)**(1/6.)
+        return self._d6_exact
+
+    @property
+    def d8_tight(self):
+        if self._d8_exact is None:
+            self._d8_exact = _onenorm(self.A8)**(1/8.)
+        return self._d8_exact
+
+    @property
+    def d10_tight(self):
+        if self._d10_exact is None:
+            self._d10_exact = _onenorm(self.A10)**(1/10.)
+        return self._d10_exact
+
+    @property
+    def d4_loose(self):
+        if self.use_exact_onenorm:
+            return self.d4_tight
+        if self._d4_exact is not None:
+            return self._d4_exact
+        else:
+            if self._d4_approx is None:
+                self._d4_approx = _onenormest_matrix_power(self.A2, 2,
+                        structure=self.structure)**(1/4.)
+            return self._d4_approx
+
+    @property
+    def d6_loose(self):
+        if self.use_exact_onenorm:
+            return self.d6_tight
+        if self._d6_exact is not None:
+            return self._d6_exact
+        else:
+            if self._d6_approx is None:
+                self._d6_approx = _onenormest_matrix_power(self.A2, 3,
+                        structure=self.structure)**(1/6.)
+            return self._d6_approx
+
+    @property
+    def d8_loose(self):
+        if self.use_exact_onenorm:
+            return self.d8_tight
+        if self._d8_exact is not None:
+            return self._d8_exact
+        else:
+            if self._d8_approx is None:
+                self._d8_approx = _onenormest_matrix_power(self.A4, 2,
+                        structure=self.structure)**(1/8.)
+            return self._d8_approx
+
+    @property
+    def d10_loose(self):
+        if self.use_exact_onenorm:
+            return self.d10_tight
+        if self._d10_exact is not None:
+            return self._d10_exact
+        else:
+            if self._d10_approx is None:
+                self._d10_approx = _onenormest_product((self.A4, self.A6),
+                        structure=self.structure)**(1/10.)
+            return self._d10_approx
+
     def pade3(self):
         b = (120., 60., 12., 1.)
         U = _smart_matrix_product(self.A,
@@ -386,6 +500,7 @@ class _ExpmPadeHelper(object):
                 structure=self.structure)
         V = b[2]*self.A2 + b[0]*self.ident
         return U, V
+
     def pade5(self):
         b = (30240., 15120., 3360., 420., 30., 1.)
         U = _smart_matrix_product(self.A,
@@ -393,6 +508,7 @@ class _ExpmPadeHelper(object):
                 structure=self.structure)
         V = b[4]*self.A4 + b[2]*self.A2 + b[0]*self.ident
         return U, V
+
     def pade7(self):
         b = (17297280., 8648640., 1995840., 277200., 25200., 1512., 56., 1.)
         U = _smart_matrix_product(self.A,
@@ -400,6 +516,7 @@ class _ExpmPadeHelper(object):
                 structure=self.structure)
         V = b[6]*self.A6 + b[4]*self.A4 + b[2]*self.A2 + b[0]*self.ident
         return U, V
+
     def pade9(self):
         b = (17643225600., 8821612800., 2075673600., 302702400., 30270240.,
                 2162160., 110880., 3960., 90., 1.)
@@ -410,6 +527,7 @@ class _ExpmPadeHelper(object):
         V = (b[8]*self.A8 + b[6]*self.A6 + b[4]*self.A4 +
                 b[2]*self.A2 + b[0]*self.ident)
         return U, V
+
     def pade13_scaled(self, s):
         b = (64764752532480000., 32382376266240000., 7771770303897600.,
                 1187353796428800., 129060195264000., 10559470521600.,
@@ -433,16 +551,13 @@ class _ExpmPadeHelper(object):
         return U, V
 
 
-
 def expm(A):
     """
     Compute the matrix exponential using Pade approximation.
 
-    .. versionadded:: 0.12.0
-
     Parameters
     ----------
-    A : (M,M) array or sparse matrix
+    A : (M,M) array_like or sparse matrix
         2D Array or Matrix (sparse or dense) to be exponentiated
 
     Returns
@@ -454,6 +569,8 @@ def expm(A):
     -----
     This is algorithm (6.1) which is a simplification of algorithm (5.1).
 
+    .. versionadded:: 0.12.0
+
     References
     ----------
     .. [1] Awad H. Al-Mohy and Nicholas J. Higham (2009)
@@ -462,31 +579,44 @@ def expm(A):
            31 (3). pp. 970-989. ISSN 1095-7162
 
     """
+    return _expm(A, use_exact_onenorm='auto')
+
+
+def _expm(A, use_exact_onenorm):
+    # Core of expm, separated to allow testing exact and approximate
+    # algorithms.
+
+    # Avoid indiscriminate asarray() to allow sparse or other strange arrays.
+    if isinstance(A, (list, tuple)):
+        A = np.asarray(A)
+    if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
+        raise ValueError('expected a square matrix')
+
     # Detect upper triangularity.
     structure = UPPER_TRIANGULAR if _is_upper_triangular(A) else None
 
+    if use_exact_onenorm == "auto":
+        # Hardcode a matrix order threshold for exact vs. estimated one-norms.
+        use_exact_onenorm = A.shape[0] < 200
+
     # Track functions of A to help compute the matrix exponential.
-    h = _ExpmPadeHelper(A, structure=structure)
+    h = _ExpmPadeHelper(
+            A, structure=structure, use_exact_onenorm=use_exact_onenorm)
 
     # Try Pade order 3.
-    d4 = _onenormest_matrix_power(h.A2, 2, structure=structure)**(1/4.)
-    d6 = _onenormest_matrix_power(h.A2, 3, structure=structure)**(1/6.)
-    eta_1 = max(d4, d6)
+    eta_1 = max(h.d4_loose, h.d6_loose)
     if eta_1 < 1.495585217958292e-002 and _ell(h.A, 3) == 0:
         U, V = h.pade3()
         return _solve_P_Q(U, V, structure=structure)
 
     # Try Pade order 5.
-    d4 = _onenorm(h.A4)**(1/4.)
-    eta_2 = max(d4, d6)
+    eta_2 = max(h.d4_tight, h.d6_loose)
     if eta_2 < 2.539398330063230e-001 and _ell(h.A, 5) == 0:
         U, V = h.pade5()
         return _solve_P_Q(U, V, structure=structure)
 
     # Try Pade orders 7 and 9.
-    d6 = _onenorm(h.A6)**(1/6.)
-    d8 = _onenormest_matrix_power(h.A4, 2, structure=structure)**(1/8.)
-    eta_3 = max(d6, d8)
+    eta_3 = max(h.d6_tight, h.d8_loose)
     if eta_3 < 9.504178996162932e-001 and _ell(h.A, 7) == 0:
         U, V = h.pade7()
         return _solve_P_Q(U, V, structure=structure)
@@ -495,8 +625,7 @@ def expm(A):
         return _solve_P_Q(U, V, structure=structure)
 
     # Use Pade order 13.
-    d10 = _onenormest_product((h.A4, h.A6), structure=structure)**(1/10.)
-    eta_4 = max(d8, d10)
+    eta_4 = max(h.d8_loose, h.d10_loose)
     eta_5 = min(eta_3, eta_4)
     theta_13 = 4.25
     s = max(int(np.ceil(np.log2(eta_5 / theta_13))), 0)
@@ -673,7 +802,8 @@ def _ell(A, m):
 
     # The c_i are explained in (2.2) and (2.6) of the 2005 expm paper.
     # They are coefficients of terms of a generating function series expansion.
-    abs_c_recip = scipy.misc.comb(2*p, p, exact=True) * math.factorial(2*p + 1)
+    choose_2p_p = scipy.misc.comb(2*p, p, exact=True)
+    abs_c_recip = float(choose_2p_p * math.factorial(2*p + 1))
 
     # This is explained after Eq. (1.2) of the 2009 expm paper.
     # It is the "unit roundoff" of IEEE double precision arithmetic.
@@ -690,4 +820,3 @@ def _ell(A, m):
     log2_alpha_div_u = np.log2(alpha/u)
     value = int(np.ceil(log2_alpha_div_u / (2 * m)))
     return max(value, 0)
-

@@ -8,22 +8,56 @@ Optimization and root finding (:mod:`scipy.optimize`)
 Optimization
 ============
 
-General-purpose
----------------
+Local Optimization
+------------------
 
 .. autosummary::
    :toctree: generated/
 
    minimize - Unified interface for minimizers of multivariate functions
+   minimize_scalar - Unified interface for minimizers of univariate functions
+   OptimizeResult - The optimization result returned by some optimizers
+
+The `minimize` function supports the following methods:
+
+.. toctree::
+
+   optimize.minimize-neldermead
+   optimize.minimize-powell
+   optimize.minimize-cg
+   optimize.minimize-bfgs
+   optimize.minimize-newtoncg
+   optimize.minimize-lbfgsb
+   optimize.minimize-tnc
+   optimize.minimize-cobyla
+   optimize.minimize-slsqp
+   optimize.minimize-dogleg
+   optimize.minimize-trustncg
+
+The `minimize_scalar` function supports the following methods:
+
+.. toctree::
+
+   optimize.minimize_scalar-brent
+   optimize.minimize_scalar-bounded
+   optimize.minimize_scalar-golden
+
+The specific optimization method interfaces below in this subsection are
+not recommended for use in new scripts; all of these methods are accessible
+via a newer, more consistent interface provided by the functions above.
+
+General-purpose multivariate methods:
+
+.. autosummary::
+   :toctree: generated/
+
    fmin - Nelder-Mead Simplex algorithm
    fmin_powell - Powell's (modified) level set method
    fmin_cg - Non-linear (Polak-Ribiere) conjugate gradient algorithm
    fmin_bfgs - Quasi-Newton method (Broydon-Fletcher-Goldfarb-Shanno)
    fmin_ncg - Line-search Newton Conjugate Gradient
-   leastsq - Minimize the sum of squares of M equations in N unknowns
 
-Constrained (multivariate)
---------------------------
+Constrained multivariate methods:
 
 .. autosummary::
    :toctree: generated/
@@ -32,29 +66,35 @@ Constrained (multivariate)
    fmin_tnc - Truncated Newton code
    fmin_cobyla - Constrained optimization by linear approximation
    fmin_slsqp - Minimization using sequential least-squares programming
-   nnls - Linear least-squares problem with non-negativity constraint
+   differential_evolution - stochastic minimization using differential evolution
 
-Global
-------
-
-.. autosummary::
-   :toctree: generated/
-
-   anneal - Simulated annealing
-   basinhopping - Basinhopping stochastic optimizer
-   brute - Brute force searching optimizer
-
-Scalar function minimizers
---------------------------
+Univariate (scalar) minimization methods:
 
 .. autosummary::
    :toctree: generated/
 
-   minimize_scalar - Unified interface for minimizers of univariate functions
    fminbound - Bounded minimization of a scalar function
    brent - 1-D function minimization using Brent method
    golden - 1-D function minimization using Golden Section method
-   bracket - Bracket a minimum, given two starting points
+
+Equation (Local) Minimizers
+---------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   leastsq - Minimize the sum of squares of M equations in N unknowns
+   nnls - Linear least-squares problem with non-negativity constraint
+
+Global Optimization
+-------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   basinhopping - Basinhopping stochastic optimizer
+   brute - Brute force searching optimizer
+   differential_evolution - stochastic minimization using differential evolution
 
 Rosenbrock function
 -------------------
@@ -109,6 +149,21 @@ General nonlinear solvers:
    broyden1 - Broyden's first method
    broyden2 - Broyden's second method
 
+The `root` function supports the following methods:
+
+.. toctree::
+
+   optimize.root-hybr
+   optimize.root-lm
+   optimize.root-broyden1
+   optimize.root-broyden2
+   optimize.root-anderson
+   optimize.root-linearmixing
+   optimize.root-diagbroyden
+   optimize.root-excitingmixing
+   optimize.root-krylov
+   optimize.root-dfsane
+
 Large-scale nonlinear solvers:
 
 .. autosummary::
@@ -128,17 +183,36 @@ Simple iterations:
 
 :mod:`Additional information on the nonlinear solvers <scipy.optimize.nonlin>`
 
-Utility Functions
-=================
+Linear Programming
+==================
+
+Simplex Algorithm:
+
+.. autosummary::
+   :toctree: generated/
+
+   linprog -- Linear programming using the simplex algorithm
+
+The `linprog` function supports the following methods:
+
+.. toctree::
+
+   optimize.linprog-simplex
+
+
+Utilities
+=========
 
 .. autosummary::
    :toctree: generated/
 
    approx_fprime - Approximate the gradient of a scalar function
+   bracket - Bracket a minimum, given two starting points
    check_grad - Check the supplied derivative using finite differences
    line_search - Return a step that satisfies the strong Wolfe conditions
 
    show_options - Show specific options optimization solvers
+   LbfgsInvHessProduct - Linear operator for L-BFGS approximate inverse Hessian
 
 """
 
@@ -149,14 +223,15 @@ from ._minimize import *
 from ._root import *
 from .minpack import *
 from .zeros import *
-from .anneal import *
-from .lbfgsb import fmin_l_bfgs_b
+from .lbfgsb import fmin_l_bfgs_b, LbfgsInvHessProduct
 from .tnc import fmin_tnc
 from .cobyla import fmin_cobyla
 from .nonlin import *
 from .slsqp import fmin_slsqp
 from .nnls import nnls
 from ._basinhopping import basinhopping
+from ._linprog import linprog, linprog_verbose_callback
+from ._differentialevolution import differential_evolution
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester

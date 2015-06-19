@@ -23,7 +23,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 # Scipy imports.
-from scipy.lib.six import callable, string_types
+from scipy._lib.six import callable, string_types
 from scipy import linalg, special
 
 from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
@@ -79,33 +79,17 @@ class gaussian_kde(object):
 
     Methods
     -------
-    kde.evaluate(points) : ndarray
-        Evaluate the estimated pdf on a provided set of points.
-    kde(points) : ndarray
-        Same as kde.evaluate(points)
-    kde.integrate_gaussian(mean, cov) : float
-        Multiply pdf with a specified Gaussian and integrate over the whole
-        domain.
-    kde.integrate_box_1d(low, high) : float
-        Integrate pdf (1D only) between two bounds.
-    kde.integrate_box(low_bounds, high_bounds) : float
-        Integrate pdf over a rectangular space between low_bounds and
-        high_bounds.
-    kde.integrate_kde(other_kde) : float
-        Integrate two kernel density estimates multiplied together.
-    kde.resample(size=None) : ndarray
-        Randomly sample a dataset from the estimated pdf.
-    kde.set_bandwidth(bw_method='scott') : None
-        Computes the bandwidth, i.e. the coefficient that multiplies the data
-        covariance matrix to obtain the kernel covariance matrix.
-        .. versionadded:: 0.11.0
-    kde.covariance_factor : float
-        Computes the coefficient (`kde.factor`) that multiplies the data
-        covariance matrix to obtain the kernel covariance matrix.
-        The default is `scotts_factor`.  A subclass can overwrite this method
-        to provide a different method, or set it through a call to
-        `kde.set_bandwidth`.
-
+    evaluate
+    __call__
+    integrate_gaussian
+    integrate_box_1d
+    integrate_box
+    integrate_kde
+    pdf
+    logpdf
+    resample
+    set_bandwidth
+    covariance_factor
 
     Notes
     -----
@@ -122,7 +106,7 @@ class gaussian_kde(object):
     with ``n`` the number of data points and ``d`` the number of dimensions.
     Silverman's Rule [2]_, implemented as `silverman_factor`, is::
 
-        n * (d + 2) / 4.)**(-1. / (d + 4)).
+        (n * (d + 2) / 4.)**(-1. / (d + 4)).
 
     Good general descriptions of kernel density estimation can be found in [1]_
     and [2]_, the mathematics for this multi-dimensional implementation can be
@@ -147,10 +131,10 @@ class gaussian_kde(object):
 
     >>> from scipy import stats
     >>> def measure(n):
-    >>>     "Measurement model, return two coupled measurements."
-    >>>     m1 = np.random.normal(size=n)
-    >>>     m2 = np.random.normal(scale=0.5, size=n)
-    >>>     return m1+m2, m1-m2
+    ...     "Measurement model, return two coupled measurements."
+    ...     m1 = np.random.normal(size=n)
+    ...     m2 = np.random.normal(scale=0.5, size=n)
+    ...     return m1+m2, m1-m2
 
     >>> m1, m2 = measure(2000)
     >>> xmin = m1.min()
@@ -169,8 +153,7 @@ class gaussian_kde(object):
     Plot the results:
 
     >>> import matplotlib.pyplot as plt
-    >>> fig = plt.figure()
-    >>> ax = fig.add_subplot(111)
+    >>> fig, ax = plt.subplots()
     >>> ax.imshow(np.rot90(Z), cmap=plt.cm.gist_earth_r,
     ...           extent=[xmin, xmax, ymin, ymax])
     >>> ax.plot(m1, m2, 'k.', markersize=2)
@@ -388,11 +371,12 @@ class gaussian_kde(object):
             large = other
 
         sum_cov = small.covariance + large.covariance
+        sum_cov_chol = linalg.cho_factor(sum_cov)
         result = 0.0
         for i in range(small.n):
             mean = small.dataset[:, i, newaxis]
             diff = large.dataset - mean
-            tdiff = dot(linalg.inv(sum_cov), diff)
+            tdiff = linalg.cho_solve(sum_cov_chol, diff)
 
             energies = sum(diff * tdiff, axis=0) / 2.0
             result += sum(exp(-energies), axis=0)
@@ -435,6 +419,11 @@ class gaussian_kde(object):
 
     #  Default method to calculate bandwidth, can be overwritten by subclass
     covariance_factor = scotts_factor
+    covariance_factor.__doc__ = """Computes the coefficient (`kde.factor`) that
+        multiplies the data covariance matrix to obtain the kernel covariance
+        matrix. The default is `scotts_factor`.  A subclass can overwrite this
+        method to provide a different method, or set it through a call to
+        `kde.set_bandwidth`."""
 
     def set_bandwidth(self, bw_method=None):
         """Compute the estimator bandwidth with given method.
@@ -458,6 +447,7 @@ class gaussian_kde(object):
 
         Examples
         --------
+        >>> import scipy.stats as stats
         >>> x1 = np.array([-7, -5, 1, 4, 5.])
         >>> kde = stats.gaussian_kde(x1)
         >>> xs = np.linspace(-10, 10, num=50)
@@ -467,8 +457,8 @@ class gaussian_kde(object):
         >>> kde.set_bandwidth(bw_method=kde.factor / 3.)
         >>> y3 = kde(xs)
 
-        >>> fig = plt.figure()
-        >>> ax = fig.add_subplot(111)
+        >>> import matplotlib.pyplot as plt
+        >>> fig, ax = plt.subplots()
         >>> ax.plot(x1, np.ones(x1.shape) / (4. * x1.size), 'bo',
         ...         label='Data points (rescaled)')
         >>> ax.plot(xs, y1, label='Scott (default)')
@@ -511,3 +501,27 @@ class gaussian_kde(object):
         self.covariance = self._data_covariance * self.factor**2
         self.inv_cov = self._data_inv_cov / self.factor**2
         self._norm_factor = sqrt(linalg.det(2*pi*self.covariance)) * self.n
+
+    def pdf(self, x):
+        """
+        Evaluate the estimated pdf on a provided set of points.
+
+        Notes
+        -----
+        This is an alias for `gaussian_kde.evaluate`.  See the ``evaluate``
+        docstring for more details.
+
+        """
+        return self.evaluate(x)
+
+    def logpdf(self, x):
+        """
+        Evaluate the log of the estimated pdf on a provided set of points.
+
+        Notes
+        -----
+        See `gaussian_kde.evaluate` for more details; this method simply
+        returns ``np.log(gaussian_kde.evaluate(x))``.
+
+        """
+        return np.log(self.evaluate(x))

@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.dual import eig
-from scipy.misc import comb
+from scipy.special import comb
 from scipy import linspace, pi, exp
 from scipy.signal import convolve
 
@@ -75,7 +75,7 @@ def daub(p):
         return q.c[::-1]
     else:
         raise ValueError("Polynomial factorization does not work "
-              "well for p too large.")
+                         "well for p too large.")
 
 
 def qmf(hk):
@@ -89,13 +89,8 @@ def qmf(hk):
 
     """
     N = len(hk) - 1
-    asgn = [{0: 1, 1:-1}[k % 2] for k in range(N + 1)]
+    asgn = [{0: 1, 1: -1}[k % 2] for k in range(N + 1)]
     return hk[::-1] * np.array(asgn)
-
-
-def wavedec(amn, hk):
-    gk = qmf(hk)
-    return NotImplemented
 
 
 def cascade(hk, J=7):
@@ -213,11 +208,11 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     ----------
     M : int
         Length of the wavelet.
-    w : float
+    w : float, optional
         Omega0. Default is 5
-    s : float
+    s : float, optional
         Scaling factor, windowed from ``-s*2*pi`` to ``+s*2*pi``. Default is 1.
-    complete : bool
+    complete : bool, optional
         Whether to use the complete or the standard version.
 
     Returns
@@ -270,9 +265,9 @@ def ricker(points, a):
 
     It models the function:
 
-        ``A (1 - x^2/a^2) exp(-t^2/a^2)``,
+        ``A (1 - x^2/a^2) exp(-x^2/2 a^2)``,
 
-    where ``A = 2/sqrt(3a)pi^1/3``.
+    where ``A = 2/sqrt(3a)pi^1/4``.
 
     Parameters
     ----------
@@ -304,9 +299,9 @@ def ricker(points, a):
     A = 2 / (np.sqrt(3 * a) * (np.pi**0.25))
     wsq = a**2
     vec = np.arange(0, points) - (points - 1.0) / 2
-    tsq = vec**2
-    mod = (1 - tsq / wsq)
-    gauss = np.exp(-tsq / (2 * wsq))
+    xsq = vec**2
+    mod = (1 - xsq / wsq)
+    gauss = np.exp(-xsq / (2 * wsq))
     total = A * mod * gauss
     return total
 
@@ -337,7 +332,7 @@ def cwt(data, wavelet, widths):
     Returns
     -------
     cwt: (M, N) ndarray
-        Will have shape of (len(data), len(widths)).
+        Will have shape of (len(widths), len(data)).
 
     Notes
     -----
@@ -348,15 +343,19 @@ def cwt(data, wavelet, widths):
     Examples
     --------
     >>> from scipy import signal
-    >>> sig = np.random.rand(20) - 0.5
-    >>> wavelet = signal.ricker
-    >>> widths = np.arange(1, 11)
-    >>> cwtmatr = signal.cwt(sig, wavelet, widths)
+    >>> import matplotlib.pyplot as plt
+    >>> t = np.linspace(-1, 1, 200, endpoint=False)
+    >>> sig  = np.cos(2 * np.pi * 7 * t) + signal.gausspulse(t - 0.4, fc=2)
+    >>> widths = np.arange(1, 31)
+    >>> cwtmatr = signal.cwt(sig, signal.ricker, widths)
+    >>> plt.imshow(cwtmatr, extent=[-1, 1, 1, 31], cmap='PRGn', aspect='auto',
+    ...            vmax=abs(cwtmatr).max(), vmin=-abs(cwtmatr).max())
+    >>> plt.show()
 
     """
     output = np.zeros([len(widths), len(data)])
     for ind, width in enumerate(widths):
         wavelet_data = wavelet(min(10 * width, len(data)), width)
         output[ind, :] = convolve(data, wavelet_data,
-                                              mode='same')
+                                  mode='same')
     return output

@@ -159,7 +159,8 @@ cdef class ZlibInputStream(GenericStream):
     cdef int read_into(self, void *buf, size_t n) except -1:
         """Read n bytes from stream into pre-allocated buffer `buf`
         """
-        cdef char *dstp, *srcp
+        cdef char *dstp
+        cdef char *srcp
         cdef size_t read_size, count, size
 
         dstp = <char*>buf
@@ -200,7 +201,9 @@ cdef class ZlibInputStream(GenericStream):
         return (self._max_length == self._read_bytes) and \
                (self._buffer_size == self._buffer_position)
 
-    cpdef long int tell(self):
+    cpdef long int tell(self) except -1:
+        if self._total_position == -1:
+            raise IOError("Invalid file position.")
         return self._total_position
 
     cpdef int seek(self, long int offset, int whence=0) except -1:
@@ -303,8 +306,11 @@ cdef class FileStream(GenericStream):
             raise IOError('Failed seek')
         return ret
 
-    cpdef long int tell(self):
-        return ftell(self.file)
+    cpdef long int tell(self) except -1:
+        cdef long int position = ftell(self.file)
+        if position == -1:
+            raise IOError("Invalid file position.")
+        return position
 
     cdef int read_into(self, void *buf, size_t n) except -1:
         """ Read n bytes from stream into pre-allocated buffer `buf`

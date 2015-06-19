@@ -2,11 +2,10 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.linalg import LinAlgError
-from . import blas
+from .blas import get_blas_funcs
+from .lapack import get_lapack_funcs
 
 __all__ = ['LinAlgError', 'norm']
-
-_nrm2_prefix = {'f': 's', 'F': 'sc', 'D': 'dz'}
 
 
 def norm(a, ord=None):
@@ -19,7 +18,7 @@ def norm(a, ord=None):
 
     Parameters
     ----------
-    x : (M,) or (M, N) array_like
+    a : (M,) or (M, N) array_like
         Input array.
     ord : {non-zero int, inf, -inf, 'fro'}, optional
         Order of the norm (see table under ``Notes``). inf means numpy's
@@ -64,7 +63,7 @@ def norm(a, ord=None):
 
     Examples
     --------
-    >>> from numpy import linalg as LA
+    >>> from scipy.linalg import norm
     >>> a = np.arange(9) - 4
     >>> a
     array([-4, -3, -2, -1,  0,  1,  2,  3,  4])
@@ -74,55 +73,71 @@ def norm(a, ord=None):
            [-1,  0,  1],
            [ 2,  3,  4]])
 
-    >>> LA.norm(a)
+    >>> norm(a)
     7.745966692414834
-    >>> LA.norm(b)
+    >>> norm(b)
     7.745966692414834
-    >>> LA.norm(b, 'fro')
+    >>> norm(b, 'fro')
     7.745966692414834
-    >>> LA.norm(a, np.inf)
+    >>> norm(a, np.inf)
     4
-    >>> LA.norm(b, np.inf)
+    >>> norm(b, np.inf)
     9
-    >>> LA.norm(a, -np.inf)
+    >>> norm(a, -np.inf)
     0
-    >>> LA.norm(b, -np.inf)
+    >>> norm(b, -np.inf)
     2
 
-    >>> LA.norm(a, 1)
+    >>> norm(a, 1)
     20
-    >>> LA.norm(b, 1)
+    >>> norm(b, 1)
     7
-    >>> LA.norm(a, -1)
+    >>> norm(a, -1)
     -4.6566128774142013e-010
-    >>> LA.norm(b, -1)
+    >>> norm(b, -1)
     6
-    >>> LA.norm(a, 2)
+    >>> norm(a, 2)
     7.745966692414834
-    >>> LA.norm(b, 2)
+    >>> norm(b, 2)
     7.3484692283495345
 
-    >>> LA.norm(a, -2)
+    >>> norm(a, -2)
     nan
-    >>> LA.norm(b, -2)
+    >>> norm(b, -2)
     1.8570331885190563e-016
-    >>> LA.norm(a, 3)
+    >>> norm(a, 3)
     5.8480354764257312
-    >>> LA.norm(a, -3)
+    >>> norm(a, -3)
     nan
 
     """
-    # Differs from numpy only in non-finite handling and the use of
-    # blas
+    # Differs from numpy only in non-finite handling and the use of blas.
     a = np.asarray_chkfinite(a)
-    if ord in (None, 2) and (a.ndim == 1) and (a.dtype.char in 'fdFD'):
-        # use blas for fast and stable euclidean norm
-        func_name = _nrm2_prefix.get(a.dtype.char, 'd') + 'nrm2'
-        nrm2 = getattr(blas, func_name)
-        return nrm2(a)
-    return np.linalg.norm(a, ord=ord)
+    if a.dtype.char in 'fdFD':
+        if ord in (None, 2) and (a.ndim == 1):
+            # use blas for fast and stable euclidean norm
+            nrm2 = get_blas_funcs('nrm2', dtype=a.dtype)
+            return nrm2(a)
 
-norm.__doc__ = np.linalg.norm.__doc__
+        if a.ndim == 2:
+            # Use lapack for a couple fast matrix norms.
+            # For some reason the *lange frobenius norm is slow.
+            lange_args = None
+            if ord == 1:
+                if np.isfortran(a):
+                    lange_args = '1', a
+                elif np.isfortran(a.T):
+                    lange_args = 'i', a.T
+            elif ord == np.inf:
+                if np.isfortran(a):
+                    lange_args = 'i', a
+                elif np.isfortran(a.T):
+                    lange_args = '1', a.T
+            if lange_args:
+                lange = get_lapack_funcs('lange', dtype=a.dtype)
+                return lange(*lange_args)
+
+    return np.linalg.norm(a, ord=ord)
 
 
 def _datacopied(arr, original):

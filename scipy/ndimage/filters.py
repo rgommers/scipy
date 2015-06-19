@@ -35,6 +35,7 @@ import numpy
 from . import _ni_support
 from . import _nd_image
 from scipy.misc import doccer
+from scipy._lib._version import NumpyVersion
 
 __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'prewitt', 'sobel', 'generic_laplace', 'laplace',
@@ -92,15 +93,15 @@ _extra_keywords_doc = \
     dict of extra keyword arguments to pass to passed function"""
 
 docdict = {
-    'input':_input_doc,
-    'axis':_axis_doc,
-    'output':_output_doc,
-    'size_foot':_size_foot_doc,
-    'mode':_mode_doc,
-    'cval':_cval_doc,
-    'origin':_origin_doc,
-    'extra_arguments':_extra_arguments_doc,
-    'extra_keywords':_extra_keywords_doc,
+    'input': _input_doc,
+    'axis': _axis_doc,
+    'output': _output_doc,
+    'size_foot': _size_foot_doc,
+    'mode': _mode_doc,
+    'cval': _cval_doc,
+    'origin': _origin_doc,
+    'extra_arguments': _extra_arguments_doc,
+    'extra_keywords': _extra_keywords_doc,
     }
 
 docfiller = doccer.filldoc(docdict)
@@ -135,8 +136,8 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     if not weights.flags.contiguous:
         weights = weights.copy()
     axis = _ni_support._check_axis(axis, input.ndim)
-    if ((len(weights) // 2 + origin < 0) or
-        (len(weights) // 2 + origin > len(weights))):
+    if (len(weights) // 2 + origin < 0) or (len(weights) // 2 +
+                                            origin > len(weights)):
         raise ValueError('invalid origin')
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.correlate1d(input, weights, axis, output, mode, cval,
@@ -195,7 +196,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     %(output)s
     %(mode)s
     %(cval)s
-    truncate : float
+    truncate : float, optional
         Truncate the filter at this many standard deviations.
         Default is 4.0.
 
@@ -478,7 +479,7 @@ def generic_gradient_magnitude(input, derivative, output=None,
             numpy.multiply(tmp, tmp, tmp)
             output += tmp
         # This allows the sqrt to work with a different default casting
-        if numpy.version.short_version > '1.6.1':
+        if NumpyVersion(numpy.__version__) > '1.6.1':
             numpy.sqrt(output, output, casting='unsafe')
         else:
             numpy.sqrt(output, output)
@@ -706,7 +707,7 @@ def uniform_filter1d(input, size, axis=-1, output=None,
     Parameters
     ----------
     %(input)s
-    size : integer
+    size : int
         length of uniform filter
     %(axis)s
     %(output)s
@@ -737,7 +738,7 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     Parameters
     ----------
     %(input)s
-    size : int or sequence of ints
+    size : int or sequence of ints, optional
         The sizes of the uniform filter are given for each axis as a
         sequence, or as a single number, in which case the size is
         equal for all axes.
@@ -789,6 +790,17 @@ def minimum_filter1d(input, size, axis=-1, output=None,
     %(mode)s
     %(cval)s
     %(origin)s
+
+    Notes
+    -----
+    This function implements the MINLIST algorithm [1]_, as described by
+    Richard Harter [2]_, and has a guaranteed O(n) performance, `n` being
+    the `input` length, regardless of filter size.
+
+    References
+    ----------
+    .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.2777
+    .. [2] http://www.richardhartersworld.com/cri/2001/slidingmin.html
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
@@ -823,6 +835,24 @@ def maximum_filter1d(input, size, axis=-1, output=None,
     %(mode)s
     %(cval)s
     %(origin)s
+
+    Returns
+    -------
+    maximum1d : ndarray, None
+        Maximum-filtered array with same shape as input.
+        None if `output` is not None
+
+    Notes
+    -----
+    This function implements the MAXLIST algorithm [1]_, as described by
+    Richard Harter [2]_, and has a guaranteed O(n) performance, `n` being
+    the `input` length, regardless of filter size.
+
+    References
+    ----------
+    .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.2777
+    .. [2] http://www.richardhartersworld.com/cri/2001/slidingmin.html
+
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
@@ -849,7 +879,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         else:
             footprint = numpy.asarray(footprint)
             footprint = footprint.astype(bool)
-            if numpy.alltrue(numpy.ravel(footprint),axis=0):
+            if numpy.alltrue(numpy.ravel(footprint), axis=0):
                 size = footprint.shape
                 footprint = None
                 separable = True
@@ -980,10 +1010,10 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         raise RuntimeError('rank not within filter footprint size')
     if rank == 0:
         return minimum_filter(input, None, footprint, output, mode, cval,
-                              origin)
+                              origins)
     elif rank == filter_size - 1:
         return maximum_filter(input, None, footprint, output, mode, cval,
-                              origin)
+                              origins)
     else:
         output, return_value = _ni_support._get_output(output, input)
         mode = _ni_support._extend_mode_to_code(mode)
@@ -1000,7 +1030,7 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
     Parameters
     ----------
     %(input)s
-    rank : integer
+    rank : int
         The rank parameter may be less then zero, i.e., rank = -1
         indicates the largest element.
     %(size_foot)s
@@ -1096,8 +1126,8 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     if filter_size < 1:
         raise RuntimeError('invalid filter size')
     axis = _ni_support._check_axis(axis, input.ndim)
-    if ((filter_size // 2 + origin < 0) or
-        (filter_size // 2 + origin >= filter_size)):
+    if (filter_size // 2 + origin < 0) or (filter_size // 2 + origin >=
+                                           filter_size):
         raise ValueError('invalid origin')
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.generic_filter1d(input, function, filter_size, axis, output,

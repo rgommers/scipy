@@ -25,6 +25,7 @@ FFTWDATA_SIZES = FFTWDATA_DOUBLE['sizes']
 
 def fftw_dct_ref(type, size, dt):
     x = np.linspace(0, size-1, size).astype(dt)
+    dt = np.result_type(np.float32, dt)
     if dt == np.double:
         data = FFTWDATA_DOUBLE
     elif dt == np.float32:
@@ -32,11 +33,12 @@ def fftw_dct_ref(type, size, dt):
     else:
         raise ValueError()
     y = (data['dct_%d_%d' % (type, size)]).astype(dt)
-    return x, y
+    return x, y, dt
 
 
 def fftw_dst_ref(type, size, dt):
     x = np.linspace(0, size-1, size).astype(dt)
+    dt = np.result_type(np.float32, dt)
     if dt == np.double:
         data = FFTWDATA_DOUBLE
     elif dt == np.float32:
@@ -44,7 +46,39 @@ def fftw_dst_ref(type, size, dt):
     else:
         raise ValueError()
     y = (data['dst_%d_%d' % (type, size)]).astype(dt)
-    return x, y
+    return x, y, dt
+
+
+class TestComplex(TestCase):
+    def test_dct_complex64(self):
+        y = dct(1j*np.arange(5, dtype=np.complex64))
+        x = 1j*dct(np.arange(5))
+        assert_array_almost_equal(x, y)
+
+    def test_dct_complex(self):
+        y = dct(np.arange(5)*1j)
+        x = 1j*dct(np.arange(5))
+        assert_array_almost_equal(x, y)
+
+    def test_idct_complex(self):
+        y = idct(np.arange(5)*1j)
+        x = 1j*idct(np.arange(5))
+        assert_array_almost_equal(x, y)
+
+    def test_dst_complex64(self):
+        y = dst(np.arange(5, dtype=np.complex64)*1j)
+        x = 1j*dst(np.arange(5))
+        assert_array_almost_equal(x, y)
+
+    def test_dst_complex(self):
+        y = dst(np.arange(5)*1j)
+        x = 1j*dst(np.arange(5))
+        assert_array_almost_equal(x, y)
+
+    def test_idst_complex(self):
+        y = idst(np.arange(5)*1j)
+        x = 1j*idst(np.arange(5))
+        assert_array_almost_equal(x, y)
 
 
 class _TestDCTBase(TestCase):
@@ -55,10 +89,9 @@ class _TestDCTBase(TestCase):
 
     def test_definition(self):
         for i in FFTWDATA_SIZES:
-            x, yr = fftw_dct_ref(self.type, i, self.rdt)
+            x, yr, dt = fftw_dct_ref(self.type, i, self.rdt)
             y = dct(x, type=self.type)
-            self.assertTrue(y.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
+            assert_equal(y.dtype, dt)
             # XXX: we divide by np.max(y) because the tests fail otherwise. We
             # should really use something like assert_array_approx_equal. The
             # difference is due to fftw using a better algorithm w.r.t error
@@ -84,25 +117,26 @@ class _TestDCTBase(TestCase):
 
 class _TestDCTIIBase(_TestDCTBase):
     def test_definition_matlab(self):
-        """Test correspondance with matlab (orthornomal mode)."""
+        # Test correspondance with matlab (orthornomal mode).
         for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
+            dt = np.result_type(np.float32, self.rdt)
+            x = np.array(X[i], dtype=dt)
+
             yr = Y[i]
             y = dct(x, norm="ortho", type=2)
-            self.assertTrue(y.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
+            assert_equal(y.dtype, dt)
             assert_array_almost_equal(y, yr, decimal=self.dec)
 
 
 class _TestDCTIIIBase(_TestDCTBase):
     def test_definition_ortho(self):
-        """Test orthornomal mode."""
+        # Test orthornomal mode.
         for i in range(len(X)):
             x = np.array(X[i], dtype=self.rdt)
+            dt = np.result_type(np.float32, self.rdt)
             y = dct(x, norm='ortho', type=2)
             xi = dct(y, norm="ortho", type=3)
-            self.assertTrue(xi.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (xi.dtype, self.rdt))
+            assert_equal(xi.dtype, dt)
             assert_array_almost_equal(xi, x, decimal=self.dec)
 
 
@@ -116,6 +150,13 @@ class TestDCTIDouble(_TestDCTBase):
 class TestDCTIFloat(_TestDCTBase):
     def setUp(self):
         self.rdt = np.float32
+        self.dec = 5
+        self.type = 1
+
+
+class TestDCTIInt(_TestDCTBase):
+    def setUp(self):
+        self.rdt = np.int
         self.dec = 5
         self.type = 1
 
@@ -134,6 +175,13 @@ class TestDCTIIFloat(_TestDCTIIBase):
         self.type = 2
 
 
+class TestDCTIIInt(_TestDCTIIBase):
+    def setUp(self):
+        self.rdt = np.int
+        self.dec = 5
+        self.type = 2
+
+
 class TestDCTIIIDouble(_TestDCTIIIBase):
     def setUp(self):
         self.rdt = np.double
@@ -148,6 +196,13 @@ class TestDCTIIIFloat(_TestDCTIIIBase):
         self.type = 3
 
 
+class TestDCTIIIInt(_TestDCTIIIBase):
+    def setUp(self):
+        self.rdt = np.int
+        self.dec = 5
+        self.type = 3
+
+
 class _TestIDCTBase(TestCase):
     def setUp(self):
         self.rdt = None
@@ -156,14 +211,13 @@ class _TestIDCTBase(TestCase):
 
     def test_definition(self):
         for i in FFTWDATA_SIZES:
-            xr, yr = fftw_dct_ref(self.type, i, self.rdt)
+            xr, yr, dt = fftw_dct_ref(self.type, i, self.rdt)
             x = idct(yr, type=self.type)
             if self.type == 1:
                 x /= 2 * (i-1)
             else:
                 x /= 2 * i
-            self.assertTrue(x.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (x.dtype, self.rdt))
+            assert_equal(x.dtype, dt)
             # XXX: we divide by np.max(y) because the tests fail otherwise. We
             # should really use something like assert_array_approx_equal. The
             # difference is due to fftw using a better algorithm w.r.t error
@@ -186,6 +240,13 @@ class TestIDCTIFloat(_TestIDCTBase):
         self.type = 1
 
 
+class TestIDCTIInt(_TestIDCTBase):
+    def setUp(self):
+        self.rdt = np.int
+        self.dec = 4
+        self.type = 1
+
+
 class TestIDCTIIDouble(_TestIDCTBase):
     def setUp(self):
         self.rdt = np.double
@@ -196,6 +257,13 @@ class TestIDCTIIDouble(_TestIDCTBase):
 class TestIDCTIIFloat(_TestIDCTBase):
     def setUp(self):
         self.rdt = np.float32
+        self.dec = 5
+        self.type = 2
+
+
+class TestIDCTIIInt(_TestIDCTBase):
+    def setUp(self):
+        self.rdt = np.int
         self.dec = 5
         self.type = 2
 
@@ -214,6 +282,13 @@ class TestIDCTIIIFloat(_TestIDCTBase):
         self.type = 3
 
 
+class TestIDCTIIIInt(_TestIDCTBase):
+    def setUp(self):
+        self.rdt = np.int
+        self.dec = 5
+        self.type = 3
+
+
 class _TestDSTBase(TestCase):
     def setUp(self):
         self.rdt = None  # dtype
@@ -222,10 +297,9 @@ class _TestDSTBase(TestCase):
 
     def test_definition(self):
         for i in FFTWDATA_SIZES:
-            xr, yr = fftw_dst_ref(self.type, i, self.rdt)
+            xr, yr, dt = fftw_dst_ref(self.type, i, self.rdt)
             y = dst(xr, type=self.type)
-            self.assertTrue(y.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
+            assert_equal(y.dtype, dt)
             # XXX: we divide by np.max(y) because the tests fail otherwise. We
             # should really use something like assert_array_approx_equal. The
             # difference is due to fftw using a better algorithm w.r.t error
@@ -248,6 +322,13 @@ class TestDSTIFloat(_TestDSTBase):
         self.type = 1
 
 
+class TestDSTIInt(_TestDSTBase):
+    def setUp(self):
+        self.rdt = np.int
+        self.dec = 5
+        self.type = 1
+
+
 class TestDSTIIDouble(_TestDSTBase):
     def setUp(self):
         self.rdt = np.double
@@ -258,6 +339,13 @@ class TestDSTIIDouble(_TestDSTBase):
 class TestDSTIIFloat(_TestDSTBase):
     def setUp(self):
         self.rdt = np.float32
+        self.dec = 6
+        self.type = 2
+
+
+class TestDSTIIInt(_TestDSTBase):
+    def setUp(self):
+        self.rdt = np.int
         self.dec = 6
         self.type = 2
 
@@ -276,6 +364,13 @@ class TestDSTIIIFloat(_TestDSTBase):
         self.type = 3
 
 
+class TestDSTIIIInt(_TestDSTBase):
+    def setUp(self):
+        self.rdt = np.int
+        self.dec = 7
+        self.type = 3
+
+
 class _TestIDSTBase(TestCase):
     def setUp(self):
         self.rdt = None
@@ -284,14 +379,13 @@ class _TestIDSTBase(TestCase):
 
     def test_definition(self):
         for i in FFTWDATA_SIZES:
-            xr, yr = fftw_dst_ref(self.type, i, self.rdt)
+            xr, yr, dt = fftw_dst_ref(self.type, i, self.rdt)
             x = idst(yr, type=self.type)
             if self.type == 1:
                 x /= 2 * (i+1)
             else:
                 x /= 2 * i
-            self.assertTrue(x.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (x.dtype, self.rdt))
+            assert_equal(x.dtype, dt)
             # XXX: we divide by np.max(x) because the tests fail otherwise. We
             # should really use something like assert_array_approx_equal. The
             # difference is due to fftw using a better algorithm w.r.t error
@@ -314,6 +408,13 @@ class TestIDSTIFloat(_TestIDSTBase):
         self.type = 1
 
 
+class TestIDSTIInt(_TestIDSTBase):
+    def setUp(self):
+        self.rdt = np.int
+        self.dec = 4
+        self.type = 1
+
+
 class TestIDSTIIDouble(_TestIDSTBase):
     def setUp(self):
         self.rdt = np.double
@@ -324,6 +425,13 @@ class TestIDSTIIDouble(_TestIDSTBase):
 class TestIDSTIIFloat(_TestIDSTBase):
     def setUp(self):
         self.rdt = np.float32
+        self.dec = 6
+        self.type = 2
+
+
+class TestIDSTIIInt(_TestIDSTBase):
+    def setUp(self):
+        self.rdt = np.int
         self.dec = 6
         self.type = 2
 
@@ -342,25 +450,27 @@ class TestIDSTIIIFloat(_TestIDSTBase):
         self.type = 3
 
 
+class TestIDSTIIIInt(_TestIDSTBase):
+    def setUp(self):
+        self.rdt = np.int
+        self.dec = 6
+        self.type = 3
+
+
 class TestOverwrite(object):
-    """
-    Check input overwrite behavior
-    """
+    """Check input overwrite behavior """
 
     real_dtypes = [np.float32, np.float64]
 
     def _check(self, x, routine, type, fftsize, axis, norm, overwrite_x,
                should_overwrite, **kw):
         x2 = x.copy()
-        y = routine(x2, type, fftsize, axis, norm, overwrite_x=overwrite_x)
+        routine(x2, type, fftsize, axis, norm, overwrite_x=overwrite_x)
 
         sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
             routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
         if not should_overwrite:
             assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
-        else:
-            if (x2 == x).all():
-                raise AssertionError("no overwrite in %s" % sig)
 
     def _check_1d(self, routine, dtype, shape, axis, overwritable_dtypes):
         np.random.seed(1234)
@@ -411,6 +521,7 @@ class TestOverwrite(object):
             self._check_1d(idst, dtype, (16,), -1, overwritable)
             self._check_1d(idst, dtype, (16, 2), 0, overwritable)
             self._check_1d(idst, dtype, (2, 16), 1, overwritable)
+
 
 if __name__ == "__main__":
     np.testing.run_module_suite()

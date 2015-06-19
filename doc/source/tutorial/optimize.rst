@@ -19,7 +19,7 @@ The module contains:
    functions (:func:`minimize`) using a variety of algorithms (e.g. BFGS,
    Nelder-Mead simplex, Newton Conjugate Gradient, COBYLA or SLSQP)
 
-2. Global (brute-force) optimization routines  (e.g., :func:`anneal`, :func:`basinhopping`)
+2. Global (brute-force) optimization routines  (e.g. :func:`basinhopping`, :func:`differential_evolution`)
 
 3. Least-squares minimization (:func:`leastsq`) and curve fitting
    (:func:`curve_fit`) algorithms
@@ -45,7 +45,7 @@ problem of minimizing the Rosenbrock function of :math:`N` variables:
 .. math::
    :nowrap:
 
-    \[ f\left(\mathbf{x}\right)=\sum_{i=1}^{N-1}100\left(x_{i}-x_{i-1}^{2}\right)^{2}+\left(1-x_{i-1}\right)^{2}.\]
+    f\left(\mathbf{x}\right)=\sum_{i=1}^{N-1}100\left(x_{i}-x_{i-1}^{2}\right)^{2}+\left(1-x_{i-1}\right)^{2}.
 
 The minimum value of this function is 0 which is achieved when
 :math:`x_{i}=1.`
@@ -157,7 +157,7 @@ locally to a quadratic form:
 .. math::
    :nowrap:
 
-    \[ f\left(\mathbf{x}\right)\approx f\left(\mathbf{x}_{0}\right)+\nabla f\left(\mathbf{x}_{0}\right)\cdot\left(\mathbf{x}-\mathbf{x}_{0}\right)+\frac{1}{2}\left(\mathbf{x}-\mathbf{x}_{0}\right)^{T}\mathbf{H}\left(\mathbf{x}_{0}\right)\left(\mathbf{x}-\mathbf{x}_{0}\right).\]
+    f\left(\mathbf{x}\right)\approx f\left(\mathbf{x}_{0}\right)+\nabla f\left(\mathbf{x}_{0}\right)\cdot\left(\mathbf{x}-\mathbf{x}_{0}\right)+\frac{1}{2}\left(\mathbf{x}-\mathbf{x}_{0}\right)^{T}\mathbf{H}\left(\mathbf{x}_{0}\right)\left(\mathbf{x}-\mathbf{x}_{0}\right).
 
 where :math:`\mathbf{H}\left(\mathbf{x}_{0}\right)` is a matrix of second-derivatives (the Hessian). If the Hessian is
 positive definite then the local minimum of this function can be found
@@ -166,7 +166,7 @@ by setting the gradient of the quadratic form to zero, resulting in
 .. math::
    :nowrap:
 
-    \[ \mathbf{x}_{\textrm{opt}}=\mathbf{x}_{0}-\mathbf{H}^{-1}\nabla f.\]
+    \mathbf{x}_{\textrm{opt}}=\mathbf{x}_{0}-\mathbf{H}^{-1}\nabla f.
 
 The inverse of the Hessian is evaluated using the conjugate-gradient
 method. An example of employing this method to minimizing the
@@ -202,7 +202,7 @@ For example, the Hessian when :math:`N=5` is
 .. math::
    :nowrap:
 
-    \[ \mathbf{H}=\left[\begin{array}{ccccc} 1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\ -400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\ 0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\ 0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\ 0 & 0 & 0 & -400x_{3} & 200\end{array}\right].\]
+    \mathbf{H}=\left[\begin{array}{ccccc} 1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\ -400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\ 0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\ 0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\ 0 & 0 & 0 & -400x_{3} & 200\end{array}\right].
 
 The code which computes this Hessian along with the code to minimize
 the function using Newton-CG method is shown in the following example:
@@ -219,7 +219,7 @@ the function using Newton-CG method is shown in the following example:
 
     >>> res = minimize(rosen, x0, method='Newton-CG',
     ...                jac=rosen_der, hess=rosen_hess,
-    ...                options={'avextol': 1e-8, 'disp': True})
+    ...                options={'xtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 19
@@ -251,12 +251,12 @@ elements:
 .. math::
    :nowrap:
 
-    \[ \mathbf{H}\left(\mathbf{x}\right)\mathbf{p}=\left[\begin{array}{c} \left(1200x_{0}^{2}-400x_{1}+2\right)p_{0}-400x_{0}p_{1}\\ \vdots\\ -400x_{i-1}p_{i-1}+\left(202+1200x_{i}^{2}-400x_{i+1}\right)p_{i}-400x_{i}p_{i+1}\\ \vdots\\ -400x_{N-2}p_{N-2}+200p_{N-1}\end{array}\right].\]
+    \mathbf{H}\left(\mathbf{x}\right)\mathbf{p}=\left[\begin{array}{c} \left(1200x_{0}^{2}-400x_{1}+2\right)p_{0}-400x_{0}p_{1}\\ \vdots\\ -400x_{i-1}p_{i-1}+\left(202+1200x_{i}^{2}-400x_{i+1}\right)p_{i}-400x_{i}p_{i+1}\\ \vdots\\ -400x_{N-2}p_{N-2}+200p_{N-1}\end{array}\right].
 
 Code which makes use of this Hessian product to minimize the
 Rosenbrock function using :func:`minimize` follows:
 
-    >>> def rosen_hess_p(x,p):
+    >>> def rosen_hess_p(x, p):
     ...     x = np.asarray(x)
     ...     Hp = np.zeros_like(x)
     ...     Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
@@ -266,8 +266,8 @@ Rosenbrock function using :func:`minimize` follows:
     ...     return Hp
 
     >>> res = minimize(rosen, x0, method='Newton-CG',
-    ...                jac=rosen_der, hess=rosen_hess_p,
-    ...                options={'avextol': 1e-8, 'disp': True})
+    ...                jac=rosen_der, hessp=rosen_hess_p,
+    ...                options={'xtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 20
@@ -302,15 +302,17 @@ As an example, let us consider the problem of maximizing the function:
 .. math::
     :nowrap:
 
-    \[ f(x, y) = 2 x y + 2 x - x^2 - 2 y^2 \]
+    f(x, y) = 2 x y + 2 x - x^2 - 2 y^2
 
 subject to an equality and an inequality constraints defined as:
 
 .. math::
     :nowrap:
 
-    \[ x^3 - y = 0 \]
-    \[ y - 1 \geq 0 \]
+    \begin{eqnarray*}
+      x^3 - y &= 0 \\
+      y - 1 &\geq 0
+    \end{eqnarray*}
 
 
 
@@ -328,7 +330,7 @@ The objective function and its derivative are defined as follows.
 
 Note that since :func:`minimize` only minimizes functions, the ``sign``
 parameter is introduced to multiply the objective function (and its
-derivative by -1) in order to perform a maximization.
+derivative) by -1 in order to perform a maximization.
 
 Then constraints are defined as a sequence of dictionaries, with keys
 ``type``, ``fun`` and ``jac``.
@@ -384,7 +386,7 @@ data-point as
 .. math::
    :nowrap:
 
-    \[ e_{i}\left(\mathbf{p},\mathbf{y}_{i},\mathbf{x}_{i}\right)=\left\Vert \mathbf{y}_{i}-\mathbf{f}\left(\mathbf{x}_{i},\mathbf{p}\right)\right\Vert .\]
+    e_{i}\left(\mathbf{p},\mathbf{y}_{i},\mathbf{x}_{i}\right)=\left\Vert \mathbf{y}_{i}-\mathbf{f}\left(\mathbf{x}_{i},\mathbf{p}\right)\right\Vert
 
 An objective function to pass to any of the previous minization
 algorithms to obtain a least-squares fit is.
@@ -392,7 +394,7 @@ algorithms to obtain a least-squares fit is.
 .. math::
    :nowrap:
 
-    \[ J\left(\mathbf{p}\right)=\sum_{i=0}^{N-1}e_{i}^{2}\left(\mathbf{p}\right).\]
+    J\left(\mathbf{p}\right)=\sum_{i=0}^{N-1}e_{i}^{2}\left(\mathbf{p}\right).
 
 
 
@@ -411,14 +413,14 @@ measured data follow a sinusoidal pattern
 .. math::
    :nowrap:
 
-    \[ y_{i}=A\sin\left(2\pi kx_{i}+\theta\right)\]
+    y_{i}=A\sin\left(2\pi kx_{i}+\theta\right)
 
 where the parameters :math:`A,` :math:`k` , and :math:`\theta` are unknown. The residual vector is
 
 .. math::
    :nowrap:
 
-    \[ e_{i}=\left|y_{i}-A\sin\left(2\pi kx_{i}+\theta\right)\right|.\]
+    e_{i}=\left|y_{i}-A\sin\left(2\pi kx_{i}+\theta\right)\right|.
 
 By defining a function to compute the residuals and (selecting an
 appropriate starting position), the least-squares fit routine can be
@@ -427,21 +429,21 @@ This is shown in the following example:
 
 .. plot::
 
-   >>> from numpy import *
-   >>> x = arange(0,6e-2,6e-2/30)
-   >>> A,k,theta = 10, 1.0/3e-2, pi/6
-   >>> y_true = A*sin(2*pi*k*x+theta)
+   >>> from numpy import arange, sin, pi, random, array
+   >>> x = arange(0, 6e-2, 6e-2 / 30)
+   >>> A, k, theta = 10, 1.0 / 3e-2, pi / 6
+   >>> y_true = A * sin(2 * pi * k * x + theta)
    >>> y_meas = y_true + 2*random.randn(len(x))
 
    >>> def residuals(p, y, x):
-   ...     A,k,theta = p
-   ...     err = y-A*sin(2*pi*k*x+theta)
+   ...     A, k, theta = p
+   ...     err = y - A * sin(2 * pi * k * x + theta)
    ...     return err
 
    >>> def peval(x, p):
-   ...     return p[0]*sin(2*pi*p[1]*x+p[2])
+   ...     return p[0] * sin(2 * pi * p[1] * x + p[2])
 
-   >>> p0 = [8, 1/2.3e-2, pi/3]
+   >>> p0 = [8, 1 / 2.3e-2, pi / 3]
    >>> print(array(p0))
    [  8.      43.4783   1.0472]
 
@@ -454,7 +456,7 @@ This is shown in the following example:
    [ 10.      33.3333   0.5236]
 
    >>> import matplotlib.pyplot as plt
-   >>> plt.plot(x,peval(x,plsq[0]),x,y_meas,'o',x,y_true)
+   >>> plt.plot(x, peval(x, plsq[0]),x,y_meas,'o',x,y_true)
    >>> plt.title('Least-squares fit to noisy data')
    >>> plt.legend(['Fit', 'Noisy', 'True'])
    >>> plt.show()
@@ -520,6 +522,91 @@ For example, to find the minimum of :math:`J_{1}\left( x \right)` near
     5.33144184241
 
 
+Custom minimizers
+-----------------
+
+Sometimes, it may be useful to use a custom method as a (multivariate
+or univariate) minimizer, for example when using some library wrappers
+of :func:`minimize` (e.g. :func:`basinhopping`).
+
+We can achieve that by, instead of passing a method name, we pass
+a callable (either a function or an object implementing a `__call__`
+method) as the `method` parameter.
+
+Let us consider an (admittedly rather virtual) need to use a trivial
+custom multivariate minimization method that will just search the
+neighborhood in each dimension independently with a fixed step size::
+
+    >>> def custmin(fun, x0, args=(), maxfev=None, stepsize=0.1,
+    ...         maxiter=100, callback=None, **options):
+    ...     bestx = x0
+    ...     besty = fun(x0)
+    ...     funcalls = 1
+    ...     niter = 0
+    ...     improved = True
+    ...     stop = False
+    ...
+    ...     while improved and not stop and niter < maxiter:
+    ...         improved = False
+    ...         niter += 1
+    ...         for dim in range(np.size(x0)):
+    ...             for s in [bestx[dim] - stepsize, bestx[dim] + stepsize]:
+    ...                 testx = np.copy(bestx)
+    ...                 testx[dim] = s
+    ...                 testy = fun(testx, *args)
+    ...                 funcalls += 1
+    ...                 if testy < besty:
+    ...                     besty = testy
+    ...                     bestx = testx
+    ...                     improved = True
+    ...             if callback is not None:
+    ...                 callback(bestx)
+    ...             if maxfev is not None and funcalls >= maxfev:
+    ...                 stop = True
+    ...                 break
+    ...
+    ...     return OptimizeResult(fun=besty, x=bestx, nit=niter,
+    ...                           nfev=funcalls, success=(niter > 1))
+    >>> x0 = [1.35, 0.9, 0.8, 1.1, 1.2]
+    >>> res = minimize(rosen, x0, method=custmin, options=dict(stepsize=0.05))
+    >>> res.x
+    [ 1.  1.  1.  1.  1.]
+
+This will work just as well in case of univariate optimization::
+
+    >>> def custmin(fun, bracket, args=(), maxfev=None, stepsize=0.1,
+    ...         maxiter=100, callback=None, **options):
+    ...     bestx = (bracket[1] + bracket[0]) / 2.0
+    ...     besty = fun(bestx)
+    ...     funcalls = 1
+    ...     niter = 0
+    ...     improved = True
+    ...     stop = False
+    ...
+    ...     while improved and not stop and niter < maxiter:
+    ...         improved = False
+    ...         niter += 1
+    ...         for testx in [bestx - stepsize, bestx + stepsize]:
+    ...             testy = fun(testx, *args)
+    ...             funcalls += 1
+    ...             if testy < besty:
+    ...                 besty = testy
+    ...                 bestx = testx
+    ...                 improved = True
+    ...         if callback is not None:
+    ...             callback(bestx)
+    ...         if maxfev is not None and funcalls >= maxfev:
+    ...             stop = True
+    ...             break
+    ...
+    ...     return OptimizeResult(fun=besty, x=bestx, nit=niter,
+    ...                           nfev=funcalls, success=(niter > 1))
+    >>> res = minimize_scalar(f, bracket=(-3.5, 0), method=custmin,
+    ...                       options=dict(stepsize = 0.05))
+    >>> res.x
+    -2.0
+
+
 Root finding
 ------------
 
@@ -561,7 +648,7 @@ equation
 .. math::
    :nowrap:
 
-    \[ x+2\cos\left(x\right)=0,\]
+    x+2\cos\left(x\right)=0,
 
 a root of which can be found as follows::
 
