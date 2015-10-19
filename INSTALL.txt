@@ -1,6 +1,8 @@
 Building and installing SciPy
 +++++++++++++++++++++++++++++
 
+EDIT: test of the web interface
+
 See http://www.scipy.org/Installing_SciPy/
 for more extensive (and possibly more up-to-date) build instructions.
 
