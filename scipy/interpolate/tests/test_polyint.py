@@ -4,25 +4,23 @@ import warnings
 
 import numpy as np
 
-from numpy.testing import (
-    assert_almost_equal, assert_array_equal, TestCase, run_module_suite,
-    assert_allclose, assert_equal, assert_, assert_raises)
-
-from scipy.interpolate import (
-    KroghInterpolator, krogh_interpolate,
-    BarycentricInterpolator, barycentric_interpolate,
-    approximate_taylor_polynomial, pchip, PchipInterpolator,
-    Akima1DInterpolator, CubicSpline)
+from numpy.testing import (assert_almost_equal, assert_array_equal,
+        TestCase, run_module_suite, assert_allclose, assert_equal, assert_)
+from scipy.interpolate import (splrep, splev,
+        KroghInterpolator, krogh_interpolate,
+        BarycentricInterpolator, barycentric_interpolate,
+        approximate_taylor_polynomial, pchip, PchipInterpolator,
+        Akima1DInterpolator, CubicSpline, make_interp_spline)
 from scipy._lib.six import xrange
 
 
 def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0):
     np.random.seed(1234)
 
-    x = [-1, 0, 1]
+    x = [-1, 0, 1, 2, 3, 4]
     s = list(range(1, len(y_shape)+1))
     s.insert(axis % (len(y_shape)+1), 0)
-    y = np.random.rand(*((3,) + y_shape)).transpose(s)
+    y = np.random.rand(*((6,) + y_shape)).transpose(s)
 
     # Cython code chokes on y.shape = (0, 3) etc, skip them
     if y.size == 0:
@@ -48,12 +46,16 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0):
         yi, y = np.broadcast_arrays(yi, yv)
         assert_allclose(yi, y)
 
-SHAPES = [(), (0,), (1,), (3, 2, 5)]
+SHAPES = [(), (0,), (1,), (6, 2, 5)]
 
 
 def test_shapes():
+
+    def spl_interp(x, y, axis):
+        return make_interp_spline(x, y, axis=axis)
+
     for ip in [KroghInterpolator, BarycentricInterpolator, pchip,
-               Akima1DInterpolator, CubicSpline]:
+               Akima1DInterpolator, CubicSpline, spl_interp]:
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
@@ -67,7 +69,7 @@ def test_derivs_shapes():
     for s1 in SHAPES:
         for s2 in SHAPES:
             for axis in range(-len(s2), len(s2)):
-                yield check_shape, krogh_derivs, s1, s2, (3,), axis
+                yield check_shape, krogh_derivs, s1, s2, (6,), axis
 
 
 def test_deriv_shapes():
@@ -105,9 +107,15 @@ def test_deriv_shapes():
     def cspline_antideriv(x, y, axis=0):
         return CubicSpline(x, y, axis).antiderivative()
 
+    def bspl_deriv(x, y, axis=0):
+        return make_interp_spline(x, y, axis=axis).derivative()
+
+    def bspl_antideriv(x, y, axis=0):
+        return make_interp_spline(x, y, axis=axis).antiderivative()
+
     for ip in [krogh_deriv, pchip_deriv, pchip_deriv2, pchip_deriv_inplace,
                pchip_antideriv, pchip_antideriv2, akima_deriv, akima_antideriv,
-               cspline_deriv, cspline_antideriv]:
+               cspline_deriv, cspline_antideriv, bspl_deriv, bspl_antideriv]:
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
