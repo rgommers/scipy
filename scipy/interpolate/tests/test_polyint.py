@@ -5,7 +5,8 @@ import warnings
 import numpy as np
 
 from numpy.testing import (assert_almost_equal, assert_array_equal,
-        TestCase, run_module_suite, assert_allclose, assert_equal, assert_)
+        TestCase, run_module_suite, assert_allclose, assert_equal, assert_,
+        assert_raises)
 from scipy.interpolate import (splrep, splev,
         KroghInterpolator, krogh_interpolate,
         BarycentricInterpolator, barycentric_interpolate,
