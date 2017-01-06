@@ -111,13 +111,30 @@ DEF ERROR_VALUE = 2
 from libc.math cimport sin
 
 
-cdef ccallback_signature_t signatures[3]
+len_sigs = 3
+extra_sigs = []
+if sizeof(int) == sizeof(long):
+    len_sigs += 2
+    extra_sigs.append(("double (double, long *, void *)", 0))
+    extra_sigs.append(("double (double, double, long *, void *)", 1))
+if sizeof(int) == sizeof(short):
+    len_sigs += 2
+    extra_sigs.append(("double (double, short *, void *)", 0))
+    extra_sigs.append(("double (double, double, short *, void *)", 1))
+
+# Cython is not happy with the variable length declaration here,
+# nor with [] or [:].  What's the right syntax here?
+cdef ccallback_signature_t signatures[len_sigs]
 
 signatures[0].signature = "double (double, int *, void *)"
 signatures[0].value = 0
 signatures[1].signature = "double (double, double, int *, void *)"
 signatures[1].value = 1
-signatures[2].signature = NULL
+for idx, sig in enumerate(extra_sigs):
+    signatures[2+idx].signature = sig[0]
+    signatures[2+idx].value = sig[1]
+
+signatures[len_sigs-1].signature = NULL
 
 
 cdef double test_thunk_cython(double a, int *error_flag, void *data) nogil except? -1.0:
