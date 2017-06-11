@@ -80,6 +80,10 @@ del _num
 del linalg
 __all__.remove('linalg')
 
+# Remove np.diff so that we can import scipy.diff
+del diff
+__all__.remove('diff')
+
 # We first need to detect if we're being called as part of the scipy
 # setup procedure itself in a reliable manner.
 try:
