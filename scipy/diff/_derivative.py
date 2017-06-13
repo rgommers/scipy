@@ -4,29 +4,27 @@ from _epsilon_generator import _epsilon
 
 
 def derivative(f, x, **options):
-    '''
+    """
     Derivative of a function
 
     Parameters
     ----------
+    f : function
+        ``f(x)`` returning one value.
+        ``f(x)`` should be univariate.
     x : array
         parameters at which the derivative is evaluated
-
-    f : function
-        `f(x)` returning one value.
-        `f(x)` should be univariate.
-
-    **options : dict
+    options : dict
         options for specifying the method and epsilon.
-        method : {'central','foward'}.
+        method : {'central','forward'}.
         Stepsize, if None, optimal stepsize is used. This is EPS**(1/2)*x for
-        `centered` == False and EPS**(1/3)*x for `centered` == True.
+        method = 'central' and EPS**(1/3)*x otherwise.
 
     Returns
     -------
     der : array
         derivative
-    '''
+    """
 
     x = np.asarray(x)
     method = 'central'
@@ -45,37 +43,35 @@ def derivative(f, x, **options):
     epsilon = _epsilon(x, s, eps)
     if method is not 'central':
         der = np.empty(x.size)
-        der = (f(x+epsilon)-f(x))/epsilon
+        der = (f(x+epsilon)-f(x)) / epsilon
 
     else:
         der = np.empty(x.size)
-        der = (f(x+epsilon)-f(x-epsilon))/(2*epsilon)
+        der = (f(x+epsilon)-f(x-epsilon)) / (2*epsilon)
     return der
 
 
 def gradient(f, x, **options):
-    '''
+    """
     Gradient of a function
 
     Parameters
     ----------
-    x : 2d array
-        parameters at which the derivative is evaluated.
-
     f : function
         `f(x)` returning one value.
-
-    **options : dict
+    x : 2d array
+        parameters at which the derivative is evaluated.
+    options : dict
         options for specifying the method and epsilon.
         method : {'central','foward'}.
         Stepsize, if None, optimal stepsize is used. This is EPS**(1/2)*x for
-        `centered` == False and EPS**(1/3)*x for `centered` == True.
+        method = 'central' and EPS**(1/3)*x otherwise.
 
     Returns
     -------
     grad : array
         gradient
-    '''
+    """
 
     x = np.asarray(x)
 
@@ -102,36 +98,34 @@ def gradient(f, x, **options):
     if method is 'central':
         grad = np.reshape(
             f(*(x_transpose + epsilon))-f(*(x_transpose - epsilon)), (x.shape))
-        grad = grad/(2*h)
+        grad = grad / (2*h)
     else:
         grad = np.reshape(
             f(*(x_transpose + epsilon))-f(*x_transpose), (x.shape))
-        grad = grad/h
+        grad = grad / h
     return grad
 
 
 def jacobian(f, x, **options):
-    '''
+    """
     Jacobian of a function
 
     Parameters
     ----------
+    f : function
     x : 2d array
         parameters at which the derivative is evaluated.
-
-    f : function
-
-    **options : dict
+    options : dict
         options for specifying the method and epsilon.
         method : {'central','foward'}.
         Stepsize, if None, optimal stepsize is used. This is EPS**(1/2)*x for
-        `centered` == False and EPS**(1/3)*x for `centered` == True.
+        method = 'central' and EPS**(1/3)*x otherwise.
 
     Returns
     -------
     jac : array
         Jacobian
-    '''
+    """
 
     x = np.asarray(x)
 
@@ -166,10 +160,10 @@ def jacobian(f, x, **options):
             f(*(x_transpose - epsilon)))
         shape = jac.shape
         jac = np.reshape(jac, ((shape[0],)+(x.shape)))
-        jac = jac/(2*h)
+        jac = jac / (2*h)
     else:
         jac = np.asarray(f(*(x_transpose + epsilon)))-f0
         shape = jac.shape
         jac = np.reshape(jac, ((shape[0],)+(x.shape)))
-        jac = jac/h
+        jac = jac / h
     return jac.swapaxes(1, 0)

@@ -3,7 +3,24 @@ import numpy as np
 EPS = np.MachAr().eps
 
 
-def _epsilon(x, s, eps):
+def _epsilon(x, s=3, eps=None):
+    """
+    Generates steps for computing derivatives.
+
+    Parameters
+    ----------
+    x : array
+        parameters at which the derivative is evaluated.
+    s : int, optional
+        scale for generation of steps.
+    eps : array, optional
+        value of the steps
+
+    Returns
+    -------
+    epsilon : array
+        steps
+    """
 
     if eps is not None:
         if np.isscalar(eps):
