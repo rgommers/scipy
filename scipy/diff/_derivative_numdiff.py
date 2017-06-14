@@ -21,8 +21,9 @@ def choose_derivative_with_least_error(der, errors):
                     (abs(errors) > (a_median * 10))) * (a_median > 1e-8) +
                     ((errors < p25-1.5*iqr) + (p75+1.5*iqr < der)))
         errors = errors + outliers * np.abs(errors - median)
-    except ValueError as msg:
-        warnings.warn(str(msg))
+    except ValueError:
+        warnings.warn('the results cannot be trusted if a slice'
+                      'contains only NaNs and Infs.')
         errors = 0 * errors
 
     try:
@@ -33,8 +34,9 @@ def choose_derivative_with_least_error(der, errors):
             idx = np.flatnonzero(errors[:, i] == min_error)
             result[i] = (der[idx[idx.size // 2]][i])
         return result
-    except ValueError as msg:
-        warnings.warn(str(msg))
+    except ValueError:
+        warnings.warn('the results cannot be trusted if a slice'
+                      'contains only NaNs and Infs.')
         result = np.zeros(der.shape[1], dtype=float)
         for i in range(der.shape[1]):
             result[i] = der[0][i]
@@ -77,9 +79,11 @@ def extrapolate(order, num_terms, step, step_ratio, results, steps, shape):
             abserr = np.where(converged, tol2 * 10, np.abs(new_seq - conv3))
             abserr = np.abs(err1) + np.abs(err2) + abserr
             result = choose_derivative_with_least_error(new_seq, abserr)
+            result = result.reshape(shape)
     else:
         abserr = np.abs(new_sequence) * 0
         result = choose_derivative_with_least_error(new_sequence, abserr)
+        result = result.reshape(shape)
     return result
 
 
