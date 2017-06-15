@@ -3,7 +3,7 @@ import numpy as np
 from _step_generators import _generate_step
 from scipy import misc
 from scipy.ndimage.filters import convolve1d
-from ._derivative_numdiff import extrapolate
+from _derivative_numdiff import extrapolate
 
 
 def _increments(n, h):
@@ -54,7 +54,6 @@ def jacobian(f, x, **options):
 
     3. D Levy, Numerical Differentiation, Section 5
     """
-    
     x = np.asarray(np.atleast_1d(x))
     x = np.transpose(x)
     method = options.pop('method', 'central')
@@ -66,7 +65,7 @@ def jacobian(f, x, **options):
                          ' as `max_step` or `min_step`')
     step_ratio = options.pop('step_ratio', None)
     if n == 0:
-        derivative = f(x)
+        jacobian = f(x)
     else:
         if step_ratio is None:
             if n == 1:
@@ -145,9 +144,13 @@ def jacobian(f, x, **options):
         jacobian = fdiff / (h**n)
         num_steps = max(h.shape[0] + 1 - fdi.size, 1)
         jacobian = extrapolate(order, richarson_terms, richardson_step,
-                                 step_ratio, jacobian[:num_steps],
-                                 h[:num_steps], original_shape)
+                               step_ratio, jacobian[:num_steps],
+                               h[:num_steps], original_shape)
     if jacobian.ndim == 3:
         jacobian = np.transpose(jacobian)
     jacobian = [np.transpose(jac) for jac in jacobian]
     return jacobian
+
+
+def gradient(f, x, **options):
+    return jacobian(f, x, **options)
