@@ -1,6 +1,6 @@
 from __future__ import division
 import numpy as np
-from _epsilon_generator import _epsilon
+from ._epsilon_generator import _epsilon
 
 
 def derivative(f, x, **options):
@@ -13,7 +13,7 @@ def derivative(f, x, **options):
         ``f(x)`` returning one value.
         ``f(x)`` should be univariate.
     x : array
-        parameters at which the derivative is evaluated
+        parameters at which the derivative is to be evaluated
     options : dict
         options for specifying the method and epsilon.
         method : {'central','forward'}.
@@ -60,7 +60,7 @@ def gradient(f, x, **options):
     f : function
         `f(x)` returning one value.
     x : 2d array
-        parameters at which the derivative is evaluated.
+        parameters at which the gradient is to be evaluated.
     options : dict
         options for specifying the method and epsilon.
         method : {'central','foward'}.
@@ -97,11 +97,11 @@ def gradient(f, x, **options):
     x_transpose = np.repeat(x_transpose, x.shape[1], axis=1)
     if method is 'central':
         grad = np.reshape(
-            f(*(x_transpose + epsilon))-f(*(x_transpose - epsilon)), (x.shape))
+            f(x_transpose + epsilon)-f(x_transpose - epsilon), (x.shape))
         grad = grad / (2*h)
     else:
         grad = np.reshape(
-            f(*(x_transpose + epsilon))-f(*x_transpose), (x.shape))
+            f(x_transpose + epsilon)-f(x_transpose), (x.shape))
         grad = grad / h
     return grad
 
@@ -114,7 +114,7 @@ def jacobian(f, x, **options):
     ----------
     f : function
     x : 2d array
-        parameters at which the derivative is evaluated.
+        parameters at which the jacobian is to be evaluated.
     options : dict
         options for specifying the method and epsilon.
         method : {'central','foward'}.
@@ -149,20 +149,20 @@ def jacobian(f, x, **options):
     epsilon = np.multiply(np.asarray(identity), np.asarray(epsilon))
     x_transpose = np.transpose(x)
     x_transpose = np.repeat(x_transpose, x.shape[1], axis=1)
-    f0 = np.asarray(f(*x_transpose))
+    f0 = np.asarray(f(x_transpose))
 
     if f0.ndim == 1:
-        f0 = np.reshape(f(*x_transpose), (1, f0.shape[0]))
+        f0 = np.reshape(f(x_transpose), (1, f0.shape[0]))
 
     if method is 'central':
         jac = np.asarray(
-            f(*(x_transpose + epsilon))) - np.asarray(
-            f(*(x_transpose - epsilon)))
+            f(x_transpose + epsilon)) - np.asarray(
+            f(x_transpose - epsilon))
         shape = jac.shape
         jac = np.reshape(jac, ((shape[0],)+(x.shape)))
         jac = jac / (2*h)
     else:
-        jac = np.asarray(f(*(x_transpose + epsilon)))-f0
+        jac = np.asarray(f(x_transpose + epsilon))-f0
         shape = jac.shape
         jac = np.reshape(jac, ((shape[0],)+(x.shape)))
         jac = jac / h

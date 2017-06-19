@@ -31,7 +31,7 @@ def _generate_step(x=None, n=1, order=2, method='central', base_step=None,
         Defines the start step.
     scale : real scalar, optional
         scale used in base step.
-        Default is 500
+        Default is 2.5
     num_steps : scalar integer, optional, default max(15, min_num_steps)
         defines number of steps generated. It should be larger than
         min_num_steps = ``(n + order - 1) / fact`` where fact is 1, 2 or 4

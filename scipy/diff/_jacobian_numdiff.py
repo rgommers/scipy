@@ -1,9 +1,9 @@
 from __future__ import division
 import numpy as np
-from _step_generators import _generate_step
+from ._step_generators import _generate_step
 from scipy import misc
 from scipy.ndimage.filters import convolve1d
-from _derivative_numdiff import extrapolate
+from ._derivative_numdiff import extrapolate
 
 
 def _increments(n, h):
@@ -22,9 +22,9 @@ def jacobian(f, x, **options):
     ----------
     f : function
     x : array
-        parameters at which the derivative is evaluated
+        parameters at which the jacobian is to be evaluated
     options : dict
-        options for specifying the method, order of derivative,
+        options for specifying the method, order of jacobian,
         order of error and other parameters for step generation.
 
     Returns
@@ -57,7 +57,7 @@ def jacobian(f, x, **options):
     x = np.asarray(np.atleast_1d(x))
     x = np.transpose(x)
     method = options.pop('method', 'central')
-    n = options.pop('n', 1)
+    n = 1
     order = options.pop('order', 2)
     step = options.pop('step', None)
     if step not in ['max_step', 'min_step', None]:
