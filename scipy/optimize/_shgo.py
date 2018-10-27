@@ -1,15 +1,17 @@
 """
 shgo: The simplicial homology global optimisation algorithm
 """
+
 from __future__ import division, print_function, absolute_import
-import numpy
+
+import numpy as np
 import time
 import logging
 import warnings
-import scipy.optimize
-import scipy.spatial
+from scipy import optimize, spatial
 from scipy.optimize.shgo_m import sobol_seq
 from scipy.optimize.shgo_m.triangulation import Complex
+
 
 __all__ = ['shgo']
 
@@ -480,11 +482,11 @@ class SHGO(object):
         self.callback = callback
 
         # Bounds
-        abound = numpy.array(bounds, float)
-        self.dim = numpy.shape(abound)[0]  # Dimensionality of problem
+        abound = np.array(bounds, float)
+        self.dim = np.shape(abound)[0]  # Dimensionality of problem
 
         # Set none finite values to large floats
-        infind = ~numpy.isfinite(abound)
+        infind = ~np.isfinite(abound)
         abound[infind[:, 0], 0] = -1e50  # e308
         abound[infind[:, 1], 1] = 1e50  # e308
 
@@ -709,7 +711,7 @@ class SHGO(object):
         self.LMC = LMapCache()
 
         # Initialize return object
-        self.res = scipy.optimize.OptimizeResult()
+        self.res = optimize.OptimizeResult()
         self.res.nfev = 0  # Includes each sampling point as func evaluation
         self.res.nlfev = 0  # Local function evals for all minimisers
         self.res.nljev = 0  # Local Jacobian evals for all minimisers
@@ -851,12 +853,12 @@ class SHGO(object):
         # Find the lowest objective function value on one of
         # the vertices of the simplicial complex
         if self.sampling_method == 'simplicial':
-            self.f_lowest = numpy.inf
+            self.f_lowest = np.inf
             for x in self.HC.V.cache:
                 if self.HC.V[x].f < self.f_lowest:
                     self.f_lowest = self.HC.V[x].f
                     self.x_lowest = self.HC.V[x].x_a
-            if self.f_lowest == numpy.inf:  # no feasible point
+            if self.f_lowest == np.inf:  # no feasible point
                 self.f_lowest = None
                 self.x_lowest = None
         else:
@@ -864,7 +866,7 @@ class SHGO(object):
                 self.f_lowest = None
                 self.x_lowest = None
             else:
-                self.f_I = numpy.argsort(self.F, axis=-1)
+                self.f_I = np.argsort(self.F, axis=-1)
                 self.f_lowest = self.F[self.f_I[0]]
                 self.x_lowest = self.C[self.f_I[0]]
 
@@ -1039,8 +1041,8 @@ class SHGO(object):
             self.minimizer_pool_F.append(v.f)
             self.X_min_cache[tuple(v.x_a)] = v.x
 
-        self.minimizer_pool_F = numpy.array(self.minimizer_pool_F)
-        self.X_min = numpy.array(self.X_min)
+        self.minimizer_pool_F = np.array(self.minimizer_pool_F)
+        self.X_min = np.array(self.X_min)
 
         # TODO: Only do this if global mode
         self.sort_min_pool()
@@ -1094,7 +1096,7 @@ class SHGO(object):
                     self.stop_l_iter = True
                     break
 
-            if numpy.shape(self.X_min)[0] == 0:
+            if np.shape(self.X_min)[0] == 0:
                 self.stop_l_iter = True
                 break
 
@@ -1117,16 +1119,16 @@ class SHGO(object):
 
     def sort_min_pool(self):
         # Sort to find minimum func value in min_pool
-        self.ind_f_min = numpy.argsort(self.minimizer_pool_F)
-        self.minimizer_pool = numpy.array(self.minimizer_pool)[self.ind_f_min]
-        self.minimizer_pool_F = numpy.array(self.minimizer_pool_F)[
+        self.ind_f_min = np.argsort(self.minimizer_pool_F)
+        self.minimizer_pool = np.array(self.minimizer_pool)[self.ind_f_min]
+        self.minimizer_pool_F = np.array(self.minimizer_pool_F)[
             self.ind_f_min]
         return
 
     def trim_min_pool(self, trim_ind):
-        self.X_min = numpy.delete(self.X_min, trim_ind, axis=0)
-        self.minimizer_pool_F = numpy.delete(self.minimizer_pool_F, trim_ind)
-        self.minimizer_pool = numpy.delete(self.minimizer_pool, trim_ind)
+        self.X_min = np.delete(self.X_min, trim_ind, axis=0)
+        self.minimizer_pool_F = np.delete(self.minimizer_pool_F, trim_ind)
+        self.minimizer_pool = np.delete(self.minimizer_pool, trim_ind)
         return
 
     def g_topograph(self, x_min, X_min):
@@ -1136,12 +1138,10 @@ class SHGO(object):
         values indicating positive entries and False ref. values indicating
         negative values.
         """
-        x_min = numpy.array([x_min])
-        self.Y = scipy.spatial.distance.cdist(x_min,
-                                              X_min,
-                                              'euclidean')
+        x_min = np.array([x_min])
+        self.Y = spatial.distance.cdist(x_min, X_min, 'euclidean')
         # Find sorted indexes of spatial distances:
-        self.Z = numpy.argsort(self.Y, axis=-1)
+        self.Z = np.argsort(self.Y, axis=-1)
 
         self.Ss = X_min[self.Z]
         self.minimizer_pool = self.minimizer_pool[self.Z]
@@ -1270,8 +1270,8 @@ class SHGO(object):
             if 'bounds' in self.min_solver_args:
                 self.minimizer_kwargs['bounds'] = g_bounds
 
-        lres = scipy.optimize.minimize(self.func, x_min,
-                                       **self.minimizer_kwargs)
+        lres = optimize.minimize(self.func, x_min,
+                                 **self.minimizer_kwargs)
 
         if self.disp:
             print('lres = {}'.format(lres))
@@ -1421,23 +1421,23 @@ class SHGO(object):
         # swallow header
         buffer = next(f)
 
-        L = int(numpy.log(N) // numpy.log(2.0)) + 1
+        L = int(np.log(N) // np.log(2.0)) + 1
 
-        C = numpy.ones(N, dtype=unsigned)
+        C = np.ones(N, dtype=unsigned)
         for i in range(1, N):
             value = i
             while value & 1:
                 value >>= 1
                 C[i] += 1
 
-        points = numpy.zeros((N, D), dtype='double')
+        points = np.zeros((N, D), dtype='double')
 
         # XXX: This appears not to set the first element of V
-        V = numpy.empty(L + 1, dtype=unsigned)
+        V = np.empty(L + 1, dtype=unsigned)
         for i in range(1, L + 1):
             V[i] = 1 << (32 - i)
 
-        X = numpy.empty(N, dtype=unsigned)
+        X = np.empty(N, dtype=unsigned)
         X[0] = 0
         for i in range(1, N):
             X[i] = X[i - 1] ^ V[C[i - 1]]
@@ -1455,9 +1455,9 @@ class SHGO(object):
                     V[i] = m[i] << (32 - i)
                 for i in range(s + 1, L + 1):
                     V[i] = V[i - s] ^ (
-                        V[i - s] >> numpy.array(s, dtype=unsigned))
+                        V[i - s] >> np.array(s, dtype=unsigned))
                     for k in range(1, s):
-                        V[i] ^= numpy.array(
+                        V[i] ^= np.array(
                             (((a >> (s - 1 - k)) & 1) * V[i - k]),
                             dtype=unsigned)
 
@@ -1504,7 +1504,7 @@ class SHGO(object):
 
     def sorted_samples(self):  # Validated
         """Find indexes of the sorted sampling points"""
-        self.Ind_sorted = numpy.argsort(self.C, axis=0)
+        self.Ind_sorted = np.argsort(self.C, axis=0)
         self.Xs = self.C[self.Ind_sorted]
         return self.Ind_sorted, self.Xs
 
@@ -1535,10 +1535,10 @@ class SHGO(object):
             fn_old = self.fn
             f_cache_bool = True
 
-        self.F = numpy.zeros(numpy.shape(self.C)[0])
+        self.F = np.zeros(np.shape(self.C)[0])
         # NOTE: It might be easier to replace this with a cached
         #      objective function
-        for i in range(self.fn, numpy.shape(self.C)[0]):
+        for i in range(self.fn, np.shape(self.C)[0]):
             eval_f = True
             if self.g_cons is not None:
                 for g in self.g_cons:
@@ -1550,7 +1550,7 @@ class SHGO(object):
                 self.F[i] = self.func(self.C[i, :], *self.args)
                 self.fn += 1
             elif self.infty_cons_sampl:
-                self.F[i] = numpy.inf
+                self.F[i] = np.inf
                 self.fn += 1
         if f_cache_bool:
             if fn_old > 0:  # Restore saved function evaluations
@@ -1565,13 +1565,13 @@ class SHGO(object):
         """
         # Replace numpy inf, -inf and nan objects with floating point numbers
         # nan --> float
-        self.F[numpy.isnan(self.F)] = numpy.inf
+        self.F[np.isnan(self.F)] = np.inf
         # inf, -inf  --> floats
-        self.F = numpy.nan_to_num(self.F)
+        self.F = np.nan_to_num(self.F)
 
         self.Ft = self.F[self.Ind_sorted]
-        self.Ftp = numpy.diff(self.Ft, axis=0)  # FD
-        self.Ftm = numpy.diff(self.Ft[::-1], axis=0)[::-1]  # BD
+        self.Ftp = np.diff(self.Ft, axis=0)  # FD
+        self.Ftm = np.diff(self.Ft[::-1], axis=0)[::-1]  # BD
         return
 
     def sample_topo(self, ind):
@@ -1618,7 +1618,7 @@ class SHGO(object):
                 else:
                     self.Xi_ind_topo_i.append(False)
 
-        if numpy.array(self.Xi_ind_topo_i).all():
+        if np.array(self.Xi_ind_topo_i).all():
             self.Xi_ind_topo = True
         else:
             self.Xi_ind_topo = False
@@ -1649,14 +1649,13 @@ class SHGO(object):
         return self.X_min
 
     def delaunay_triangulation(self, grow=False, n_prc=0):
-        from scipy.spatial import Delaunay
         if not grow:
-            self.Tri = Delaunay(self.C)
+            self.Tri = spatial.Delaunay(self.C)
         else:
             if hasattr(self, 'Tri'):
                 self.Tri.add_points(self.C[n_prc:, :])
             else:
-                self.Tri = Delaunay(self.C, incremental=True)
+                self.Tri = spatial.Delaunay(self.C, incremental=True)
 
         return self.Tri
 
@@ -1683,7 +1682,7 @@ class SHGO(object):
             self.Xi_ind_topo_i.append(rel_topo_bool)
 
         # Check if minimizer
-        if numpy.array(self.Xi_ind_topo_i).all():
+        if np.array(self.Xi_ind_topo_i).all():
             self.Xi_ind_topo = True
         else:
             self.Xi_ind_topo = False
@@ -1699,8 +1698,8 @@ class SHGO(object):
         if self.disp:
             logging.info('self.fn = {}'.format(self.fn))
             logging.info('self.nc = {}'.format(self.nc))
-            logging.info('numpy.shape(self.C)'
-                         ' = {}'.format(numpy.shape(self.C)))
+            logging.info('np.shape(self.C)'
+                         ' = {}'.format(np.shape(self.C)))
         for ind in range(self.fn):
             min_bool = self.sample_delaunay_topo(ind)
             if min_bool:
@@ -1740,7 +1739,7 @@ class LMapCache:
         self.size = 0
 
     def __getitem__(self, v):
-        v = numpy.ndarray.tolist(v)
+        v = np.ndarray.tolist(v)
         v = tuple(v)
         try:
             return self.cache[v]
@@ -1751,7 +1750,7 @@ class LMapCache:
             return self.cache[v]
 
     def add_res(self, v, lres, bounds=None):
-        v = numpy.ndarray.tolist(v)
+        v = np.ndarray.tolist(v)
         v = tuple(v)
         self.cache[v].x_l = lres.x
         self.cache[v].lres = lres
@@ -1771,18 +1770,17 @@ class LMapCache:
         """
         Sort results and build the global return object
         """
-        import numpy
         results = {}
         # Sort results and save
-        self.xl_maps = numpy.array(self.xl_maps)
-        self.f_maps = numpy.array(self.f_maps)
+        self.xl_maps = np.array(self.xl_maps)
+        self.f_maps = np.array(self.f_maps)
 
         # Sorted indexes in Func_min
-        ind_sorted = numpy.argsort(self.f_maps)
+        ind_sorted = np.argsort(self.f_maps)
 
         # Save ordered list of minima
         results['xl'] = self.xl_maps[ind_sorted]  # Ordered x vals
-        self.f_maps = numpy.array(self.f_maps)
+        self.f_maps = np.array(self.f_maps)
         results['funl'] = self.f_maps[ind_sorted]
         results['funl'] = results['funl'].T
 
@@ -1790,6 +1788,6 @@ class LMapCache:
         results['x'] = self.xl_maps[ind_sorted[0]]  # Save global minima
         results['fun'] = self.f_maps[ind_sorted[0]]  # Save global fun value
 
-        self.xl_maps = numpy.ndarray.tolist(self.xl_maps)
-        self.f_maps = numpy.ndarray.tolist(self.f_maps)
+        self.xl_maps = np.ndarray.tolist(self.xl_maps)
+        self.f_maps = np.ndarray.tolist(self.f_maps)
         return results
