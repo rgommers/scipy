@@ -9,8 +9,8 @@ import time
 import logging
 import warnings
 from scipy import optimize, spatial
-from scipy.optimize.shgo_m import sobol_seq
-from scipy.optimize.shgo_m.triangulation import Complex
+from scipy.optimize._shgo_lib import sobol_seq
+from scipy.optimize._shgo_lib.triangulation import Complex
 
 
 __all__ = ['shgo']
