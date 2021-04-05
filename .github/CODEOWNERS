@@ -10,11 +10,29 @@
 
 # Each line is a file pattern followed by one or more owners.
 
-.github/CODEOWNERS @rgommers
+.github/CODEOWNERS @rgommers @larsoner
 
 # Build related files
 pyproject.toml @rgommers
-setup.py @rgommers
+setup.py @rgommers @larsoner
 
 # SciPy submodules
 scipy/stats/*qmc.* @tupui
+scipy/signal/* @larsoner
+scipy/linalg/* @larsoner
+
+# Testing infrastructure
+ci/* @larsoner
+tools/* @larsoner
+runtests.py @larsoner
+pytest.ini @larsoner
+tox.ini @larsoner
+codecov.yml @larsoner
+.coveragerc @larsoner
+benchmarks/asv.conf.json @larsoner
+
+# CI config
+.circleci/* @larsoner
+.github/* @larsoner
+azure-pipelines.yml @larsoner
+.travis.yml @larsoner
