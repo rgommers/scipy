@@ -11,6 +11,7 @@
 requires = [
     "wheel",
     "setuptools",
+    "meson",
     "Cython>=0.29.18",
     "pybind11>=2.4.3",
     "pythran>=0.9.11",
