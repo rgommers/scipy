@@ -16,5 +16,6 @@ inc_np = include_directories(incdir_numpy)
 #
 numpy_nodepr_api = '-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'
 
+subdir('_lib')
 subdir('cluster')
 subdir('ndimage')
