@@ -1,6 +1,6 @@
 project(
   'SciPy',
-  'c', 'cython',
+  'c', 'cpp', 'cython',
   version: '1.7.0.dev0+ababababab', # FIXME: git hash
   license: 'BSD-3',
   meson_version: '>= 0.54',
