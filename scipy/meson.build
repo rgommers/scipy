@@ -33,3 +33,4 @@ py3.install_sources(
 subdir('_lib')
 subdir('cluster')
 subdir('ndimage')
+subdir('odr')
