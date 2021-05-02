@@ -17,9 +17,11 @@ inc_np = include_directories(incdir_numpy)
 numpy_nodepr_api = '-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'
 
 python_sources = [
+  '__config__.py',  # TODO: generate dynamically
   '__init__.py',
   '_distributor_init.py',
   'conftest.py',
+  'version.py',  # TODO: generate dynamically
 ]
 
 py3.install_sources(
