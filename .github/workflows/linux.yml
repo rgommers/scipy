@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - rbf
       - maintenance/**
   pull_request:
     branches:
@@ -53,7 +54,7 @@ jobs:
 
   test_nightly:
     name: Nightly CPython
-    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]') && !contains(github.ref, 'maintenance/')"
+    if: "github.repository == 'rgommers/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]') && !contains(github.ref, 'maintenance/')"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -83,10 +84,6 @@ jobs:
         pip install --user git+https://github.com/numpy/numpy.git
         python3.10 -m pip install --user setuptools wheel cython pytest pybind11 pytest-xdist pythran
         python3.10 -m pip install -r mypy_requirements.txt
-
-    - name: Mypy
-      run: |
-        python3.10 -u runtests.py --mypy
 
     - name: Test SciPy
       run: |
