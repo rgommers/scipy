@@ -205,8 +205,8 @@ def test_bad_association_args():
     assert_raises(ValueError, association, [[[1, 2]], [[3, 4]]], "cramer")
     # chi2_contingency exception
     assert_raises(ValueError, association, [[-1, 10], [1, 2]], 'cramer')
-    # Invalid Array Item Data Type
-    assert_raises(ValueError, association, [[1, 2], ["dd", 4]], 'cramer')
+    # Invalid array item data type
+    assert_raises(ValueError, association, [[1, 2], [np, 4]], 'cramer')
 
 
 @pytest.mark.parametrize('stat, expected',
