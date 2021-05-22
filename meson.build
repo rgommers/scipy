@@ -7,6 +7,7 @@ project(
   default_options: [
     'buildtype=debugoptimized',
     'c_std=c99',
+    'cpp_std=c++14',  # TODO: use c++11 if 14 is not available
   ],
 )
 
