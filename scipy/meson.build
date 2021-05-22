@@ -6,6 +6,10 @@ incdir_numpy = run_command(py3,
 
 inc_np = include_directories(incdir_numpy)
 
+incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
+inc_f2py = include_directories(incdir_f2py)
+fortranobject_c = incdir_f2py / 'fortranobject.c'
+
 # pybind11 include directory - needed in several submodules
 incdir_pybind11 = run_command(py3,
   ['-c', 'import pybind11; print(pybind11.get_include())'],
@@ -23,6 +27,16 @@ inc_pybind11 = include_directories(incdir_pybind11)
 #     numpy_nodepr_api)
 #
 numpy_nodepr_api = '-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'
+
+
+# TODO: 64-bit BLAS and LAPACK
+blas = dependency('openblas')
+lapack = dependency('openblas')
+
+# TODO: deal with case where we do need the g77 ABI wrappers (see
+#       _build_utils/_fortran.py)
+g77_abi_wrappers = files('_build_utils' / 'src' / 'wrap_dummy_g77_abi.f')
+
 
 python_sources = [
   '__config__.py',  # TODO: generate dynamically
@@ -43,5 +57,6 @@ subdir('cluster')
 subdir('constants')
 subdir('fft')
 subdir('fftpack')
+subdir('linalg')
 subdir('ndimage')
 subdir('odr')
