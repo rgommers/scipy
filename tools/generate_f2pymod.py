@@ -16,17 +16,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("infile", type=str,
                         help="Path to the input file")
-    parser.add_argument("-o", "--outfile", type=str,
-                        help="Path to the output file")
+    parser.add_argument("-o", "--outdir", type=str,
+                        help="Path to the output directory")
     args = parser.parse_args()
 
     # Read .pyf.src file
     code = process_file(args.infile)
 
     # Write out the .pyf file
-    outdir = os.path.split(args.outfile)[0]
-    outdir_abs = os.path.join(os.getcwd(), outdir)
-    fname_pyf = os.path.join(outdir,
+    outdir_abs = os.path.join(os.getcwd(), args.outdir)
+    fname_pyf = os.path.join(args.outdir,
                              os.path.splitext(os.path.split(args.infile)[1])[0])
 
     with open(fname_pyf, 'w') as f:
