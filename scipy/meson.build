@@ -6,6 +6,14 @@ incdir_numpy = run_command(py3,
 
 inc_np = include_directories(incdir_numpy)
 
+# pybind11 include directory - needed in several submodules
+incdir_pybind11 = run_command(py3,
+  ['-c', 'import pybind11; print(pybind11.get_include())'],
+  check : true
+).stdout().strip()
+
+inc_pybind11 = include_directories(incdir_pybind11)
+
 # Don't use the deprecated NumPy C API. Define this to a fixed version instead of
 # NPY_API_VERSION in order not to break compilation for released SciPy versions
 # when NumPy introduces a new deprecation. Use in a meson.build file::
@@ -32,5 +40,6 @@ py3.install_sources(
 
 subdir('_lib')
 subdir('cluster')
+subdir('fft')
 subdir('ndimage')
 subdir('odr')
