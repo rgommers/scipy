@@ -1,0 +1,182 @@
+#fwrappers = static_library('fwrappers',
+#  ['odrpack/d_lpk.f',
+#  ])
+
+# TODO: 64-bit BLAS and LAPACK
+
+# fblas
+fblas_module = custom_target('fblas_module',
+  output : ['_fblasmodule.c', '_fblas-f2pywrappers.f'],
+  input : 'fblas.pyf.src',
+  command : [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+)
+
+py3.extension_module('_fblas',
+  [fblas_module, fortranobject_c, g77_abi_wrappers],
+  c_args : numpy_nodepr_api,
+  include_directories : [inc_np, inc_f2py],
+  dependencies : [py3_dep, blas],
+  install : true,
+  subdir : 'scipy/linalg')
+
+# flapack
+deprecated_lapack_routines = [
+  'src/lapack_deprecations/cgegv.f',
+  'src/lapack_deprecations/dgegv.f',
+  'src/lapack_deprecations/sgegv.f',
+  'src/lapack_deprecations/zgegv.f',
+]
+
+flapack_module = custom_target('flapack_module',
+  output : ['_flapackmodule.c', '_flapack-f2pywrappers.f'],
+  input : 'flapack.pyf.src',
+  command : [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+)
+
+py3.extension_module('_flapack',
+  [flapack_module,
+   fortranobject_c,
+   g77_abi_wrappers,
+   deprecated_lapack_routines,
+  ],
+  c_args : numpy_nodepr_api,
+  include_directories : [inc_np, inc_f2py],
+  dependencies : [py3_dep, lapack],
+  install : true,
+  subdir : 'scipy/linalg')
+
+# TODO: cblas/clapack are built *only* for ATLAS. Why? Is it still needed?
+
+# _flinalg
+py3.extension_module('_flinalg',
+  ['src/det.f', 'src/lu.f'],
+  c_args : numpy_nodepr_api,
+  include_directories : [inc_np, inc_f2py],
+  dependencies : [py3_dep, lapack],
+  install : true,
+  subdir : 'scipy/linalg')
+
+# _interpolative
+interpolative_module = custom_target('interpolative_module',
+  output : '_interpolativemodule.c',
+  input : 'interpolative.pyf',
+  command : [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+)
+
+py3.extension_module('_interpolative',
+  ['src/id_dist/src/dfft.f',
+   'src/id_dist/src/id_rand.f',
+   'src/id_dist/src/id_rtrans.f',
+   'src/id_dist/src/idd_frm.f',
+   'src/id_dist/src/idd_house.f',
+   'src/id_dist/src/idd_id.f',
+   'src/id_dist/src/idd_id2svd.f',
+   'src/id_dist/src/idd_qrpiv.f',
+   'src/id_dist/src/idd_sfft.f',
+   'src/id_dist/src/idd_snorm.f',
+   'src/id_dist/src/idd_svd.f',
+   'src/id_dist/src/iddp_aid.f',
+   'src/id_dist/src/iddp_asvd.f',
+   'src/id_dist/src/iddp_rid.f',
+   'src/id_dist/src/iddp_rsvd.f',
+   'src/id_dist/src/iddr_aid.f',
+   'src/id_dist/src/iddr_asvd.f',
+   'src/id_dist/src/iddr_rid.f',
+   'src/id_dist/src/iddr_rsvd.f',
+   'src/id_dist/src/idz_frm.f',
+   'src/id_dist/src/idz_house.f',
+   'src/id_dist/src/idz_id.f',
+   'src/id_dist/src/idz_id2svd.f',
+   'src/id_dist/src/idz_qrpiv.f',
+   'src/id_dist/src/idz_sfft.f',
+   'src/id_dist/src/idz_snorm.f',
+   'src/id_dist/src/idz_svd.f',
+   'src/id_dist/src/idzp_aid.f',
+   'src/id_dist/src/idzp_asvd.f',
+   'src/id_dist/src/idzp_rid.f',
+   'src/id_dist/src/idzp_rsvd.f',
+   'src/id_dist/src/idzr_aid.f',
+   'src/id_dist/src/idzr_asvd.f',
+   'src/id_dist/src/idzr_rid.f',
+   'src/id_dist/src/idzr_rsvd.f',
+   'src/id_dist/src/prini.f',
+   interpolative_module,
+   fortranobject_c,
+  ],
+  c_args : numpy_nodepr_api,
+  include_directories : [inc_np, inc_f2py],
+  dependencies : [py3_dep, lapack],
+  install : true,
+  subdir : 'scipy/linalg')
+
+# _solve_toeplitz
+py3.extension_module('_solve_toeplitz',
+  '_solve_toeplitz.pyx',
+  c_args : numpy_nodepr_api,
+  include_directories : inc_np,
+  dependencies : py3_dep,
+  install : true,
+  subdir : 'scipy/linalg')
+
+# _matfuncs_sqrtm_triu:
+py3.extension_module('_matfuncs_sqrtm_triu',
+  '_matfuncs_sqrtm_triu.pyx',
+  c_args : numpy_nodepr_api,
+  include_directories : inc_np,
+  dependencies : py3_dep,
+  install : true,
+  subdir : 'scipy/linalg')
+
+# _decomp_update
+_decomp_update_pyx = custom_target('_decomp_update',
+  build_by_default : true,
+  output : '_decomp_update.pyx',
+  input : '_decomp_update.pyx.in',
+  command : [py3, tempita, '@INPUT@', '-o', '@OUTDIR@'],
+)
+
+py3.extension_module('_decomp_update',
+  _decomp_update_pyx,
+  dependencies : py3_dep,
+  include_directories : inc_np,
+  install : true,
+  subdir : 'scipy/linalg')
+
+
+python_sources = [
+  '__init__.py',
+  '_decomp_cossin.py',
+  '_decomp_ldl.py',
+  '_decomp_polar.py',
+  '_decomp_qz.py',
+  '_expm_frechet.py',
+  '_interpolative_backend.py',
+  '_matfuncs_inv_ssq.py',
+  '_matfuncs_sqrtm.py',
+  '_procrustes.py',
+  '_sketches.py',
+  '_solvers.py',
+  '_testutils.py',
+  'basic.py',
+  'blas.py',
+  'decomp.py',
+  'decomp_cholesky.py',
+  'decomp_lu.py',
+  'decomp_qr.py',
+  'decomp_schur.py',
+  'decomp_svd.py',
+  'flinalg.py',
+  'interpolative.py',
+  'lapack.py',
+  'matfuncs.py',
+  'misc.py',
+  'special_matrices.py',
+]
+
+py3.install_sources(
+    python_sources,
+    pure: false,
+    subdir: 'scipy/linalg'
+)
+
+subdir('tests')
