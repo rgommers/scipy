@@ -12,6 +12,8 @@ project(
 )
 
 cython = find_program('cython')
+generate_f2pymod = files('tools/generate_f2pymod.py')
+tempita = files('scipy/_build_utils/tempita.py')
 
 # https://mesonbuild.com/Python-module.html
 py_mod = import('python')
