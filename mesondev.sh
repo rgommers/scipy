@@ -8,6 +8,7 @@ pushd build
 meson install
 
 export PYTHONPATH=~/code/bldscipy/installdir/lib/python3.9/site-packages/
+python -c "from scipy import linalg as s; s.test()"
 python -c "from scipy import constants as s; s.test()"
 # python -c "from scipy import ndimage as s; s.test()"  # relies on special
 python -c "from scipy import odr as s; s.test()"
