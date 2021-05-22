@@ -40,6 +40,7 @@ py3.install_sources(
 
 subdir('_lib')
 subdir('cluster')
+subdir('constants')
 subdir('fft')
 subdir('fftpack')
 subdir('ndimage')
