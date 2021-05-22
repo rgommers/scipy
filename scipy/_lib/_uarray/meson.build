@@ -3,6 +3,8 @@
 # TODO: this used -std=c++14 if available, add c++11 otherwise
 #       can we now rely on c++14 unconditionally?
 
+# FIXME: /EHsc is the default already, and for hidden use gnu_symbol_visibility
+# (see fft/_pocketfft)
 compiler = meson.get_compiler('cpp')
 if compiler.get_id() == 'msvc'
   cpp_args = '/EHsc'
