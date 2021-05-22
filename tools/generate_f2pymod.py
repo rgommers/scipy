@@ -20,16 +20,21 @@ def main():
                         help="Path to the output directory")
     args = parser.parse_args()
 
-    # Read .pyf.src file
-    code = process_file(args.infile)
+    if not args.infile.endswith(('.pyf', '.pyf.src')):
+        raise ValueError(f"Input file has unknown extension: {args.infile}")
+
+    outdir_abs = os.path.join(os.getcwd(), args.outdir)
 
     # Write out the .pyf file
-    outdir_abs = os.path.join(os.getcwd(), args.outdir)
-    fname_pyf = os.path.join(args.outdir,
-                             os.path.splitext(os.path.split(args.infile)[1])[0])
+    if args.infile.endswith('.pyf.src'):
+        code = process_file(args.infile)
+        fname_pyf = os.path.join(args.outdir,
+                                 os.path.splitext(os.path.split(args.infile)[1])[0])
 
-    with open(fname_pyf, 'w') as f:
-        f.write(code)
+        with open(fname_pyf, 'w') as f:
+            f.write(code)
+    else:
+        fname_pyf = args.infile
 
     # Now invoke f2py to generate the C API module file
     p = subprocess.Popen([sys.executable, '-m', 'numpy.f2py', fname_pyf,
