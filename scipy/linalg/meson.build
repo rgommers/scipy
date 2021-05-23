@@ -1,7 +1,3 @@
-#fwrappers = static_library('fwrappers',
-#  ['odrpack/d_lpk.f',
-#  ])
-
 # TODO: 64-bit BLAS and LAPACK
 
 # fblas
@@ -104,6 +100,7 @@ py3.extension_module('_interpolative',
    fortranobject_c,
   ],
   c_args : numpy_nodepr_api,
+# TODO: add -fallow-argument-mismatch for gfortran >= 10, see gh-11842
   include_directories : [inc_np, inc_f2py],
   dependencies : [py3_dep, lapack],
   install : true,
@@ -127,21 +124,58 @@ py3.extension_module('_matfuncs_sqrtm_triu',
   install : true,
   subdir : 'scipy/linalg')
 
-# _decomp_update
-_decomp_update_pyx = custom_target('_decomp_update',
+# TODO: Cython BLAS/LAPACK (codegen + cython compilation not working yet,
+#       see meson PR with discussion linked for _decomp_update below)
+_generate_cy = custom_target('_generate_cy',
   build_by_default : true,
-  output : '_decomp_update.pyx',
-  input : '_decomp_update.pyx.in',
-  command : [py3, tempita, '@INPUT@', '-o', '@OUTDIR@'],
+  output : ['cython_blas.pyx',
+            'cython_lapack.pyx',
+            'cython_blas.pxd',
+            'cython_lapack.pxd',
+            '_blas_subroutines.h',
+            '_lapack_subroutines.h',
+            '_blas_subroutine_wrappers.f',
+            '_lapack_subroutine_wrappers.f',
+           ],
+  input : '_generate_pyx.py',
+  command : [py3, '@INPUT@', '-o', '@OUTDIR@'],  # TODO: support --outdir
 )
 
-py3.extension_module('_decomp_update',
-  _decomp_update_pyx,
-  dependencies : py3_dep,
-  include_directories : inc_np,
+fwrappers = static_library('fwrappers',
+  [_generate_cy[4],
+   _generate_cy[5],
+   _generate_cy[6],
+   _generate_cy[7],
+   g77_abi_wrappers,
+  ],
+#  c_args : numpy_nodepr_api,
+#  include_directories : inc_np,
+#  dependencies : py3_dep,
+)
+
+py3.extension_module('cython_blas',
+  _generate_cy[0],  # cython_blas.pyx
+  link_with : fwrappers,
+  dependencies : [py3_dep, blas],
   install : true,
   subdir : 'scipy/linalg')
 
+
+# _decomp_update (TODO: not working, see https://github.com/mesonbuild/meson/pull/8706)
+#_decomp_update_pyx = custom_target('_decomp_update',
+#  build_by_default : true,
+#  output : '_decomp_update.pyx',
+#  input : '_decomp_update.pyx.in',
+#  dependencies : cython_blas,
+#  command : [py3, tempita, '@INPUT@', '-o', '@OUTDIR@'],
+#)
+#
+#py3.extension_module('_decomp_update',
+#  _decomp_update_pyx,
+#  dependencies : py3_dep,
+#  include_directories : inc_np,
+#  install : true,
+#  subdir : 'scipy/linalg')
 
 python_sources = [
   '__init__.py',
@@ -171,6 +205,12 @@ python_sources = [
   'matfuncs.py',
   'misc.py',
   'special_matrices.py',
+]
+
+# TODO: install these pxd files
+pxd_files = [
+  _generate_cy[2],  # cython_blas.pxd
+  _generate_cy[3],  # cython_lapack.pxd
 ]
 
 py3.install_sources(
