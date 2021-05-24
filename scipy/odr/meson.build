@@ -3,7 +3,9 @@ odrpack = static_library('odrpack',
    'odrpack/d_mprec.f',
    'odrpack/d_odr.f',
    'odrpack/dlunoc.f',
-  ])
+  ],
+  fortran_args : '-Wno-conversion',  # silence "conversion from REAL(8) to INTEGER(4)"
+)
 
 # TODO: add support for multiple BLAS libraries!
 # Note that this works as is with conda (on Linx at least), because
