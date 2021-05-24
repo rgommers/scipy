@@ -100,6 +100,12 @@ py3.extension_module('_interpolative',
    fortranobject_c,
   ],
   c_args : numpy_nodepr_api,
+  fortran_args : ['-Wno-tabs',
+                  '-Wno-conversion',
+                  '-Wno-argument-mismatch',
+                  '-Wno-unused-dummy-argument',
+                  '-Wno-maybe-uninitialized',
+                  ],
 # TODO: add -fallow-argument-mismatch for gfortran >= 10, see gh-11842
   include_directories : [inc_np, inc_f2py],
   dependencies : [py3_dep, lapack],
@@ -124,10 +130,7 @@ py3.extension_module('_matfuncs_sqrtm_triu',
   install : true,
   subdir : 'scipy/linalg')
 
-# TODO: Cython BLAS/LAPACK (codegen + cython compilation not working yet,
-#       see meson PR with discussion linked for _decomp_update below)
 _generate_cy = custom_target('_generate_cy',
-  build_by_default : true,
   output : ['cython_blas.pyx',
             'cython_lapack.pyx',
             'cython_blas.pxd',
