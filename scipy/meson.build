@@ -1,6 +1,6 @@
 # NumPy include directory - needed in all submodules
 incdir_numpy = run_command(py3,
-  ['-c', 'import numpy; print(numpy.get_include())'],
+  ['-c', 'import os; os.chdir(".."); import numpy; print(numpy.get_include())'],
   check : true
 ).stdout().strip()
 
