@@ -6,6 +6,9 @@ meson setup build --prefix=/home/rgommers/code/bldscipy/installdir
 ninja -C build
 pushd build
 meson install
+popd
+# Avoid being in a directory which has a scipy/ dir
+pushd installdir
 
 export PYTHONPATH=~/code/bldscipy/installdir/lib/python3.9/site-packages/
 python -c "from scipy import linalg as s; s.test()"
