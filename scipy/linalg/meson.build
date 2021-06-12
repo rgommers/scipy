@@ -181,21 +181,29 @@ py3.extension_module('cython_lapack',
   subdir : 'scipy/linalg')
 
 
-# _decomp_update (TODO: not working, see https://github.com/mesonbuild/meson/pull/8706)
+# Needed to trick Cython, it won't do a relative import outside a package
+_dummy_init2 = custom_target('_dummy_init',
+  output : '__init__.py',
+  input : '__init__.py',
+  command : ['cp', '@INPUT@', '@OUTDIR@'],
+)
+
+# _decomp_update (TODO: not working, see https://github.com/mesonbuild/meson/pull/8775)
 # will fail with `from . cimport cython_blas as blas_pointers`
-#_decomp_update_pyx = custom_target('_decomp_update',
-#  build_by_default : true,
-#  output : '_decomp_update.pyx',
-#  input : '_decomp_update.pyx.in',
-#  command : [py3, tempita, '@INPUT@', '-o', '@OUTDIR@'],
-#)
-#
-#py3.extension_module('_decomp_update',
-#  _decomp_update_pyx,
-#  include_directories : inc_np,
-#  dependencies : py3_dep,
-#  install : true,
-#  subdir : 'scipy/linalg')
+_decomp_update_pyx = custom_target('_decomp_update',
+  build_by_default : true,
+  output : '_decomp_update.pyx',
+  input : '_decomp_update.pyx.in',
+  command : [py3, tempita, '@INPUT@', '-o', '@OUTDIR@',
+             '--ignore', _dummy_init, '--ignore', _dummy_init2, '--ignore', _linalg_pxd],
+)
+
+py3.extension_module('_decomp_update',
+  _decomp_update_pyx,
+  include_directories : inc_np,
+  dependencies : py3_dep,
+  install : true,
+  subdir : 'scipy/linalg')
 
 python_sources = [
   '__init__.py',
