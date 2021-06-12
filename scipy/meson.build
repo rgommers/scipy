@@ -52,6 +52,19 @@ py3.install_sources(
     subdir: 'scipy'
 )
 
+
+# Needed to trick Cython, it won't do a relative import outside a package
+_dummy_init = custom_target('_dummy_init',
+  output : '__init__.py',
+  input : '__init__.py',
+  command : ['cp', '@INPUT@', '@OUTDIR@'],
+)
+_linalg_pxd = custom_target('_linalg_pxd',
+  output : 'linalg.pxd',
+  input : 'linalg.pxd',
+  command : ['cp', '@INPUT@', '@OUTDIR@'],
+)
+
 subdir('_lib')
 subdir('cluster')
 subdir('constants')
