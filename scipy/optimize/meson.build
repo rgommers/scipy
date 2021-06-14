@@ -99,3 +99,19 @@ _lasp = py3.extension_module('_lasp',
   include_directories : include_dirs,
   install : true,
   subdir : 'scipy/optimize')
+
+rootfind_lib = static_library('rootfind', 
+     ['Zeros/zeros.h',
+     'Zeros/brentq.c', 
+     'Zeros/ridder.c', 
+     'Zeros/bisect.c', 
+     'Zeros/brenth.c'])
+
+_minpack = py3.extension_module('_zeros',
+  ['zeros.c',],
+  link_with : rootfind_lib,
+  c_args : numpy_nodepr_api,
+  dependencies : [py3_dep],
+  include_directories : include_dirs,
+  install : true,
+  subdir : 'scipy/optimize')
