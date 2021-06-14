@@ -33,11 +33,6 @@ _minpack = py3.extension_module('_minpack',
   install : true,
   subdir : 'scipy/optimize')
 
-# TODO: Add equivalent of hooks for setting compiler flags
-rectangular_lasp = static_library('rectangular_lasp',
-                    ['rectangular_lsap/rectangular_lsap.h',
-                     'rectangular_lsap/rectangular_lsap.cpp'])
-
 compiler = meson.get_compiler('cpp')
 compiler_id = compiler.get_id()
 std_flag = ''
@@ -72,12 +67,34 @@ if host_machine.system() == 'darwin'
   endif
 endif
 
+rectangular_lasp = static_library('rectangular_lasp',
+     ['rectangular_lsap/rectangular_lsap.h',
+      'rectangular_lsap/rectangular_lsap.cpp'],
+      cpp_args: cpp_args,
+      link_args: link_args)
+
+compiler = meson.get_compiler('c')
+compiler_id = compiler.get_id()
+if compiler_id == 'msvc'
+  std_flag = ''
+elif compiler_id == 'intelw'
+  if compiler.has_argument('/Qstd=c99')
+    std_flag = '/Qstd=c99'
+  else
+    std_flag = ''
+  endif
+else
+  if compiler.has_argument('-std=c99')
+    std_flag = '-std=c99'
+  else
+    std_flag = ''
+  endif
+endif
+
 _lasp = py3.extension_module('_lasp',
   ['_lsap_module.c'],
   link_with : rectangular_lasp,
-  cpp_args : cpp_args,
-  link_args : link_args,
-  c_args : numpy_nodepr_api,
+  c_args : [numpy_nodepr_api] + [std_flag],
   dependencies : [py3_dep],
   include_directories : include_dirs,
   install : true,
