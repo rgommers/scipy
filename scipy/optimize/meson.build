@@ -33,36 +33,11 @@ _minpack = py3.extension_module('_minpack',
   install : true,
   subdir : 'scipy/optimize')
 
-compiler = meson.get_compiler('cpp')
-compiler_id = compiler.get_id()
-std_flag = ''
-if compiler_id == 'msvc'
-  if compiler.has_argument('/std=c++14')
-    std_flag = '/std=c++14'
-  endif
-elif compiler_id == 'intelw'
-  if compiler.has_argument('/Qstd=c++14')
-    std_flag = '/Qstd=c++14'
-  elif compiler.has_argument('/Qstd=c++11')
-    std_flag = '/Qstd=c++11'
-  endif
-else
-  if compiler.has_argument('-std=c++14')
-    std_flag = '-std=c++14'
-  elif compiler.has_argument('-std=c++11')
-    std_flag = '-std=c++11'
-  endif
-endif
-
-if std_flag != ''
-  cpp_args = [std_flag]
-else
-  cpp_args = []
-endif
+cpp_args = []
 link_args = []
 if host_machine.system() == 'darwin'
   if compiler.has_argument('-mmacosx-version-min=10.9')
-      cpp_args = cpp_args + ['-mmacosx-version-min=10.9']
+      cpp_args = ['-mmacosx-version-min=10.9']
       link_args = ['-mmacosx-version-min=10.9']
   endif
 endif
@@ -73,28 +48,10 @@ rectangular_lasp = static_library('rectangular_lasp',
       cpp_args: cpp_args,
       link_args: link_args)
 
-compiler = meson.get_compiler('c')
-compiler_id = compiler.get_id()
-if compiler_id == 'msvc'
-  std_flag = ''
-elif compiler_id == 'intelw'
-  if compiler.has_argument('/Qstd=c99')
-    std_flag = '/Qstd=c99'
-  else
-    std_flag = ''
-  endif
-else
-  if compiler.has_argument('-std=c99')
-    std_flag = '-std=c99'
-  else
-    std_flag = ''
-  endif
-endif
-
 _lasp = py3.extension_module('_lasp',
   ['_lsap_module.c'],
   link_with : rectangular_lasp,
-  c_args : [numpy_nodepr_api] + [std_flag],
+  c_args : [numpy_nodepr_api],
   dependencies : [py3_dep],
   include_directories : include_dirs,
   install : true,
