@@ -88,8 +88,10 @@ _lbfgsb = py3.extension_module('_lbfgsb',
                   '-Wno-argument-mismatch',
                   '-Wno-unused-dummy-argument',
                   '-Wno-maybe-uninitialized',
+                  '-Wno-unused-label',
+                  '-Wno-unused-variable'
                   ],
   include_directories : [inc_np, inc_f2py],
-  dependencies : [py3_dep, lapack],
+  dependencies : [py3_dep],
   install: true,
   subdir: 'scipy/optimize')
