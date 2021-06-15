@@ -95,3 +95,34 @@ _lbfgsb = py3.extension_module('_lbfgsb',
   dependencies : [py3_dep],
   install: true,
   subdir: 'scipy/optimize')
+
+moduleTNC = py3.extension_module('moduleTNC',
+  ['tnc/tnc.h', 'tnc/moduleTNC.c', 'tnc/tnc.c'],
+  c_args: numpy_nodepr_api,
+  include_directories : [inc_np, inc_f2py],
+  dependencies : [py3_dep],
+  install: true,
+  subdir: 'scipy/optimize')
+
+cobyla_module = custom_target('cobyla_module',
+  output : ['_cobylamodule.c'],
+  input : 'cobyla/cobyla.pyf',
+  command : [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+)
+
+_cobyla = py3.extension_module('_cobyla',
+  [cobyla_module, fortranobject_c, 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
+  c_args: [numpy_nodepr_api] + ['-Wno-unused-variable', 
+                                '-Wno-unused-const-variable'],
+  fortran_args : ['-Wno-tabs',
+                  '-Wno-conversion',
+                  '-Wno-argument-mismatch',
+                  '-Wno-unused-dummy-argument',
+                  '-Wno-maybe-uninitialized',
+                  '-Wno-unused-label',
+                  '-Wno-unused-variable'
+                  ],
+  include_directories : [inc_np, inc_f2py],
+  dependencies : [py3_dep],
+  install: true,
+  subdir: 'scipy/optimize')
