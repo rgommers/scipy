@@ -72,3 +72,24 @@ _minpack = py3.extension_module('_zeros',
   include_directories : include_dirs,
   install : true,
   subdir : 'scipy/optimize')
+
+lbfgsb_module = custom_target('lbfgsb_module',
+  output : ['_lbfgsb-f2pywrappers.f', '_lbfgsbmodule.c'],
+  input : 'lbfgsb_src/lbfgsb.pyf',
+  command : [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+)
+
+_lbfgsb = py3.extension_module('_lbfgsb', 
+  ['lbfgsb_src/lbfgsb.f', 'lbfgsb_src/linpack.f', 
+  'lbfgsb_src/timer.f', lbfgsb_module, fortranobject_c],
+  c_args : numpy_nodepr_api,
+  fortran_args : ['-Wno-tabs',
+                  '-Wno-conversion',
+                  '-Wno-argument-mismatch',
+                  '-Wno-unused-dummy-argument',
+                  '-Wno-maybe-uninitialized',
+                  ],
+  include_directories : [inc_np, inc_f2py],
+  dependencies : [py3_dep, lapack],
+  install: true,
+  subdir: 'scipy/optimize')
