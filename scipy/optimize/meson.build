@@ -170,23 +170,16 @@ __nnls = py3.extension_module('__nnls',
 
 res = run_command(py3, '-c', 'import os; print(os.environ.get("SCIPY_USE_PYTHRAN", 1))')
 if res.returncode() == 0
-  # TODO: Fix the following for Pythran to work.
-  # _group_columns = custom_target('_group_columns',
-  #   output: ['_group_columns.so'],
-  #   input : '_group_columns.py',
-  #   command : [pythran, '@INPUT@', '-o', '@OUTDIR@/_group_columns.so'],
-  # )
-  # _group_columns = py3.extension_module('_group_columns',
-  # [_group_columns],
-  # install: true,
-  # subdir: 'scipy/optimize')
+  # DOES THIS WORK?
+  _group_columns = custom_target('_group_columns',
+    output: ['_group_columns.so'],
+    input : '_group_columns.py',
+    command : [pythran, '@INPUT@', '-o', '@OUTDIR@/_group_columns.so'],
+  )
   _group_columns = py3.extension_module('_group_columns',
-    ['_group_columns.c'],
-    c_args: numpy_nodepr_api,
-    include_directories : [inc_np],
-    dependencies : [py3_dep],
-    install: true,
-    subdir: 'scipy/optimize')
+  [_group_columns],
+  install: true,
+  subdir: 'scipy/optimize')
 else
   _group_columns = py3.extension_module('_group_columns',
   ['_group_columns.c'],
