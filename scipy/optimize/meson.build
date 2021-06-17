@@ -1,4 +1,4 @@
-include_dirs = [incdir_numpy, '../_lib/src']
+include_dirs = [inc_np, '../_lib/src']
 fortran_ignore_warnings = [
   '-Wno-tabs', '-Wno-conversion',
   '-Wno-argument-mismatch', '-Wno-unused-dummy-argument',
@@ -196,3 +196,69 @@ _bglu_dense = py3.extension_module('_bglu_dense',
   dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/optimize')
+
+subdir('_lsq')
+subdir('_trlib')
+subdir('_trustregion_constr')
+subdir('cython_optimize')
+
+py3.install_sources(
+    ['cython_optimize.pxd'],
+    pure: false,
+    subdir: 'scipy/optimize'
+)
+
+subdir('_shgo_lib')
+
+# subdir('_highs')
+subdir('tests')
+
+py3.install_sources(
+    ['lbfgsb_src/README'],
+    pure: false,
+    subdir: 'scipy/optimize'
+)
+
+py3.install_sources(
+  ['_shgo.py', 
+   'tnc.py', 
+   '_linprog.py', 
+   '_trustregion_ncg.py', 
+   'zeros.py', 
+   '_differentiable_functions.py', 
+   '_spectral.py', 
+   '__init__.py', 
+   '_root.py', 
+   '_linprog_doc.py', 
+   'cobyla.py', 
+   '_qap.py', 
+   '_linprog_util.py', 
+   'minpack.py', 
+   '_dual_annealing.py', 
+   '_hessian_update_strategy.py', 
+   '_nnls.py', 
+   '_trustregion_dogleg.py', 
+   '_root_scalar.py', 
+   '_linprog_rs.py', 
+   '_trustregion_exact.py', 
+   'linesearch.py', 
+   'slsqp.py', 
+   '_trustregion_krylov.py', 
+   'lbfgsb.py', 
+   '_linprog_simplex.py', 
+   '_differentialevolution.py', 
+   '_constraints.py', 
+   '_linprog_ip.py', 
+   '_trustregion.py', 
+   '_lsap.py', 
+   '_minimize.py', 
+   'optimize.py', 
+   '_remove_redundancy.py', 
+   '_linprog_highs.py', 
+   '_numdiff.py', 
+   '_tstutils.py', 
+   '_basinhopping.py', 
+   'nonlin.py'],
+   pure: false,
+   subdir: 'scipy/optimize'
+)
