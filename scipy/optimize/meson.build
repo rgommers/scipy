@@ -69,15 +69,6 @@ rootfind_lib = static_library('rootfind',
      'Zeros/bisect.c', 
      'Zeros/brenth.c'])
 
-_zeros = py3.extension_module('_zeros',
-  ['zeros.c',],
-  link_with : rootfind_lib,
-  c_args : numpy_nodepr_api,
-  dependencies : [py3_dep],
-  include_directories : include_dirs,
-  install : true,
-  subdir : 'scipy/optimize')
-
 lbfgsb_module = custom_target('lbfgsb_module',
   output : ['_lbfgsb-f2pywrappers.f', '_lbfgsbmodule.c'],
   input : 'lbfgsb_src/lbfgsb.pyf',
@@ -190,17 +181,26 @@ else
   subdir: 'scipy/optimize')
 endif
 
-_bglu_dense = py3.extension_module('_bglu_dense',
-  ['_bglu_dense.pyx'],
-  include_directories: [inc_np],
-  dependencies: [py3_dep],
-  install: true,
-  subdir: 'scipy/optimize')
+# Needed to trick Cython, it won't do a relative import outside a package
+_dummy_init_optimize = custom_target('_dummy_init_optimize',
+  output : '__init__.py',
+  input : '__init__.py',
+  command : ['cp', '@INPUT@', '@OUTDIR@'],
+)
+
+# TODO: depends on cython_blas.pxd, which is generated in linalg/meson.build
+#       this doesn't work yet (waiting for "structured sources" Meson PR)
+#_bglu_dense = py3.extension_module('_bglu_dense',
+#  ['_bglu_dense.pyx', _dummy_init, _dummy_init_optimize, _linalg_pxd],
+#  include_directories: [inc_np],
+#  dependencies: [py3_dep],
+#  install: true,
+#  subdir: 'scipy/optimize')
 
 subdir('_lsq')
 subdir('_trlib')
 subdir('_trustregion_constr')
-subdir('cython_optimize')
+#subdir('cython_optimize')
 
 subdir('_shgo_lib')
 
