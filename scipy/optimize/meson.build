@@ -69,7 +69,7 @@ rootfind_lib = static_library('rootfind',
      'Zeros/bisect.c', 
      'Zeros/brenth.c'])
 
-_minpack = py3.extension_module('_zeros',
+_zeros = py3.extension_module('_zeros',
   ['zeros.c',],
   link_with : rootfind_lib,
   c_args : numpy_nodepr_api,
@@ -202,15 +202,9 @@ subdir('_trlib')
 subdir('_trustregion_constr')
 subdir('cython_optimize')
 
-py3.install_sources(
-    ['cython_optimize.pxd'],
-    pure: false,
-    subdir: 'scipy/optimize'
-)
-
 subdir('_shgo_lib')
 
-# subdir('_highs')
+subdir('_highs')
 subdir('tests')
 
 py3.install_sources(
