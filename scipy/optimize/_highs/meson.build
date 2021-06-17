@@ -26,7 +26,8 @@ basiclu_lib = static_library('basiclu', ['src/ipm/basiclu/src/lu_build_factors.c
     'src/ipm/basiclu/src/lu_markowitz.c',
     'src/ipm/basiclu/src/basiclu_update.c',
     'src/ipm/basiclu/src/lu_singletons.c'],
-    include_directories : ['src/', 'src/ipm/basiclu/include/'])
+    include_directories : ['src/', 'src/ipm/basiclu/include/'],
+    c_args: ['-Wno-unused-variable'])
 
 # highs_wrapper
 ipx_sources = ['src/ipm/ipx/src/control.cc',
