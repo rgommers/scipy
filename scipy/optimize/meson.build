@@ -189,3 +189,10 @@ else
   install: true,
   subdir: 'scipy/optimize')
 endif
+
+_bglu_dense = py3.extension_module('_bglu_dense',
+  ['_bglu_dense.pyx'],
+  include_directories: [inc_np],
+  dependencies: [py3_dep],
+  install: true,
+  subdir: 'scipy/optimize')
