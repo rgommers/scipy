@@ -335,6 +335,8 @@ def main():
     p = optparse.OptionParser(usage=(__doc__ or '').strip())
     p.add_option("--no-force", action="store_false",
                  dest="force", default=True)
+    p.add_option("-o", "--outdir", type=str,
+                 help="Relative path to the output directory")
     options, args = p.parse_args()
 
     names = []
@@ -371,8 +373,14 @@ def main():
             methods.append(method)
 
         # Produce output
-        dst = os.path.join(os.path.dirname(__file__),
-                           'sparsetools',
+        if options.outdir:
+            # Used by Meson (options.outdir == scipy/sparse/sparsetools)
+            outdir = os.path.join(os.getcwd(), options.outdir)
+        else:
+            # Used by setup.py
+            outdir = os.path.join(os.path.dirname(__file__), 'sparsetools')
+
+        dst = os.path.join(outdir,
                            unit_name + '_impl.h')
         if newer(__file__, dst) or options.force:
             print("[generate_sparsetools] generating %r" % (dst,))
@@ -384,7 +392,9 @@ def main():
                 for method in methods:
                     f.write(method)
         else:
-            print("[generate_sparsetools] %r already up-to-date" % (dst,))
+            if not options.outdir:
+                # Be silent if we're using Meson
+                print("[generate_sparsetools] %r already up-to-date" % (dst,))
 
     # Generate code for method struct
     method_defs = ""
@@ -411,7 +421,9 @@ def main():
             f.write(method_defs)
             f.write(method_struct)
     else:
-        print("[generate_sparsetools] %r already up-to-date" % (dst,))
+        if not options.outdir:
+            # Be silent if we're using Meson
+            print("[generate_sparsetools] %r already up-to-date" % (dst,))
 
 
 def write_autogen_blurb(stream):
