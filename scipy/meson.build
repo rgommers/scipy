@@ -73,10 +73,13 @@ _linalg_pxd = custom_target('_linalg_pxd',
   command : ['cp', '@INPUT@', '@OUTDIR@'],
 )
 
+# Note that subdirs with the most heavy builds should come first (that
+# parallelizes better)
+subdir('sparse')
+subdir('fft')
 subdir('_lib')
 subdir('cluster')
 subdir('constants')
-subdir('fft')
 subdir('fftpack')
 subdir('linalg')
 subdir('ndimage')
