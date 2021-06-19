@@ -18,6 +18,14 @@ incdir_pybind11 = run_command(py3,
 
 inc_pybind11 = include_directories(incdir_pybind11)
 
+# Pythran include directory
+incdir_pythran = run_command(py3,
+  ['-c', 'import os; os.chdir(".."); import pythran; print(os.path.dirname(pythran.__file__));'],
+  check : true
+).stdout().strip()
+
+inc_pythran = include_directories(incdir_pythran)
+
 # Don't use the deprecated NumPy C API. Define this to a fixed version instead of
 # NPY_API_VERSION in order not to break compilation for released SciPy versions
 # when NumPy introduces a new deprecation. Use in a meson.build file::
@@ -73,3 +81,4 @@ subdir('fftpack')
 subdir('linalg')
 subdir('ndimage')
 subdir('odr')
+subdir('optimize')
