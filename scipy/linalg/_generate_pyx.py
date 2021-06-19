@@ -729,7 +729,7 @@ def make_all(outdir,
         f.write(fcomment)
         f.write(blas_fortran)
     blas_c_header = generate_c_header(*(blas_sigs + ('BLAS',)))
-    with open(blas_header_name, 'w') as f:
+    with open(os.path.join(outdir, blas_header_name), 'w') as f:
         f.write(ccomment)
         f.write(blas_c_header)
     with open(lapack_signature_file, 'r') as f:
