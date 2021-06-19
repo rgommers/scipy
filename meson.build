@@ -17,6 +17,7 @@ project(
 )
 
 cython = find_program('cython')
+pythran = find_program('pythran')
 generate_f2pymod = files('tools/generate_f2pymod.py')
 tempita = files('scipy/_build_utils/tempita.py')
 
