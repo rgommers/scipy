@@ -62,19 +62,19 @@ dop_src = ['dop/dop853.f', 'dop/dopri5.f']
 quadpack_test_src = ['tests/_test_multivariate.c']
 odeint_banded_test_src = ['tests/banded5x5.f']
 
-mach = static_library('mach', 
+mach_lib = static_library('mach_lib', 
     mach_src,
     fortran_args: fortran_ignore_warnings)
-quadpack = static_library('quadpack', 
+quadpack_lib = static_library('quadpack_lib', 
     quadpack_src,
     fortran_args: fortran_ignore_warnings)
-lsoda = static_library('lsoda', 
+lsoda_lib = static_library('lsoda_lib', 
     lsoda_src,
     fortran_args: fortran_ignore_warnings)
-vode = static_library('vode', 
+vode_lib = static_library('vode_lib', 
     vode_src,
     fortran_args: fortran_ignore_warnings)
-dop = static_library('dop', 
+dop_lib = static_library('dop_lib', 
     dop_src,
     fortran_args: fortran_ignore_warnings)
 
@@ -82,6 +82,51 @@ py3.extension_module('_quadpack',
     ['__quadpack.h', '_quadpackmodule.c'] + quadpack_src + mach_src,
     fortran_args: fortran_ignore_warnings,
     include_directories: [inc_np, '../_lib/src'],
-    link_with: [quadpack, mach],
-    dependencies: [py3_dep]
+    link_with: [quadpack_lib, mach_lib],
+    dependencies: [py3_dep],
+    install: true,
+    subdir: 'scipy/integrate'
+)
+
+py3.extension_module('_odepack',
+    lsoda_src + mach_src + ['_odepackmodule.c'],
+    c_args: numpy_nodepr_api,
+    fortran_args: fortran_ignore_warnings,
+    link_with: [lsoda_lib, mach_lib],
+    dependencies: [py3_dep],
+    include_directories: [inc_np],
+    install: true,
+    subdir: 'scipy/integrate'
+)
+
+vode_module = custom_target('vode_module',
+  output : ['vode-f2pywrappers.f', 'vodemodule.c'],
+  input : 'vode.pyf',
+  command : [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+)
+
+py3.extension_module('vode',
+    [vode_module, fortranobject_c],
+    link_with: [vode_lib, lsoda_lib],
+    c_args: numpy_nodepr_api,
+    dependencies: [py3_dep],
+    include_directories: [inc_np, inc_f2py],
+    install: true,
+    subdir: 'scipy/integrate'
+)
+
+lsoda_module = custom_target('lsoda_module',
+  output : ['lsoda-f2pywrappers.f', 'lsodamodule.c'],
+  input : 'lsoda.pyf',
+  command : [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+)
+
+py3.extension_module('lsoda',
+    [lsoda_module, fortranobject_c],
+    link_with: [lsoda_lib, mach_lib],
+    c_args: numpy_nodepr_api,
+    dependencies: [py3_dep],
+    include_directories: [inc_np, inc_f2py],
+    install: true,
+    subdir: 'scipy/integrate'
 )
