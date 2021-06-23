@@ -26,3 +26,11 @@ statlib = py3.extension_module('statlib',
   include_directories : [inc_np, inc_f2py],
   install : true,
   subdir : 'scipy/stats')
+
+# TODO: Add c_args: numpy_nodepr_api 
+_stats = py3.extension_module('_stats',
+  ['_stats.pyx'],
+  dependencies : [py3_dep],
+  include_directories : [inc_np],
+  install : true,
+  subdir : 'scipy/stats')
