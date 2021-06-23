@@ -78,6 +78,7 @@ dop_lib = static_library('dop_lib',
     dop_src,
     fortran_args: fortran_ignore_warnings)
 
+# TODO: Add c_args: numpy_nodepr_api
 py3.extension_module('_quadpack',
     ['__quadpack.h', '_quadpackmodule.c'] + quadpack_src + mach_src,
     fortran_args: fortran_ignore_warnings,
@@ -130,3 +131,37 @@ py3.extension_module('lsoda',
     install: true,
     subdir: 'scipy/integrate'
 )
+
+_dop_module = custom_target('_dop_module',
+  output : ['_dop-f2pywrappers.f', '_dopmodule.c'],
+  input : 'dop.pyf',
+  command : [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+)
+
+py3.extension_module('_dop',
+    [_dop_module, fortranobject_c],
+    link_with: [dop_lib],
+    c_args: numpy_nodepr_api,
+    dependencies: [py3_dep],
+    include_directories: [inc_np, inc_f2py],
+    install: true,
+    subdir: 'scipy/integrate'
+)
+
+py3.extension_module('_test_multivariate',
+    [quadpack_test_src],
+    dependencies: [py3_dep],
+    install: true,
+    subdir: 'scipy/integrate'
+)
+
+py3.extension_module('_test_odeint_banded',
+    odeint_banded_test_src,
+    link_with: [lsoda_lib, mach_lib],
+    fortran_args: fortran_ignore_warnings,
+    install: true,
+    subdir: 'scipy/integrate'
+)
+
+subdir('_ivp')
+subdir('tests')
