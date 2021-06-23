@@ -76,6 +76,7 @@ _linalg_pxd = custom_target('_linalg_pxd',
 # Note that subdirs with the most heavy builds should come first (that
 # parallelizes better)
 subdir('sparse')
+subdir('stats')
 subdir('fft')
 subdir('_lib')
 subdir('cluster')
