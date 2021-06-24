@@ -165,3 +165,15 @@ py3.extension_module('_test_odeint_banded',
 
 subdir('_ivp')
 subdir('tests')
+
+py3.install_sources(['_quad_vec.py',
+    '__init__.py',
+    '_quadrature.py',
+    '_ode.py',
+    'quadpack.py',
+    '_bvp.py',
+    'setup.py',
+    'odepack.py'],
+    pure : false,
+    subdir : 'scipy/integrate'
+)
