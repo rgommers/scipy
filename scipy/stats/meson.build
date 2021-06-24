@@ -49,3 +49,17 @@ mvn = py3.extension_module('mvn',
   include_directories : [inc_np, inc_f2py],
   install : true,
   subdir : 'scipy/stats')
+
+_sobol = py3.extension_module('_sobol',
+  ['_sobol.pyx'],
+  c_args: numpy_nodepr_api,
+  dependencies : [py3_dep],
+  include_directories : [inc_np],
+  install : true,
+  subdir : 'scipy/stats')
+
+py3.install_sources(
+  ['_sobol_direction_numbers.npz'],
+  pure : false,
+  subdir : 'scipy/stats'
+)
