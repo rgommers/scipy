@@ -34,3 +34,18 @@ _stats = py3.extension_module('_stats',
   include_directories : [inc_np],
   install : true,
   subdir : 'scipy/stats')
+
+mvn_module = custom_target('mvn_module',
+  output : ['mvn-f2pywrappers.f', 'mvnmodule.c'],
+  input : 'mvn.pyf',
+  command : [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+)
+
+mvn = py3.extension_module('mvn',
+  [mvn_module, 'mvndst.f'],
+  c_args: numpy_nodepr_api,
+  fortran_args: fortran_ignore_warnings,
+  dependencies : [py3_dep],
+  include_directories : [inc_np, inc_f2py],
+  install : true,
+  subdir : 'scipy/stats')
