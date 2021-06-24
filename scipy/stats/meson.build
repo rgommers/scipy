@@ -72,3 +72,32 @@ _qmc_cy = py3.extension_module('_qmc_cy',
   include_directories : [inc_np],
   install : true,
   subdir : 'scipy/stats')
+
+py3.install_sources(
+  ['biasedurn.pxd'],
+  pure : false,
+  subdir : 'scipy/stats'
+)
+
+npyrandom_src = run_command(py3, '-c', 
+  'import numpy, os; print(os.path.dirname(numpy.random.__file__) + "/lib/libnpyrandom.a")')
+# npyrandom_lib = static_library('npyrandom_lib',
+#  [npyrandom_src])
+
+npymath_src = run_command(py3, '-c', 
+  'import numpy, os; print(os.path.dirname(numpy.random.__file__) + "/lib/libnpymath.a")')
+# npymath_lib = static_library('npymath_lib',
+#  [npymath_src])
+
+incdir_biasedurn = incdir_numpy / '..' / '..' / 'random' / 'lib'
+inc_baisedurn = include_directories(incdir_biasedurn)
+biasedurn = py3.extension_module('biasedurn',
+  ['biasedurn.cxx', 'biasedurn/impls.cpp',
+   'biasedurn/fnchyppr.cpp', 'biasedurn/wnchyppr.cpp',
+   'biasedurn/stoc1.cpp', 'biasedurn/stoc3.cpp'],
+    include_directories: [inc_np, inc_baisedurn],
+#    link_with: [npyrandom, npymath],
+#    define_macros=[('R_BUILD', None)],
+#    language='c++',
+    dependencies: ['biasedurn/stocR.h', npyrandom_src, npymath_src],
+)
