@@ -29,6 +29,7 @@ python -c "from scipy.sparse import csgraph as s; s.test()"
 # python -c "from scipy import fftpack as s; s.test()"  # relies on fft
 # python -c "from scipy import fft as s; s.test()"  # relies on special
 # python -c "from scipy import _lib as s; s.test()"  # relies on spatial
+# python -c "from scipy import integrate as s; s.test()" # relies on special
 # python -c "from scipy import optimize as s; s.test()" # relies on sparse.linalg
 popd
 
