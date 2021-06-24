@@ -63,3 +63,12 @@ py3.install_sources(
   pure : false,
   subdir : 'scipy/stats'
 )
+
+run_command(cython, '--cplus', '_qmc_cy.pyx')
+_qmc_cy = py3.extension_module('_qmc_cy',
+  ['_qmc_cy.cpp'],
+  cpp_args: ['-pthread'],
+  dependencies : [py3_dep],
+  include_directories : [inc_np],
+  install : true,
+  subdir : 'scipy/stats')
