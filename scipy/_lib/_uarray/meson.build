@@ -13,7 +13,7 @@ elif compiler.has_argument('-fvisibility=hidden')
 endif
 
 py3.extension_module('_uarray',
-  '_uarray_dispatch.cxx',
+  ['_uarray_dispatch.cxx', 'vectorcall.cxx'],
   cpp_args : cpp_args,
   dependencies : py3_dep,
   install : true,
