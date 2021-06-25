@@ -64,11 +64,11 @@ py3.install_sources(
   subdir : 'scipy/stats'
 )
 
+pthread = dependency('threads')
 run_command(cython, '--cplus', '_qmc_cy.pyx')
 _qmc_cy = py3.extension_module('_qmc_cy',
   ['_qmc_cy.cpp'],
-  cpp_args: ['-pthread'],
-  dependencies : [py3_dep],
+  dependencies : [py3_dep, pthread],
   include_directories : [inc_np],
   install : true,
   subdir : 'scipy/stats')
@@ -79,25 +79,23 @@ py3.install_sources(
   subdir : 'scipy/stats'
 )
 
-npyrandom_src = run_command(py3, '-c', 
-  'import numpy, os; print(os.path.dirname(numpy.random.__file__) + "/lib/libnpyrandom.a")')
-# npyrandom_lib = static_library('npyrandom_lib',
-#  [npyrandom_src])
-
-npymath_src = run_command(py3, '-c', 
-  'import numpy, os; print(os.path.dirname(numpy.random.__file__) + "/lib/libnpymath.a")')
-# npymath_lib = static_library('npymath_lib',
-#  [npymath_src])
-
+npymath_path = incdir_numpy / '..' / 'lib'
+npymath_lib = meson.get_compiler('c').find_library('npymath', dirs: npymath_path)
+npyrandom_path = incdir_numpy / '..' / '..' / 'random' / 'lib'
+npyrandom_lib = meson.get_compiler('c').find_library('npyrandom', dirs: npyrandom_path)
 incdir_biasedurn = incdir_numpy / '..' / '..' / 'random' / 'lib'
 inc_baisedurn = include_directories(incdir_biasedurn)
+run_command(py3, '_generate_pyx.py')
+run_command(cython, '--cplus', 'biasedurn.pyx', '-o', 'biasedurn.cpp')
+m_lib = meson.get_compiler('c').find_library('m')
+run_command(py3, 
+  ['-c', 'import os; os.environ["R_BUILD"] = None;'])
 biasedurn = py3.extension_module('biasedurn',
-  ['biasedurn.cxx', 'biasedurn/impls.cpp',
+  ['biasedurn/stocR.h', 
+   'biasedurn.cpp', 'biasedurn/impls.cpp',
    'biasedurn/fnchyppr.cpp', 'biasedurn/wnchyppr.cpp',
    'biasedurn/stoc1.cpp', 'biasedurn/stoc3.cpp'],
+   c_args: numpy_nodepr_api,
     include_directories: [inc_np, inc_baisedurn],
-#    link_with: [npyrandom, npymath],
-#    define_macros=[('R_BUILD', None)],
-#    language='c++',
-    dependencies: ['biasedurn/stocR.h', npyrandom_src, npymath_src],
+    dependencies: [py3_dep, npyrandom_lib, npymath_lib, m_lib]
 )
