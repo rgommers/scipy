@@ -95,3 +95,51 @@ biasedurn = py3.extension_module('biasedurn',
    include_directories: [inc_np],
    dependencies: [py3_dep, npyrandom_lib, npymath_lib]
 )
+
+# subdir('_boost')
+
+py3.install_sources(
+  ['_qmc_cy.pyi', 
+   '_sobol.pyi'],
+  pure : false,
+  subdir : 'scipy/stats'
+)
+
+py3.install_sources(['qmc.py',
+  '_distn_infrastructure.py',
+  '_hypotests.py',
+  '__init__.py',
+  '_mannwhitneyu.py',
+  '_distr_params.py',
+  'mstats_basic.py',
+  'mstats_extras.py',
+  '_wilcoxon_data.py',
+  '_tukeylambda_stats.py',
+  '_binomtest.py',
+  'stats.py',
+  '_page_trend_test.py',
+  'mstats.py',
+  '_discrete_distns.py',
+  '_result_classes.py',
+  '_entropy.py',
+  'morestats.py',
+  '_constants.py',
+  '_stats_mstats_common.py',
+  '_common.py',
+  '_multivariate.py',
+  '_generate_pyx.py',
+  '_continuous_distns.py',
+  '_binned_statistic.py',
+  'setup.py',
+  '_rvs_sampling.py',
+  '_crosstab.py',
+  '_qmc.py',
+  'distributions.py',
+  'kde.py',
+  '_relative_risk.py',
+  'contingency.py',
+  '_ksstats.py',
+  '_bootstrap.py',],
+  pure : false,
+  subdir : 'scipy/stats'
+)
