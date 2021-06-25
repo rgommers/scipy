@@ -83,19 +83,15 @@ npymath_path = incdir_numpy / '..' / 'lib'
 npymath_lib = meson.get_compiler('c').find_library('npymath', dirs: npymath_path)
 npyrandom_path = incdir_numpy / '..' / '..' / 'random' / 'lib'
 npyrandom_lib = meson.get_compiler('c').find_library('npyrandom', dirs: npyrandom_path)
-incdir_biasedurn = incdir_numpy / '..' / '..' / 'random' / 'lib'
-inc_baisedurn = include_directories(incdir_biasedurn)
 run_command(py3, '_generate_pyx.py')
 run_command(cython, '--cplus', 'biasedurn.pyx', '-o', 'biasedurn.cpp')
-m_lib = meson.get_compiler('c').find_library('m')
-run_command(py3, 
-  ['-c', 'import os; os.environ["R_BUILD"] = None;'])
 biasedurn = py3.extension_module('biasedurn',
   ['biasedurn/stocR.h', 
    'biasedurn.cpp', 'biasedurn/impls.cpp',
    'biasedurn/fnchyppr.cpp', 'biasedurn/wnchyppr.cpp',
    'biasedurn/stoc1.cpp', 'biasedurn/stoc3.cpp'],
    c_args: numpy_nodepr_api,
-    include_directories: [inc_np, inc_baisedurn],
-    dependencies: [py3_dep, npyrandom_lib, npymath_lib, m_lib]
+   cpp_args: ['-DR_BUILD'],
+   include_directories: [inc_np],
+   dependencies: [py3_dep, npyrandom_lib, npymath_lib]
 )
