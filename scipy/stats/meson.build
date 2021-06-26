@@ -69,6 +69,7 @@ pthread = dependency('threads')
 run_command(cython, '--cplus', '_qmc_cy.pyx')
 _qmc_cy = py3.extension_module('_qmc_cy',
   ['_qmc_cy.cpp'],
+  cpp_args: '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
   dependencies : [py3_dep, pthread],
   include_directories : [inc_np],
   install : true,
@@ -81,8 +82,7 @@ biasedurn = py3.extension_module('biasedurn',
    'biasedurn.cpp', 'biasedurn/impls.cpp',
    'biasedurn/fnchyppr.cpp', 'biasedurn/wnchyppr.cpp',
    'biasedurn/stoc1.cpp', 'biasedurn/stoc3.cpp'],
-   c_args: numpy_nodepr_api,
-   cpp_args: ['-DR_BUILD'],
+   cpp_args: ['-DR_BUILD', numpy_nodepr_api],
    include_directories: [inc_np],
    dependencies: [py3_dep, npyrandom_lib, npymath_lib]
 )

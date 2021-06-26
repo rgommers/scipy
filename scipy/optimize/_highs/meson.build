@@ -135,7 +135,8 @@ _highs_wrapper = py3.extension_module('_highs_wrapper',
     cpp_args: ['-DHIGHS_VERSION_MAJOR=1', 
                '-DHIGHS_VERSION_MINOR=0',
                '-Wno-unused-variable',
-               '-Wno-unused-but-set-variable'],
+               '-Wno-unused-but-set-variable',
+               numpy_nodepr_api],
     install : true,
     subdir : 'scipy/optimize/_highs'
 )
