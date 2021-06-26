@@ -81,9 +81,9 @@ dop_lib = static_library('dop_lib',
     c_args: '-Wunused-variable',
     fortran_args: fortran_ignore_warnings)
 
-# TODO: Add c_args: numpy_nodepr_api
 py3.extension_module('_quadpack',
     ['__quadpack.h', '_quadpackmodule.c'] + quadpack_src + mach_src,
+    c_args: '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
     fortran_args: fortran_ignore_warnings,
     include_directories: [inc_np, '../_lib/src'],
     link_with: [quadpack_lib, mach_lib],
