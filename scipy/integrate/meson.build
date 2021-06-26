@@ -70,12 +70,15 @@ quadpack_lib = static_library('quadpack_lib',
     fortran_args: fortran_ignore_warnings)
 lsoda_lib = static_library('lsoda_lib', 
     lsoda_src,
+    c_args: '-Wunused-variable',
     fortran_args: fortran_ignore_warnings)
 vode_lib = static_library('vode_lib', 
     vode_src,
+    c_args: '-Wunused-variable',
     fortran_args: fortran_ignore_warnings)
 dop_lib = static_library('dop_lib', 
     dop_src,
+    c_args: '-Wunused-variable',
     fortran_args: fortran_ignore_warnings)
 
 # TODO: Add c_args: numpy_nodepr_api
