@@ -96,7 +96,7 @@ biasedurn = py3.extension_module('biasedurn',
    dependencies: [py3_dep, npyrandom_lib, npymath_lib]
 )
 
-# subdir('_boost')
+subdir('_boost')
 
 py3.install_sources(
   ['_qmc_cy.pyi', 
