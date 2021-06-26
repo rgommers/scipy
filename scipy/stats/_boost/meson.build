@@ -43,3 +43,8 @@ binom_ufunc = py3.extension_module('binom_ufunc',
     cpp_args: cpp_args,
     dependencies: [py3_dep]
 )
+
+py3.install_sources(['__init__.py'],
+  pure : false,
+  subdir : 'scipy/stats/_boost'
+)

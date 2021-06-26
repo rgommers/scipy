@@ -139,7 +139,19 @@ py3.install_sources(['qmc.py',
   '_relative_risk.py',
   'contingency.py',
   '_ksstats.py',
-  '_bootstrap.py',],
+  '_bootstrap.py'],
+  pure : false,
+  subdir : 'scipy/stats'
+)
+
+py3.install_sources(['biasedurn.pxd',
+  '_stats.pxd'],
+  pure : false,
+  subdir : 'scipy/stats'
+)
+
+py3.install_sources(['_qmc_cy.pyi',
+  '_sobol.pyi'],
   pure : false,
   subdir : 'scipy/stats'
 )
