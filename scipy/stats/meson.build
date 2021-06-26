@@ -66,25 +66,67 @@ py3.install_sources(
 )
 
 pthread = dependency('threads')
-run_command(cython, '--cplus', '_qmc_cy.pyx')
+_qmc_cpp = custom_target('_qmc_cpp',
+  output : '_qmc_cy.cpp',
+  input : '_qmc_cy.pyx',
+  command : [cython, '--cplus', '-3', '--fast-fail', '@INPUT@', '-o', '@OUTPUT@']
+)
 _qmc_cy = py3.extension_module('_qmc_cy',
-  ['_qmc_cy.cpp'],
+  _qmc_cpp,
   cpp_args: '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
   dependencies : [py3_dep, pthread],
   include_directories : [inc_np],
   install : true,
   subdir : 'scipy/stats')
 
-run_command(py3, '_generate_pyx.py')
-run_command(cython, '--cplus', 'biasedurn.pyx', '-o', 'biasedurn.cpp')
+_stats_pxd = custom_target('_stats_pxd',
+  output : [
+    '__init__.py',
+    '_stats.pxd',
+    'biasedurn.pxd',
+  ],
+  input : [
+    '__init__.py',
+    '_stats.pxd',
+    'biasedurn.pxd',
+  ],
+  command : ['cp', '@INPUT@', '-t', '@OUTDIR@'],
+)
+
+_stats_gen_pyx = custom_target('_stats_gen_pyx',
+  output : [
+    'biasedurn.pyx',
+    'beta_ufunc.pyx',
+    'binom_ufunc.pyx',
+    'func_defs.pxd',
+    'hypergeom_ufunc.pyx',
+    'nbinom_ufunc.pyx',
+    'templated_pyufunc.pxd',
+  ],
+  input : '_generate_pyx.py',
+  command : [py3, '@INPUT@', '-o', '@OUTDIR@']
+)
+_biasedurn_cpp = custom_target('_biasedurn_cpp',
+  output : 'biasedurn.cpp',
+  input : [
+    _stats_gen_pyx[0],  # biasedurn.pyx
+    _stats_pxd,
+    _dummy_init,
+  ],
+  command : [cython, '--cplus', '-3', '--fast-fail', '@INPUT0@', '-o', '@OUTPUT@']
+)
 biasedurn = py3.extension_module('biasedurn',
-  ['biasedurn/stocR.h', 
-   'biasedurn.cpp', 'biasedurn/impls.cpp',
-   'biasedurn/fnchyppr.cpp', 'biasedurn/wnchyppr.cpp',
-   'biasedurn/stoc1.cpp', 'biasedurn/stoc3.cpp'],
-   cpp_args: ['-DR_BUILD', numpy_nodepr_api],
-   include_directories: [inc_np],
-   dependencies: [py3_dep, npyrandom_lib, npymath_lib]
+  [_biasedurn_cpp,
+   'biasedurn/fnchyppr.cpp',
+   'biasedurn/impls.cpp',
+   'biasedurn/stoc1.cpp',
+   'biasedurn/stoc3.cpp',
+   'biasedurn/stocR.h', 
+   'biasedurn/wnchyppr.cpp',
+  ],
+  cpp_args: ['-DR_BUILD', numpy_nodepr_api],
+  include_directories: [inc_np],
+  dependencies: [py3_dep, npyrandom_lib, npymath_lib]
 )
 
 py3.install_sources([
@@ -142,4 +184,5 @@ py3.install_sources([
 )
 
 subdir('_boost')
+
 subdir('tests')
