@@ -293,3 +293,9 @@ scipy/optimize/_highs/cython/src/_highs_wrapper.cpp
 scipy/optimize/_highs/cython/src/_highs_constants.cpp
 scipy/optimize/_highs/cython/src/_highs_wrapper.c
 scipy/optimize/_highs/cython/src/_highs_constants.c
+scipy/stats/_qmc_cy.cxx
+scipy/stats/_qmc_cy.cpp
+scipy/stats/_qmc_cy.c
+scipy/stats/biasedurn.cxx
+scipy/stats/biasedurn.cpp
+scipy/stats/biasedurn.c

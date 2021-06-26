@@ -31,6 +31,7 @@ python -c "from scipy.sparse import csgraph as s; s.test()"
 # python -c "from scipy import _lib as s; s.test()"  # relies on spatial
 # python -c "from scipy import integrate as s; s.test()" # relies on special
 # python -c "from scipy import optimize as s; s.test()" # relies on sparse.linalg
+# python -c "from scipy import stats as s; s.test()" # relies on spatial
 popd
 
 # Notes:
