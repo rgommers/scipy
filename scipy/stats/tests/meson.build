@@ -25,3 +25,5 @@ py3.install_sources(['test_bootstrap.py',
     pure : false,
     subdir : 'scipy/stats/tests'
 )
+
+subdir('data')

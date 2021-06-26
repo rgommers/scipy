@@ -4,8 +4,6 @@ fortran_ignore_warnings = [
   '-Wno-maybe-uninitialized', '-Wno-unused-label',
   '-Wno-unused-variable']
 
-subdir('tests')
-
 statlib_lib = static_library('statlib_lib',
     ['statlib/ansari.f',
      'statlib/spearman.f',
@@ -27,13 +25,13 @@ statlib = py3.extension_module('statlib',
   install : true,
   subdir : 'scipy/stats')
 
-# TODO: Add c_args: numpy_nodepr_api 
-_stats = py3.extension_module('_stats',
-  ['_stats.pyx'],
-  dependencies : [py3_dep],
-  include_directories : [inc_np],
-  install : true,
-  subdir : 'scipy/stats')
+# TODO: relies on cython_special
+#_stats = py3.extension_module('_stats',
+#  ['_stats.pyx'],
+#  dependencies : [py3_dep],
+#  include_directories : [inc_np],
+#  install : true,
+#  subdir : 'scipy/stats')
 
 mvn_module = custom_target('mvn_module',
   output : ['mvn-f2pywrappers.f', 'mvnmodule.c'],
@@ -73,16 +71,6 @@ _qmc_cy = py3.extension_module('_qmc_cy',
   install : true,
   subdir : 'scipy/stats')
 
-py3.install_sources(
-  ['biasedurn.pxd'],
-  pure : false,
-  subdir : 'scipy/stats'
-)
-
-npymath_path = incdir_numpy / '..' / 'lib'
-npymath_lib = meson.get_compiler('c').find_library('npymath', dirs: npymath_path)
-npyrandom_path = incdir_numpy / '..' / '..' / 'random' / 'lib'
-npyrandom_lib = meson.get_compiler('c').find_library('npyrandom', dirs: npyrandom_path)
 run_command(py3, '_generate_pyx.py')
 run_command(cython, '--cplus', 'biasedurn.pyx', '-o', 'biasedurn.cpp')
 biasedurn = py3.extension_module('biasedurn',
@@ -96,16 +84,8 @@ biasedurn = py3.extension_module('biasedurn',
    dependencies: [py3_dep, npyrandom_lib, npymath_lib]
 )
 
-subdir('_boost')
-
-py3.install_sources(
-  ['_qmc_cy.pyi', 
-   '_sobol.pyi'],
-  pure : false,
-  subdir : 'scipy/stats'
-)
-
-py3.install_sources(['qmc.py',
+py3.install_sources([
+  'qmc.py',
   '_distn_infrastructure.py',
   '_hypotests.py',
   '__init__.py',
@@ -144,14 +124,19 @@ py3.install_sources(['qmc.py',
   subdir : 'scipy/stats'
 )
 
-py3.install_sources(['biasedurn.pxd',
+py3.install_sources([
+  'biasedurn.pxd',
   '_stats.pxd'],
   pure : false,
   subdir : 'scipy/stats'
 )
 
-py3.install_sources(['_qmc_cy.pyi',
+py3.install_sources([
+  '_qmc_cy.pyi',
   '_sobol.pyi'],
   pure : false,
   subdir : 'scipy/stats'
 )
+
+subdir('_boost')
+subdir('tests')
