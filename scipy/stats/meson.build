@@ -5,9 +5,12 @@ fortran_ignore_warnings = [
   '-Wno-unused-variable']
 
 statlib_lib = static_library('statlib_lib',
-    ['statlib/ansari.f',
-     'statlib/spearman.f',
-     'statlib/swilk.f'])
+  ['statlib/ansari.f',
+   'statlib/spearman.f',
+   'statlib/swilk.f'
+  ],
+  fortran_args: '-Wno-unused-variable',
+)
 
 statlib_module = custom_target('statlib_module',
   output : ['statlib-f2pywrappers.f', 'statlibmodule.c'],
