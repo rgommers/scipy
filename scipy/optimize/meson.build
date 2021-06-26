@@ -101,7 +101,7 @@ cobyla_module = custom_target('cobyla_module',
 
 _cobyla = py3.extension_module('_cobyla',
   [cobyla_module, fortranobject_c, 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
-  c_args: numpy_nodepr_api,
+  c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
   fortran_args : fortran_ignore_warnings,
   include_directories : [inc_np, inc_f2py],
   dependencies : [py3_dep],
