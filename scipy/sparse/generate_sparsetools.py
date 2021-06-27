@@ -383,7 +383,9 @@ def main():
         dst = os.path.join(outdir,
                            unit_name + '_impl.h')
         if newer(__file__, dst) or options.force:
-            print("[generate_sparsetools] generating %r" % (dst,))
+            if not options.outdir:
+                # Be silent if we're using Meson. TODO: add --verbose option
+                print("[generate_sparsetools] generating %r" % (dst,))
             with open(dst, 'w') as f:
                 write_autogen_blurb(f)
                 f.write(getter_code)
@@ -410,12 +412,11 @@ def main():
     };"""
 
     # Produce sparsetools_impl.h
-    dst = os.path.join(os.path.dirname(__file__),
-                       'sparsetools',
-                       'sparsetools_impl.h')
-
+    dst = os.path.join(outdir, 'sparsetools_impl.h')
     if newer(__file__, dst) or options.force:
-        print("[generate_sparsetools] generating %r" % (dst,))
+        if not options.outdir:
+            # Be silent if we're using Meson.
+            print("[generate_sparsetools] generating %r" % (dst,))
         with open(dst, 'w') as f:
             write_autogen_blurb(f)
             f.write(method_defs)
