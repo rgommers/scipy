@@ -264,7 +264,7 @@ _generate_cy = custom_target('_generate_cy',
   command : [py3, '@INPUT0@', '-o', '@OUTDIR@'],
 )
 
-_ufuncs_pxi_pxd = custom_target('_ufuncs_pxi_pxd',
+_ufuncs_pxi_pxd_sources = custom_target('_ufuncs_pxi_pxd',
   output : [
     '__init__.py',
     '_agm.pxd',
@@ -338,11 +338,20 @@ _ufuncs_pxi_pxd = custom_target('_ufuncs_pxi_pxd',
   command : ['cp', '@INPUT@', '-t', '@OUTDIR@'],
 )
 
+# FIXME: the generated ninja.build file is missing the dependency between
+#       copying these files into the build dir and the `.pyx -> .c` stage.
+#       For the `.c -> .so` stage the dependency (see `||` in the `build.ninja`
+#       file) is picked up correctly. This only shows up when running the build
+#       with `-j 1` (when the steps are run in parallel, the copying of sources
+#       seems to always happen quickly enough. This will likely only be fixed
+#       by the "structured sources" PR on the Meson repo.
+_ufuncs_pxi_pxd_dep = declare_dependency(sources: _ufuncs_pxi_pxd_sources)
+
 py3.extension_module('_ufuncs',
-  [ufuncs_sources, _generate_cy[0], _ufuncs_pxi_pxd, _dummy_init],
+  [ufuncs_sources, _generate_cy[0], _dummy_init],
   c_args : [numpy_nodepr_api, use_math_defines],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies : [py3_dep, lapack, npymath_lib],
+  dependencies : [py3_dep, lapack, npymath_lib, _ufuncs_pxi_pxd_dep],
   link_with: [
     amos_lib,
     cdflib_lib,
@@ -361,10 +370,10 @@ _ufuncs_cxx_cy = custom_target('_ufuncs_cxx_cy',
 )
 
 py3.extension_module('_ufuncs_cxx',
-  [ufuncs_cxx_sources, _ufuncs_cxx_cy, _ufuncs_pxi_pxd, _dummy_init],
+  [ufuncs_cxx_sources, _ufuncs_cxx_cy, _dummy_init],
   cpp_args : [numpy_nodepr_api, use_math_defines],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies : [py3_dep, npymath_lib],
+  dependencies : [py3_dep, npymath_lib, _ufuncs_pxi_pxd_dep],
   install : true,
   subdir : 'scipy/special'
 )
