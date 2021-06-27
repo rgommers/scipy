@@ -1,3 +1,6 @@
+# Platform detection
+is_windows = host_machine.system() == 'windows'
+
 # NumPy include directory - needed in all submodules
 incdir_numpy = run_command(py3,
   ['-c', 'import os; os.chdir(".."); import numpy; print(numpy.get_include())'],
@@ -77,6 +80,11 @@ _linalg_pxd = custom_target('_linalg_pxd',
   input : 'linalg.pxd',
   command : ['cp', '@INPUT@', '@OUTDIR@'],
 )
+_special_pxd = custom_target('_special_pxd',
+  output : 'special.pxd',
+  input : 'special.pxd',
+  command : ['cp', '@INPUT@', '@OUTDIR@'],
+)
 
 # Note that subdirs with the most heavy builds should come first (that
 # parallelizes better)
@@ -84,6 +92,7 @@ subdir('sparse')
 subdir('stats')
 subdir('fft')
 subdir('_lib')
+subdir('special')
 subdir('cluster')
 subdir('constants')
 subdir('fftpack')
