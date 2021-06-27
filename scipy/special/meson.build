@@ -210,10 +210,25 @@ cephes_lib = static_library('cephes',
   dependencies : py3_dep,
 )
 
+amos_lib = static_library('amos',
+  amos_sources,
+  fortran_args: '-Wno-maybe-uninitialized'
+)
 
-amos_lib = static_library('amos', amos_sources)
-cdflib_lib = static_library('cdflib', cdflib_sources)
-mach_lib = static_library('mach', mach_sources)
+cdflib_lib = static_library('cdflib',
+  cdflib_sources,
+  fortran_args: [
+    '-Wno-maybe-uninitialized',
+    '-Wno-unused-label',
+    '-Wno-intrinsic-shadow',
+  ],
+)
+
+mach_lib = static_library('mach',
+  mach_sources,
+  fortran_args: ['-Wno-unused-dummy-argument', '-Wno-maybe-uninitialized'],
+)
+
 specfun_lib = static_library('specfun',
   'specfun/specfun.f',
   fortran_args: '-Wno-maybe-uninitialized'
