@@ -6,6 +6,7 @@ from textwrap import dedent
 from shutil import copyfile
 import pathlib
 import os
+import argparse
 
 from gen_func_defs_pxd import (  # type: ignore
     _gen_func_defs_pxd)
@@ -78,8 +79,8 @@ def _ufunc_gen(scipy_dist: str, types: list, ctor_args: tuple,
                 PyUFunc_None,
                 {line_joiner.join(types)}
             )
-            from templated_pyufunc cimport PyUFunc_T
-            from func_defs cimport (
+            from .templated_pyufunc cimport PyUFunc_T
+            from .func_defs cimport (
                 {func_defs_cimports},
             )
             cdef extern from "{boost_hdr}" namespace "boost::math" nogil:
@@ -149,10 +150,18 @@ func{ii}[{jj}] = <void*>{boost_fun}[{boost_tmpl}]
 
 
 if __name__ == '__main__':
-    # create target directory
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-o", "--outdir", type=str,
+                        help="Path to the output directory")
+    args = parser.parse_args()
+
     _boost_dir = pathlib.Path(__file__).resolve().parent.parent
-    src_dir = _boost_dir / 'src'
-    src_dir.mkdir(exist_ok=True, parents=True)
+    if args.outdir:
+        src_dir = pathlib.Path(args.outdir)
+    else:
+        # We're using setup.py here, not Meson. Create target directory
+        src_dir = _boost_dir / 'src'
+        src_dir.mkdir(exist_ok=True, parents=True)
 
     # copy contents of include into directory to satisfy Cython
     # PXD include conditions
