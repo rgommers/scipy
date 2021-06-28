@@ -46,5 +46,14 @@ ckdtree = py3.extension_module('ckdtree',
   install : true,
   subdir : 'scipy/spatial')
 
+# TODO: Add c_args: numpy_nodepr_api,
+# once NumPy API usage is corrected (can be done in main SciPy Repo)
+_distance_wrap = py3.extension_module('_distance_wrap',
+  'src/distance_wrap.c',
+  include_directories: [incdir_numpy, '../_lib'],
+  dependencies: [py3_dep, npymath_lib],
+  install : true,
+  subdir : 'scipy/spatial')
+
 # subdir('tests')
 # subdir('transform')
