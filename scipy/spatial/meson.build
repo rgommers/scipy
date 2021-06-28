@@ -38,9 +38,11 @@ ckdtree_cpp = custom_target('ckdtree_cpp',
   command : [cython, '--cplus', '-3', '--fast-fail', '@INPUT@', '-o', '@OUTPUT@']
 )
 
-# TODO: Add cpp_args: numpy_nodepr_api, once NumPy API usage is corrected.
+# TODO: Add cpp_args: numpy_nodepr_api and remove cpp_args: '-Wno-cpp',
+# once NumPy API usage is corrected.
 ckdtree = py3.extension_module('ckdtree',
   ckdtree_src + [ckdtree_cpp],
+  cpp_args: '-Wno-cpp',
   include_directories: [incdir_numpy, '../_lib', '../_build_utils/src', 'ckdtree/src'],
   dependencies: [py3_dep],
   install : true,
