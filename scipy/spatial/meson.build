@@ -16,9 +16,9 @@ qhull_src = ['qhull_src/src/poly_r.c',
 'qhull_src/src/rboxlib_r.c',
 'qhull_src/src/qset_r.c']
 
-# TODO: Add c_args: numpy_nodepr_api, once NumPy API usage is corrected.
 qhull = py3.extension_module('qhull',
   ['qhull.pyx', 'qhull_misc.h', 'qhull_misc.c'] + qhull_src,
+  c_args: '-Wno-cpp',
   include_directories: [incdir_numpy, '../_lib', '../_build_utils/src', 'qhull_src/src'],
   dependencies: [py3_dep],
   install : true,
@@ -46,10 +46,9 @@ ckdtree = py3.extension_module('ckdtree',
   install : true,
   subdir : 'scipy/spatial')
 
-# TODO: Add c_args: numpy_nodepr_api,
-# once NumPy API usage is corrected (can be done in main SciPy Repo)
 _distance_wrap = py3.extension_module('_distance_wrap',
   'src/distance_wrap.c',
+  c_args: '-Wno-cpp', # TODO: replace with numpy_nodepr_api
   include_directories: [incdir_numpy, '../_lib'],
   dependencies: [py3_dep, npymath_lib],
   install : true,
