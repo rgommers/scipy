@@ -54,5 +54,42 @@ _distance_wrap = py3.extension_module('_distance_wrap',
   install : true,
   subdir : 'scipy/spatial')
 
-# subdir('tests')
-# subdir('transform')
+_distance_pybind = py3.extension_module('_distance_pybind',
+  ['src/distance_pybind.cpp'],
+  cpp_args: numpy_nodepr_api,
+  include_directories: [incdir_pybind11, incdir_numpy, 'src/'],
+  dependencies: [py3_dep],
+  install : true,
+  subdir : 'scipy/spatial')
+
+_voronoi = py3.extension_module('_voronoi',
+  ['_voronoi.pyx'],
+  c_args: numpy_nodepr_api,
+  include_directories: [incdir_numpy],
+  dependencies: [py3_dep],
+  install : true,
+  subdir : 'scipy/spatial')
+
+_hausdorff = py3.extension_module('_hausdorff',
+  ['_hausdorff.pyx'],
+  c_args: numpy_nodepr_api,
+  include_directories: [incdir_numpy],
+  dependencies: [py3_dep],
+  install : true,
+  subdir : 'scipy/spatial')
+
+py3.install_sources(['qhull_src/COPYING.txt'],
+  pure: false,
+  subdir: 'scipy/spatial'
+)
+
+py3.install_sources(['qhull.pyi',
+  '_voronoi.pyi',
+  'ckdtree.pyi',
+  'distance.pyi'],
+  pure: false,
+  subdir: 'scipy/spatial'
+)
+
+subdir('tests')
+subdir('transform')
