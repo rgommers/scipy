@@ -33,8 +33,30 @@ py3.extension_module('_test_deprecation_def',
   install : true,
   subdir : 'scipy/_lib')
 
-# FIXME: add messagestream extension. We may not need that config file,
-#        can we pass around a configuration object instead?
+# May be easier as a compile flag, but use a config header file to stay
+# in sync with what is done in setup.py
+# TODO: the `prefix` here is recommended in
+#       https://mesonbuild.com/Compiler-properties.html#does-a-function-exist
+#       and seems needed, but why does it fail to detect it for the conda
+#       compiler? Does it not exist, or is it hidden elsewhere?
+conf_memstream = configuration_data()
+if meson.get_compiler('c').has_function('open_memstream',
+                                        prefix : '#include <stdio.h>')
+  conf_memstream.set('has_openmemstream', '1')
+else
+  conf_memstream.set('has_openmemstream', '0')
+endif
+configure_file(input : 'src/messagestream_config.h.in',
+               output : 'messagestream_config.h',
+               configuration : conf_memstream)
+
+py3.extension_module('messagestream',
+  'messagestream.pyx',
+  include_directories : 'src',
+  dependencies : py3_dep,
+  install : true,
+  subdir : 'scipy/_lib')
+
 
 python_sources = [
   '__init__.py',
