@@ -6,8 +6,12 @@ py3.install_sources(['__init__.py',
   'test_spherical_voronoi.py',
   'test_slerp.py',
   'test_distance.py',
-  'test_qhull.py',
-  'data/pdist-spearman-ml.txt',
+  'test_qhull.py'],
+  pure: false,
+  subdir: 'scipy/spatial/tests'
+)
+
+py3.install_sources(['data/pdist-spearman-ml.txt',
   'data/pdist-boolean-inp.txt',
   'data/pdist-minkowski-5.8-ml-iris.txt',
   'data/selfdual-4d-polytope.txt',
@@ -39,5 +43,5 @@ py3.install_sources(['__init__.py',
   'data/pdist-jensenshannon-ml-iris.txt',
   'data/pdist-cityblock-ml-iris.txt'],
   pure: false,
-  subdir: 'scipy/spatial/tests'
+  subdir: 'scipy/spatial/tests/data'
 )

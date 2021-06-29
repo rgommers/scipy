@@ -33,6 +33,7 @@ python -c "from scipy.sparse import csgraph as s; s.test()"
 # python -c "from scipy import optimize as s; s.test()" # relies on sparse.linalg
 # python -c "from scipy import stats as s; s.test()" # relies on spatial
 # python -c "from scipy import special as s; s.test()" # relies on spatial
+# python -c "from scipy import spatial as s; s.test()" # relies on scipy._lib.messagestream
 popd
 
 # Notes:

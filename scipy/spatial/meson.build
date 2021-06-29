@@ -1,3 +1,9 @@
+_spatial_pxd = custom_target('_spatial_pxd',
+  output : ['qhull.pxd', 'setlist.pxd'],
+  input : ['qhull.pxd', 'setlist.pxd'],
+  command : ['cp', '@INPUT@', '-t', '@OUTDIR@'],
+)
+
 qhull_src = ['qhull_src/src/poly_r.c',
 'qhull_src/src/stat_r.c',
 'qhull_src/src/merge_r.c',
@@ -20,7 +26,7 @@ qhull = py3.extension_module('qhull',
   ['qhull.pyx', 'qhull_misc.h', 'qhull_misc.c'] + qhull_src,
   c_args: '-Wno-cpp',
   include_directories: [incdir_numpy, '../_lib', '../_build_utils/src', 'qhull_src/src'],
-  dependencies: [py3_dep],
+  dependencies: [py3_dep, lapack],
   install : true,
   subdir : 'scipy/spatial')
 
@@ -80,13 +86,24 @@ _hausdorff = py3.extension_module('_hausdorff',
 
 py3.install_sources(['qhull_src/COPYING.txt'],
   pure: false,
-  subdir: 'scipy/spatial'
+  subdir: 'scipy/spatial/qhull_src'
 )
 
 py3.install_sources(['qhull.pyi',
   '_voronoi.pyi',
   'ckdtree.pyi',
   'distance.pyi'],
+  pure: false,
+  subdir: 'scipy/spatial'
+)
+
+py3.install_sources(['__init__.py',
+  'distance.py',
+  '_geometric_slerp.py',
+  '_procrustes.py',
+  'kdtree.py',
+  '_spherical_voronoi.py',
+  '_plotutils.py'],
   pure: false,
   subdir: 'scipy/spatial'
 )
