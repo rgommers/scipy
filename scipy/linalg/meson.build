@@ -180,26 +180,20 @@ py3.extension_module('cython_lapack',
   install : true,
   subdir : 'scipy/linalg')
 
-
-# Needed to trick Cython, it won't do a relative import outside a package
 _dummy_init2 = custom_target('_dummy_init',
   output : '__init__.py',
   input : '__init__.py',
   command : ['cp', '@INPUT@', '@OUTDIR@'],
 )
 
-# _decomp_update (TODO: not working, see https://github.com/mesonbuild/meson/pull/8775)
-# will fail with `from . cimport cython_blas as blas_pointers`
 _decomp_update_pyx = custom_target('_decomp_update',
-  build_by_default : true,
   output : '_decomp_update.pyx',
   input : '_decomp_update.pyx.in',
-  command : [py3, tempita, '@INPUT@', '-o', '@OUTDIR@',
-             '--ignore', _dummy_init, '--ignore', _dummy_init2, '--ignore', _linalg_pxd],
+  command : [py3, tempita, '@INPUT@', '-o', '@OUTDIR@'],
 )
 
 py3.extension_module('_decomp_update',
-  _decomp_update_pyx,
+  [_decomp_update_pyx, _dummy_init, _dummy_init2, _linalg_pxd],
   include_directories : inc_np,
   dependencies : py3_dep,
   install : true,
@@ -235,16 +229,25 @@ python_sources = [
   'special_matrices.py',
 ]
 
-# TODO: install these pxd files
-pxd_files = [
-  _generate_cy[2],  # cython_blas.pxd
-  _generate_cy[3],  # cython_lapack.pxd
-]
-
 py3.install_sources(
     python_sources,
     pure: false,
     subdir: 'scipy/linalg'
 )
+
+
+# TODO: install these pxd files. Neither py3.install_sources nor install_data
+#       accept generated data files. What https://mesonbuild.com/Installing.html
+#       says is for build targets to use:
+#         `custom_target(..., install: true, install_dir: ...)
+#         # should use `py3.get_install_dir() + 'scipy/linalg'` ?
+pxd_files = [
+  _generate_cy[2],  # cython_blas.pxd
+  _generate_cy[3],  # cython_lapack.pxd
+]
+#install_data(
+#    pxd_files,
+#    install_dir: py3.get_install_dir() + 'scipy/linalg'
+#)
 
 subdir('tests')
