@@ -44,9 +44,17 @@ ckdtree_cpp = custom_target('ckdtree_cpp',
   command : [cython, '--cplus', '-3', '--fast-fail', '@INPUT@', '-o', '@OUTPUT@']
 )
 
+cpp_args = []
+compiler = meson.get_compiler('cpp')
+if compiler.get_id() == 'msvc'
+  cpp_args = cpp_args + ['/EHsc']
+elif compiler.has_argument('-fvisibility=hidden')
+  cpp_args = cpp_args + ['-fvisibility=hidden']
+endif
+
 ckdtree = py3.extension_module('ckdtree',
   ckdtree_src + [ckdtree_cpp],
-  cpp_args: '-Wno-cpp', # TODO: replace with numpy_nodepr_api
+  cpp_args: cpp_args + ['-Wno-cpp'], # TODO: replace with numpy_nodepr_api
   include_directories: [incdir_numpy, '../_lib', '../_build_utils/src', 'ckdtree/src'],
   dependencies: [py3_dep],
   install : true,
@@ -62,7 +70,7 @@ _distance_wrap = py3.extension_module('_distance_wrap',
 
 _distance_pybind = py3.extension_module('_distance_pybind',
   ['src/distance_pybind.cpp'],
-  cpp_args: numpy_nodepr_api,
+  cpp_args: cpp_args + [numpy_nodepr_api],
   include_directories: [incdir_pybind11, incdir_numpy, 'src/'],
   dependencies: [py3_dep],
   install : true,
