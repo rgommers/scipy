@@ -13,6 +13,8 @@ set -e
 # Build SciPy - use a prefix, without it is broken
 meson setup $1 --prefix=$2
 ninja -C $1
+touch scipy/linalg/_decomp_update.pyx.in  # workaround for bug, see gh-28
+ninja -C $1
 pushd $1
 meson install
 popd
