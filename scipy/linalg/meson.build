@@ -142,6 +142,10 @@ _generate_cy = custom_target('_generate_cy',
            ],
   input : '_generate_pyx.py',
   command : [py3, '@INPUT@', '-o', '@OUTDIR@'],
+  # FIXME - we only want to install the .pxd files! See comments for
+  #         `pxd_files` further down.
+  install : true,
+  install_dir: py3.get_install_dir() + 'scipy/linalg'
 )
 
 fwrappers = static_library('fwrappers',
@@ -236,18 +240,23 @@ py3.install_sources(
 )
 
 
-# TODO: install these pxd files. Neither py3.install_sources nor install_data
-#       accept generated data files. What https://mesonbuild.com/Installing.html
-#       says is for build targets to use:
+# TODO: install (only) these pxd files. Neither py3.install_sources nor
+#       install_data accept generated data files. What
+#       https://mesonbuild.com/Installing.html says is for build targets to
+#       use:
 #         `custom_target(..., install: true, install_dir: ...)
 #         # should use `py3.get_install_dir() + 'scipy/linalg'` ?
-pxd_files = [
-  _generate_cy[2],  # cython_blas.pxd
-  _generate_cy[3],  # cython_lapack.pxd
-]
-#install_data(
-#    pxd_files,
-#    install_dir: py3.get_install_dir() + 'scipy/linalg'
+#       see https://github.com/mesonbuild/meson/issues/3206
+#pxd_files = [
+#  _generate_cy[2],  # cython_blas.pxd
+#  _generate_cy[3],  # cython_lapack.pxd
+#]
+#custom_target('cython_blas_lapack_pxd',
+#  input : pxd_files,
+#  output : ['cython_blas2.pxd', 'cython_lapack2.pxd'],
+#  command : ['cp', '@INPUT0@', '@OUTPUT0@', '&&', 'cp', '@INPUT1@', '@OUTPUT1@'],
+#  install : true,
+#  install_dir: py3.get_install_dir() + 'scipy/linalg'
 #)
 
 subdir('tests')
