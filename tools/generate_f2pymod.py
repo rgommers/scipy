@@ -20,13 +20,13 @@ def main():
                         help="Path to the output directory")
     args = parser.parse_args()
 
-    if not args.infile.endswith(('.pyf', '.pyf.src')):
+    if not args.infile.endswith(('.pyf', '.pyf.src', '.f.src')):
         raise ValueError(f"Input file has unknown extension: {args.infile}")
 
     outdir_abs = os.path.join(os.getcwd(), args.outdir)
 
-    # Write out the .pyf file
-    if args.infile.endswith('.pyf.src'):
+    # Write out the .pyf/.f file
+    if args.infile.endswith(('.pyf.src', '.f.src')):
         code = process_file(args.infile)
         fname_pyf = os.path.join(args.outdir,
                                  os.path.splitext(os.path.split(args.infile)[1])[0])
@@ -37,15 +37,16 @@ def main():
         fname_pyf = args.infile
 
     # Now invoke f2py to generate the C API module file
-    p = subprocess.Popen([sys.executable, '-m', 'numpy.f2py', fname_pyf,
-                          '--build-dir', outdir_abs], #'--quiet'],
-                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                          cwd=os.getcwd())
-    out, err = p.communicate()
-    if not (p.returncode == 0):
-        raise RuntimeError(f"Writing {args.outfile} with f2py failed!\n"
-                           f"{out}\n"
-                           r"{err}")
+    if args.infile.endswith(('.pyf.src', '.pyf')):
+        p = subprocess.Popen([sys.executable, '-m', 'numpy.f2py', fname_pyf,
+                            '--build-dir', outdir_abs], #'--quiet'],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            cwd=os.getcwd())
+        out, err = p.communicate()
+        if not (p.returncode == 0):
+            raise RuntimeError(f"Writing {args.outfile} with f2py failed!\n"
+                            f"{out}\n"
+                            r"{err}")
 
 
 if __name__ == "__main__":
