@@ -10,5 +10,5 @@ py3.install_sources(['_expm_multiply.py',
 
 subdir('isolve')
 subdir('dsolve')
-# subdir('eigen')
-# subdir('tests')
+subdir('eigen')
+subdir('tests')

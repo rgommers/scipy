@@ -101,7 +101,7 @@ _arpack = py3.extension_module('_arpack',
 
 py3.install_sources(['__init__.py',
   'arpack.py',
-  'ARPACK/COPYING']
+  'ARPACK/COPYING'],
   pure: false,
   subdir: 'scipy/sparse/linalg/eigen/arpack'
 )
