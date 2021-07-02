@@ -1,13 +1,11 @@
-subdir('tests')
-
-if is_windows and meson.get_compiler('cpp', native: true).sizeof('void*') == 4
+if is_windows
   c_args = ['-DNO_TIMER=1']
 else
   c_args = []
 endif
 c_args += ['-DUSE_VENDOR_BLAS=1']
 
-superlu_src = static_library('superlu_src',
+superlu_lib = static_library('superlu_lib',
   ['SuperLU/SRC/ccolumn_bmod.c',
   'SuperLU/SRC/ccolumn_dfs.c',
   'SuperLU/SRC/ccopy_to_ucol.c',
@@ -185,5 +183,31 @@ superlu_src = static_library('superlu_src',
   'SuperLU/SRC/zsp_blas2.c',
   'SuperLU/SRC/zsp_blas3.c',
   'SuperLU/SRC/zutil.c'],
+  c_args: ['-Wno-unused-variable', 
+    '-Wno-maybe-uninitialized',
+    '-Wno-parentheses',
+    '-Wno-unused-label',
+    '-Wno-implicit-function-declaration',
+    '-Wno-switch'],
   include_directories: ['SuperLU/SRC'],
 )
+
+_superlu = py3.extension_module('_superlu',
+  ['_superlumodule.c', '_superlu_utils.c',
+  '_superluobject.c'],
+  c_args: numpy_nodepr_api,
+  link_with: [superlu_lib],
+  include_directories: [incdir_numpy, 'SuperLU/SRC'],
+  dependencies: [py3_dep, lapack],
+  install: true,
+  subdir: 'scipy/sparse/linalg/dsolve'
+)
+
+py3.install_sources(['__init__.py',
+   '_add_newdocs.py',
+   'linsolve.py'],
+  pure: false,
+  subdir: 'scipy/sparse/linalg'
+)
+
+subdir('tests')
