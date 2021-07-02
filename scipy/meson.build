@@ -26,13 +26,27 @@ incdir_pybind11 = run_command(py3,
 
 inc_pybind11 = include_directories(incdir_pybind11)
 
-# Pythran include directory
-incdir_pythran = run_command(py3,
-  ['-c', 'import os; os.chdir(".."); import pythran; print(os.path.dirname(pythran.__file__));'],
+# Pythran include directory and build flags
+use_pythran = run_command(py3,
+  ['-c', 'import os; print(os.environ.get("SCIPY_USE_PYTHRAN", 1))'],
   check : true
-).stdout().strip()
+).stdout().strip() == '1'
 
-inc_pythran = include_directories(incdir_pythran)
+if use_pythran
+  incdir_pythran = run_command(py3,
+    ['-c', 'import os; os.chdir(".."); import pythran; print(os.path.dirname(pythran.__file__));'],
+    check : true
+  ).stdout().strip()
+  inc_pythran = include_directories(incdir_pythran)
+else
+  inc_pythran = []
+endif
+
+cpp_args_pythran = [
+  '-DENABLE_PYTHON_MODULE',
+  '-D__PYTHRAN__=3',
+  '-DPYTHRAN_BLAS_NONE'
+]
 
 # Don't use the deprecated NumPy C API. Define this to a fixed version instead of
 # NPY_API_VERSION in order not to break compilation for released SciPy versions
