@@ -51,4 +51,7 @@ jobs:
         export PYTHONPATH=$PWD/installdir/lib/python3.9/site-packages/
         # FIXME: run all tests, not just one simple module - create a dev.py
         #        interface. Also ensure that fails CI if tests fail (see runtests.py)
+        # Avoid being in a directory which has a scipy/ dir
+        pushd installdir
         python -c "from scipy import constants as s; s.test()"
+        popd
