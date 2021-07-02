@@ -29,7 +29,7 @@ jobs:
 
     - name: Install Ubuntu dependencies
       run: |
-        # NOTE: not the same OpenBLAS version as in upstream CI (being lazy here)
+        # NOTE: not the same OpenBLAS version as in upstream CI (I'm being lazy here)
         sudo apt-get install libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
 
     - name: Install Python packages
@@ -37,6 +37,18 @@ jobs:
         python -m pip install numpy setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist mpmath gmpy2 pythran ninja
         python -m pip install --user git+https://github.com/mesonbuild/meson.git
 
+    - name: Build SciPy
+      run: |
+        meson setup build --prefix=$PWD/installdir
+        ninja -C build
+
+    - name: Install SciPy
+      run: |
+        meson install -C build
+
     - name: Test SciPy
       run: |
-        ./mesondev.sh build $PWD/installdir
+        export PYTHONPATH=$PWD/installdir/lib/python3.9/site-packages/
+        # FIXME: run all tests, not just one simple module - create a dev.py
+        #        interface. Also ensure that fails CI if tests fail (see runtests.py)
+        python -c "from scipy import constants as s; s.test()"
