@@ -159,7 +159,7 @@ __nnls = py3.extension_module('__nnls',
   install: true,
   subdir: 'scipy/optimize')
 
-res = run_command(py3, '-c', 'import os; print(os.environ.get("SCIPY_USE_PYTHRAN", 0))').stdout().strip()
+res = run_command(py3, '-c', 'import os; print(os.environ.get("SCIPY_USE_PYTHRAN", 1))').stdout().strip()
 if res == '1'
   _group_columns = custom_target('_group_columns',
     output: ['_group_columns.cpp'],
@@ -168,8 +168,14 @@ if res == '1'
   )
   _group_columns = py3.extension_module('_group_columns',
   [_group_columns],
-  cpp_args: ['-Wno-unused-function', '-Wno-int-in-bool-context'],
-  include_directories: [incdir_pythran],
+  cpp_args: ['-Wno-unused-function', '-Wno-unused-variable', 
+             '-Wno-deprecated-declarations',
+             '-Wno-cpp', '-Wno-int-in-bool-context', 
+             '-DENABLE_PYTHON_MODULE',
+             '-D__PYTHRAN__=3',
+             '-DPYTHRAN_BLAS_NONE'],
+  include_directories: [incdir_pythran, incdir_numpy],
+  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/optimize')
 else
