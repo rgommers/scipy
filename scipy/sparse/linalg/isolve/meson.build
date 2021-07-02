@@ -4,6 +4,7 @@ fortran_ignore_warnings = [
   '-Wno-maybe-uninitialized', '-Wno-unused-label',
   '-Wno-unused-variable']
 
+# Note: 3 source files in iterative/ are unused
 methods = ['iterative/BiCGREVCOM.f.src',
   'iterative/BiCGSTABREVCOM.f.src',
   'iterative/CGREVCOM.f.src',

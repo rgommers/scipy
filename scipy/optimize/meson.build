@@ -159,8 +159,7 @@ __nnls = py3.extension_module('__nnls',
   install: true,
   subdir: 'scipy/optimize')
 
-res = run_command(py3, '-c', 'import os; print(os.environ.get("SCIPY_USE_PYTHRAN", 1))').stdout().strip()
-if res == '1'
+if use_pythran
   _group_columns = custom_target('_group_columns',
     output: ['_group_columns.cpp'],
     input : '_group_columns.py',
@@ -171,9 +170,7 @@ if res == '1'
   cpp_args: ['-Wno-unused-function', '-Wno-unused-variable', 
              '-Wno-deprecated-declarations',
              '-Wno-cpp', '-Wno-int-in-bool-context', 
-             '-DENABLE_PYTHON_MODULE',
-             '-D__PYTHRAN__=3',
-             '-DPYTHRAN_BLAS_NONE'],
+            ] + cpp_args_pythran,
   include_directories: [incdir_pythran, incdir_numpy],
   dependencies: [py3_dep],
   install: true,
