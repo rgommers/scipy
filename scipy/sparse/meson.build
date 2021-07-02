@@ -40,7 +40,6 @@ py3.install_sources(
 )
 
 subdir('sparsetools')
-# TODO: 
 subdir('csgraph')
-#subdir('linalg')
+subdir('linalg')
 subdir('tests')
