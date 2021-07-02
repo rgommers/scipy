@@ -197,7 +197,10 @@ _decomp_update_pyx = custom_target('_decomp_update',
 )
 
 py3.extension_module('_decomp_update',
-  [_decomp_update_pyx, _dummy_init, _dummy_init2, _linalg_pxd],
+  [_decomp_update_pyx,
+   _dummy_init, _dummy_init2,
+   _linalg_pxd,  #_generate_cy[1], _generate_cy[3]],  # FIXME needs Meson fix
+  ],
   include_directories : inc_np,
   dependencies : py3_dep,
   install : true,
