@@ -81,7 +81,7 @@ _lbfgsb = py3.extension_module('_lbfgsb',
   c_args : numpy_nodepr_api,
   fortran_args : fortran_ignore_warnings,
   include_directories : [inc_np, inc_f2py],
-  dependencies : [py3_dep],
+  dependencies : [py3_dep, lapack],
   install: true,
   subdir: 'scipy/optimize')
 
@@ -159,8 +159,8 @@ __nnls = py3.extension_module('__nnls',
   install: true,
   subdir: 'scipy/optimize')
 
-res = run_command(py3, '-c', 'import os; print(os.environ.get("SCIPY_USE_PYTHRAN", 1))')
-if res.returncode() == 0
+res = run_command(py3, '-c', 'import os; print(os.environ.get("SCIPY_USE_PYTHRAN", 0))').stdout().strip()
+if res == '1'
   _group_columns = custom_target('_group_columns',
     output: ['_group_columns.cpp'],
     input : '_group_columns.py',
@@ -169,7 +169,7 @@ if res.returncode() == 0
   _group_columns = py3.extension_module('_group_columns',
   [_group_columns],
   cpp_args: ['-Wno-unused-function', '-Wno-int-in-bool-context'],
-  include_directories: [inc_pythran],
+  include_directories: [incdir_pythran],
   install: true,
   subdir: 'scipy/optimize')
 else
