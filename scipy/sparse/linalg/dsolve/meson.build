@@ -207,7 +207,7 @@ py3.install_sources(['__init__.py',
    '_add_newdocs.py',
    'linsolve.py'],
   pure: false,
-  subdir: 'scipy/sparse/linalg'
+  subdir: 'scipy/sparse/linalg/dsolve'
 )
 
 subdir('tests')

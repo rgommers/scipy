@@ -97,6 +97,8 @@ _arpack = py3.extension_module('_arpack',
   link_with: [arpack_lib],
   include_directories: [incdir_numpy, incdir_f2py],
   dependencies: [py3_dep, lapack],
+  install: true,
+  subdir: 'scipy/sparse/linalg/eigen/arpack'
 )
 
 py3.install_sources(['__init__.py',

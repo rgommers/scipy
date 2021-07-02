@@ -8,5 +8,5 @@ py3.install_sources(['test_gcrotmk.py',
   'test_iterative.py',
   'test_minres.py'],
   pure : false,
-  subdir : 'scipy/sparse/linalg/isolve'
+  subdir : 'scipy/sparse/linalg/isolve/tests'
 )
