@@ -90,15 +90,34 @@ fitpack_lib = static_library('fitpack_lib',
 
 interpnd = py3.extension_module('interpnd',
   ['interpnd.pyx'],
+  c_args: numpy_nodepr_api,
   include_directories: [incdir_numpy],
-  dependencies: [py3_dep])
+  dependencies: [py3_dep],
+  install : true,
+  subdir : 'scipy/interpolate')
 
 _ppoly = py3.extension_module('_ppoly',
   ['_ppoly.pyx'],
+  c_args: numpy_nodepr_api,
   include_directories: [incdir_numpy],
-  dependencies: [py3_dep])
+  dependencies: [py3_dep],
+  install : true,
+  subdir : 'scipy/interpolate')
 
 _bspl = py3.extension_module('_bspl',
   ['_bspl.pyx'],
+  c_args: numpy_nodepr_api,
   include_directories: ['src/', incdir_numpy],
-  dependencies: [py3_dep])
+  dependencies: [py3_dep],
+  install : true,
+  subdir : 'scipy/interpolate')
+
+# TODO: Add flags for 64 bit ints
+_fitpack = py3.extension_module('_fitpack',
+  ['src/_fitpackmodule.c'],
+  c_args: ['-Wno-cpp', '-Wno-maybe-uninitialized'], # TODO: Replace with numpy_nodepr_api
+  link_with: [fitpack_lib],
+  include_directories: ['src/', incdir_numpy],
+  dependencies: [py3_dep],
+  install : true,
+  subdir : 'scipy/interpolate')
