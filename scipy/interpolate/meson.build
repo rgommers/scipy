@@ -92,3 +92,8 @@ interpnd = py3.extension_module('interpnd',
   ['interpnd.pyx'],
   include_directories: [incdir_numpy],
   dependencies: [py3_dep])
+
+_ppoly = py3.extension_module('_ppoly',
+  ['_ppoly.pyx'],
+  include_directories: [incdir_numpy],
+  dependencies: [py3_dep])
