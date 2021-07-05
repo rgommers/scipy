@@ -97,3 +97,8 @@ _ppoly = py3.extension_module('_ppoly',
   ['_ppoly.pyx'],
   include_directories: [incdir_numpy],
   dependencies: [py3_dep])
+
+_bspl = py3.extension_module('_bspl',
+  ['_bspl.pyx'],
+  include_directories: ['src/', incdir_numpy],
+  dependencies: [py3_dep])
