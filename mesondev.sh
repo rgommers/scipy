@@ -2,7 +2,7 @@
 set -e
 
 # Command Line Arguments
-# $1 - First argument is an absolute/relative 
+# $1 - First argument is an absolute/relative
 #      path to build directory.
 # $2 - Second argument is an absolute path to
 #      install directory.
@@ -37,6 +37,7 @@ python -c "from scipy.sparse import linalg as s; s.test()"
 # python -c "from scipy import stats as s; s.test()" # relies on spatial
 # python -c "from scipy import special as s; s.test()" # relies on spatial
 # python -c "from scipy import spatial as s; s.test()" # relies on optimize
+python -c "from scipy import misc as s; s.test()"
 popd
 
 # Notes:
