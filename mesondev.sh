@@ -27,7 +27,7 @@ python -c "from scipy import constants as s; s.test()"
 # python -c "from scipy import ndimage as s; s.test()"  # relies on special
 python -c "from scipy import odr as s; s.test()"
 python -c "from scipy.sparse import csgraph as s; s.test()"
-python -c "from scipy.sparse import linalg as s; s.test()"
+# python -c "from scipy.sparse import linalg as s; s.test()"
 # python -c "from scipy import sparse as s; s.test()"
 # python -c "from scipy import fftpack as s; s.test()"  # relies on fft
 # python -c "from scipy import fft as s; s.test()"  # relies on special
@@ -38,6 +38,7 @@ python -c "from scipy.sparse import linalg as s; s.test()"
 # python -c "from scipy import special as s; s.test()" # relies on spatial
 # python -c "from scipy import spatial as s; s.test()" # relies on optimize
 python -c "from scipy import misc as s; s.test()"
+python -c "from scipy import io as s; s.test()"
 popd
 
 # Notes:
