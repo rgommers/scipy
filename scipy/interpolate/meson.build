@@ -121,3 +121,40 @@ _fitpack = py3.extension_module('_fitpack',
   dependencies: [py3_dep],
   install : true,
   subdir : 'scipy/interpolate')
+
+dfitpack_module = custom_target('dfitpack_module',
+  output : ['dfitpack-f2pywrappers.f', 'dfitpackmodule.c'],
+  input : 'src/fitpack.pyf',
+  command : [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+)
+
+# TODO: Add flags for 64 bit ints
+dfitpack = py3.extension_module('dfitpack',
+  [dfitpack_module, fortranobject_c],
+  c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
+  include_directories: [incdir_numpy, incdir_f2py],
+  dependencies: [py3_dep, lapack],
+  link_with: [fitpack_lib],
+  install: true,
+  subdir: 'scipy/interpolate')
+
+if use_pythran
+  _rbfinterp_pythran = custom_target('_rbfinterp_pythran',
+    output: ['_rbfinterp_pythran.cpp'],
+    input : '_rbfinterp_pythran.py',
+    command : [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_rbfinterp_pythran.cpp'],
+  )
+  _rbfinterp_pythran = py3.extension_module('_rbfinterp_pythran',
+  [_rbfinterp_pythran],
+  cpp_args: ['-Wno-unused-function', '-Wno-unused-variable', 
+             '-Wno-deprecated-declarations',
+             '-Wno-cpp', '-Wno-int-in-bool-context',
+             '-Wno-unused-but-set-variable'
+            ] + cpp_args_pythran,
+  include_directories: [incdir_pythran, incdir_numpy],
+  dependencies: [py3_dep],
+  install: true,
+  subdir: 'scipy/interpolate')
+endif
+
+subdir('tests')
