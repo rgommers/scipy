@@ -33,6 +33,7 @@ python -c "from scipy.sparse import linalg as s; s.test()"
 # python -c "from scipy import fft as s; s.test()"  # relies on special
 # python -c "from scipy import _lib as s; s.test()"  # relies on spatial
 # python -c "from scipy import integrate as s; s.test()" # relies on special
+python -c "from scipy import interpolate as s; s.test()" # relies on linalg
 # python -c "from scipy import optimize as s; s.test()" # relies on 'scipy.optimize._lsq.givens_elimination'
 # python -c "from scipy import stats as s; s.test()" # relies on spatial
 # python -c "from scipy import special as s; s.test()" # relies on spatial

@@ -1,3 +1,9 @@
+fortran_ignore_warnings = [
+  '-Wno-tabs', '-Wno-conversion',
+  '-Wno-argument-mismatch', '-Wno-unused-dummy-argument',
+  '-Wno-maybe-uninitialized', '-Wno-unused-label',
+  '-Wno-unused-variable']
+
 fitpack_src = ['fitpack/fpclos.f',
   'fitpack/sphere.f',
   'fitpack/cocosp.f',
@@ -91,6 +97,7 @@ fitpack_lib = static_library('fitpack_lib',
 interpnd = py3.extension_module('interpnd',
   ['interpnd.pyx'],
   c_args: numpy_nodepr_api,
+  fortran_args: fortran_ignore_warnings,
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],
   install : true,
@@ -156,5 +163,23 @@ if use_pythran
   install: true,
   subdir: 'scipy/interpolate')
 endif
+
+py3.install_sources(['interpnd_info.py',
+  '__init__.py',
+  '_fitpack_impl.py',
+  '_rbfinterp.py',
+  '_cubic.py',
+  'polyint.py',
+  'fitpack.py',
+  'ndgriddata.py',
+  'fitpack2.py',
+  '_bsplines.py',
+  '_rbfinterp_pythran.py',
+  'rbf.py',
+  'interpolate.py',
+  '_pade.py'],
+  pure : false,
+  subdir : 'scipy/interpolate'
+)
 
 subdir('tests')
