@@ -1,9 +1,3 @@
-fortran_ignore_warnings = [
-  '-Wno-tabs', '-Wno-conversion',
-  '-Wno-argument-mismatch', '-Wno-unused-dummy-argument',
-  '-Wno-maybe-uninitialized', '-Wno-unused-label',
-  '-Wno-unused-variable']
-
 fitpack_src = ['fitpack/fpclos.f',
   'fitpack/sphere.f',
   'fitpack/cocosp.f',
@@ -92,12 +86,12 @@ fitpack_src = ['fitpack/fpclos.f',
 
 # TODO: Add flags for 64 bit ints
 fitpack_lib = static_library('fitpack_lib',
-  fitpack_src)
+  fitpack_src,
+  fortran_args: '-Wno-maybe-uninitialized')
 
 interpnd = py3.extension_module('interpnd',
   ['interpnd.pyx'],
   c_args: numpy_nodepr_api,
-  fortran_args: fortran_ignore_warnings,
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],
   install : true,
