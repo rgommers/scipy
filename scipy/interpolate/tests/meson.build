@@ -14,3 +14,9 @@ py3.install_sources(['test_regression.py',
   pure : false,
   subdir : 'scipy/interpolate/tests'
 )
+
+py3.install_sources(['data/estimate_gradients_hang.npy',
+  'data/bug-1310.npz'],
+  pure : false,
+  subdir : 'scipy/interpolate/tests/data'
+)
