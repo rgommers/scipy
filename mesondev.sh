@@ -38,6 +38,7 @@ python -c "from scipy.sparse import linalg as s; s.test()"
 # python -c "from scipy import special as s; s.test()" # relies on spatial
 # python -c "from scipy import spatial as s; s.test()" # relies on optimize
 python -c "from scipy import misc as s; s.test()"
+python -c "from scipy import io as s; s.test()"
 popd
 
 # Notes:
