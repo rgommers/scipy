@@ -15,10 +15,13 @@ if sys.platform == 'win32' and os.path.isdir(extra_dll_dir):
         os.environ.setdefault('PATH', '')
         os.environ['PATH'] += os.pathsep + extra_dll_dir
 
-lapack_mkl_info={'libraries': ['mkl_rt', 'pthread'], 'library_dirs': ['/home/rgommers/anaconda3/envs/scipy-dev/lib'], 'define_macros': [('SCIPY_MKL_H', None), ('HAVE_CBLAS', None)], 'include_dirs': ['/home/rgommers/anaconda3/envs/scipy-dev/include']}
-lapack_opt_info={'libraries': ['mkl_rt', 'pthread'], 'library_dirs': ['/home/rgommers/anaconda3/envs/scipy-dev/lib'], 'define_macros': [('SCIPY_MKL_H', None), ('HAVE_CBLAS', None)], 'include_dirs': ['/home/rgommers/anaconda3/envs/scipy-dev/include']}
-blas_mkl_info={'libraries': ['mkl_rt', 'pthread'], 'library_dirs': ['/home/rgommers/anaconda3/envs/scipy-dev/lib'], 'define_macros': [('SCIPY_MKL_H', None), ('HAVE_CBLAS', None)], 'include_dirs': ['/home/rgommers/anaconda3/envs/scipy-dev/include']}
-blas_opt_info={'libraries': ['mkl_rt', 'pthread'], 'library_dirs': ['/home/rgommers/anaconda3/envs/scipy-dev/lib'], 'define_macros': [('SCIPY_MKL_H', None), ('HAVE_CBLAS', None)], 'include_dirs': ['/home/rgommers/anaconda3/envs/scipy-dev/include']}
+lapack_mkl_info={}
+openblas_lapack_info={'libraries': ['openblas', 'openblas'], 'library_dirs': ['/home/rgommers/anaconda3/envs/scipy-meson/lib'], 'language': 'c', 'define_macros': [('HAVE_CBLAS', None)]}
+lapack_opt_info={'libraries': ['openblas', 'openblas'], 'library_dirs': ['/home/rgommers/anaconda3/envs/scipy-meson/lib'], 'language': 'c', 'define_macros': [('HAVE_CBLAS', None)]}
+blas_mkl_info={}
+blis_info={}
+openblas_info={'libraries': ['openblas', 'openblas'], 'library_dirs': ['/home/rgommers/anaconda3/envs/scipy-meson/lib'], 'language': 'c', 'define_macros': [('HAVE_CBLAS', None)]}
+blas_opt_info={'libraries': ['openblas', 'openblas'], 'library_dirs': ['/home/rgommers/anaconda3/envs/scipy-meson/lib'], 'language': 'c', 'define_macros': [('HAVE_CBLAS', None)]}
 
 def get_info(name):
     g = globals()
