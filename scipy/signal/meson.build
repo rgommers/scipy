@@ -68,29 +68,20 @@ else
   subdir: 'scipy/signal')
 endif
 
-_peak_finding_utils = py3.extension_module('_peak_finding_utils',
-  ['_peak_finding_utils.pyx'],
-  include_directories : [inc_np],
-  dependencies : [py3_dep],
-  install: true,
-  subdir: 'scipy/signal'
-)
+pyx_files = [
+  ['_peak_finding_utils', '_peak_finding_utils.pyx'],
+  ['_sosfilt', '_sosfilt.pyx'],
+  ['_upfirdn_apply', '_upfirdn_apply.pyx'],
+]
 
-_sosfilt = py3.extension_module('_sosfilt',
-  ['_sosfilt.pyx'],
-  include_directories : [inc_np],
-  dependencies : [py3_dep],
-  install: true,
-  subdir: 'scipy/signal'
-)
-
-_upfirdn_apply = py3.extension_module('_upfirdn_apply',
-  ['_upfirdn_apply.pyx'],
-  include_directories : [inc_np],
-  dependencies : [py3_dep],
-  install: true,
-  subdir: 'scipy/signal'
-)
+foreach pyx_file : pyx_files
+  py3.extension_module(pyx_file[0],
+    pyx_file[1],
+    include_directories : [inc_np],
+    dependencies : [py3_dep],
+    install: true,
+    subdir: 'scipy/signal')
+endforeach
 
 spline = py3.extension_module('spline',
   ['splinemodule.c', 'S_bspline_util.c', 'D_bspline_util.c',
