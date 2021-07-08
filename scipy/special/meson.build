@@ -348,7 +348,7 @@ _ufuncs_pxi_pxd_sources = custom_target('_ufuncs_pxi_pxd',
 _ufuncs_pxi_pxd_dep = declare_dependency(sources: _ufuncs_pxi_pxd_sources)
 
 py3.extension_module('_ufuncs',
-  [ufuncs_sources, _generate_cy[0], _dummy_init],
+  [ufuncs_sources, _generate_cy[0], _cython_tree],
   c_args : [numpy_nodepr_api, use_math_defines],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
   dependencies : [py3_dep, lapack, npymath_lib, _ufuncs_pxi_pxd_dep],
@@ -370,7 +370,7 @@ _ufuncs_cxx_cy = custom_target('_ufuncs_cxx_cy',
 )
 
 py3.extension_module('_ufuncs_cxx',
-  [ufuncs_cxx_sources, _ufuncs_cxx_cy, _dummy_init],
+  [ufuncs_cxx_sources, _ufuncs_cxx_cy, _cython_tree],
   cpp_args : [numpy_nodepr_api, use_math_defines],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
   dependencies : [py3_dep, npymath_lib, _ufuncs_pxi_pxd_dep],
@@ -379,7 +379,7 @@ py3.extension_module('_ufuncs_cxx',
 )
 
 cython_special_pxd = declare_dependency(sources: _generate_cy)
-special_pxd = declare_dependency(sources: _special_pxd)
+special_pxd = declare_dependency(sources: _cython_tree)
 _ellip_harm_pyx = custom_target('_ellip_harm_pyx',
   output : '_ellip_harm_2.pyx',
   input : '_ellip_harm_2.pyx',

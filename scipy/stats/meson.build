@@ -111,7 +111,7 @@ _biasedurn_cpp = custom_target('_biasedurn_cpp',
   input : [
     _stats_gen_pyx[0],  # biasedurn.pyx
     _stats_pxd,
-    _dummy_init,
+    _cython_tree,
   ],
   command : [cython, '--cplus', '-3', '--fast-fail', '@INPUT0@', '-o', '@OUTPUT@']
 )

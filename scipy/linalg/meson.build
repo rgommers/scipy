@@ -1,5 +1,11 @@
 # TODO: 64-bit BLAS and LAPACK
 
+__init__py = custom_target('__init__py',
+  output : '__init__.py',
+  input : '__init__.py',
+  command : ['cp', '@INPUT@', '@OUTDIR@'],
+)
+
 # fblas
 fblas_module = custom_target('fblas_module',
   output : ['_fblasmodule.c', '_fblas-f2pywrappers.f'],
@@ -184,12 +190,6 @@ py3.extension_module('cython_lapack',
   install : true,
   subdir : 'scipy/linalg')
 
-_dummy_init2 = custom_target('_dummy_init',
-  output : '__init__.py',
-  input : '__init__.py',
-  command : ['cp', '@INPUT@', '@OUTDIR@'],
-)
-
 _decomp_update_pyx = custom_target('_decomp_update',
   output : '_decomp_update.pyx',
   input : '_decomp_update.pyx.in',
@@ -198,8 +198,8 @@ _decomp_update_pyx = custom_target('_decomp_update',
 
 py3.extension_module('_decomp_update',
   [_decomp_update_pyx,
-   _dummy_init, _dummy_init2,
-   _linalg_pxd,  #_generate_cy[1], _generate_cy[3]],  # FIXME needs Meson fix
+   _cython_tree, __init__py,
+   #_generate_cy[1], _generate_cy[3]],  # FIXME needs Meson fix
   ],
   include_directories : inc_np,
   dependencies : py3_dep,
