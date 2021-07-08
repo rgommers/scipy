@@ -195,11 +195,10 @@ _decomp_update_pyx = custom_target('_decomp_update',
 py3.extension_module('_decomp_update',
   [_decomp_update_pyx,
    _cython_tree, __init__py,
-   _generate_cy[1], _generate_cy[3],  # FIXME needs Meson fix
+   _generate_cy[3],  # FIXME needs Meson fix
   ],
   include_directories : inc_np,
   dependencies : py3_dep,
-  link_with : cython_lapack,
   install : true,
   subdir : 'scipy/linalg')
 
