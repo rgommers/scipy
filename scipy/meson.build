@@ -84,20 +84,18 @@ py3.install_sources(
 
 
 # Needed to trick Cython, it won't do a relative import outside a package
-_dummy_init = custom_target('_dummy_init',
-  output : '__init__.py',
-  input : '__init__.py',
-  command : ['cp', '@INPUT@', '@OUTDIR@'],
-)
-_linalg_pxd = custom_target('_linalg_pxd',
-  output : 'linalg.pxd',
-  input : 'linalg.pxd',
-  command : ['cp', '@INPUT@', '@OUTDIR@'],
-)
-_special_pxd = custom_target('_special_pxd',
-  output : 'special.pxd',
-  input : 'special.pxd',
-  command : ['cp', '@INPUT@', '@OUTDIR@'],
+_cython_tree = custom_target('_cython_tree',
+  output : [
+    '__init__.py',
+    'linalg.pxd',
+    'special.pxd',
+  ],
+  input : [
+    '__init__.py',
+    'linalg.pxd',
+    'special.pxd',
+  ],
+  command : [py3, '_build_utils/copyfiles.py', '@INPUT@', '-o', '@OUTDIR@'],
 )
 
 # Note that subdirs with the most heavy builds should come first (that
