@@ -4,34 +4,15 @@ correlate_nd_c = custom_target('correlate_nd',
    command : [py3, tempita, '@INPUT@', '-o', '@OUTDIR@'],
  )
 
-correlate_nd = py3.extension_module('correlate_nd',
-   correlate_nd_c,
-   c_args: ['-Wno-cpp'],  # TODO: replace with numpy_nodepr_api
-   include_directories: [inc_np],
-   dependencies: [py3_dep],
-   install: true,
-   subdir: 'scipy/signal'
-)
-
 lfilter_c = custom_target('lfilter',
    output : 'lfilter.c',
    input : 'lfilter.c.in',
    command : [py3, tempita, '@INPUT@', '-o', '@OUTDIR@'],
  )
 
-lfilter = py3.extension_module('lfilter',
-   lfilter_c,
-   c_args: ['-Wno-cpp'],  # TODO: replace with numpy_nodepr_api
-   include_directories: [inc_np],
-   dependencies: [py3_dep],
-   install: true,
-   subdir: 'scipy/signal'
-)
-
 sigtools = py3.extension_module('sigtools',
   ['sigtoolsmodule.c', 'firfilter.c', 'sigtools.h',
-  'medianfilter.c'],
-  link_with: [lfilter, correlate_nd],
+  'medianfilter.c', lfilter_c, correlate_nd_c],
   c_args : numpy_nodepr_api,
   include_directories : [inc_np],
   dependencies: [py3_dep],
