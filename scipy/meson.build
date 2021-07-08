@@ -95,7 +95,7 @@ _cython_tree = custom_target('_cython_tree',
     'linalg.pxd',
     'special.pxd',
   ],
-  command : [py3, '_build_utils/copyfiles.py', '@INPUT@', '-o', '@OUTDIR@'],
+  command : ['cp', '@INPUT@', '-t', '@OUTDIR@'],
 )
 
 # Note that subdirs with the most heavy builds should come first (that

@@ -194,7 +194,7 @@ _dummy_init_optimize = custom_target('_dummy_init_optimize',
 # TODO: depends on cython_blas.pxd, which is generated in linalg/meson.build
 #       this doesn't work yet (waiting for "structured sources" Meson PR)
 #_bglu_dense = py3.extension_module('_bglu_dense',
-#  ['_bglu_dense.pyx', _dummy_init, _dummy_init_optimize, _linalg_pxd],
+#  ['_bglu_dense.pyx', _cython_tree, _dummy_init_optimize],
 #  include_directories: [inc_np],
 #  dependencies: [py3_dep],
 #  install: true,
