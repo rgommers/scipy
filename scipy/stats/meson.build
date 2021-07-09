@@ -19,7 +19,7 @@ statlib_module = custom_target('statlib_module',
 )
 
 statlib = py3.extension_module('statlib',
-  [statlib_module],
+  [statlib_module, fortranobject_c],
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   link_with : statlib_lib,
@@ -56,7 +56,7 @@ mvn_module = custom_target('mvn_module',
 )
 
 mvn = py3.extension_module('mvn',
-  [mvn_module, 'mvndst.f'],
+  [mvn_module, 'mvndst.f', fortranobject_c],
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   dependencies : [py3_dep],
