@@ -29,12 +29,25 @@ statlib = py3.extension_module('statlib',
   subdir : 'scipy/stats')
 
 # TODO: relies on cython_special
-#_stats = py3.extension_module('_stats',
-#  ['_stats.pyx'],
-#  dependencies : [py3_dep],
-#  include_directories : [inc_np],
-#  install : true,
-#  subdir : 'scipy/stats')
+_stats_c = custom_target('_stats_c',
+  output: '_stats.c',
+  input: [
+    '_stats.pyx',
+    _cython_tree,
+    # _cython_special_pxd
+  ],
+  command: [cython, '-3', '--fast-fail',
+            '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'],
+)
+
+
+_stats = py3.extension_module('_stats',
+  _stats_c,
+  dependencies : [py3_dep],
+  include_directories : [inc_np],
+  install : true,
+  subdir : 'scipy/stats'
+)
 
 mvn_module = custom_target('mvn_module',
   output : ['mvn-f2pywrappers.f', 'mvnmodule.c'],
