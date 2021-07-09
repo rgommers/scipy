@@ -20,9 +20,14 @@ popd
 pushd $2
 
 export PYTHONPATH=$2/lib/python3.9/site-packages/
-python -c "from scipy import integrate as s; s.test()" # relies on special
+python -c "from scipy import optimize as s; s.test()"
+python -c "from scipy import stats as s; s.test()"
+python -c "from scipy import special as s; s.test()"
+python -c "from scipy import spatial as s; s.test()"
+python -c "from scipy import interpolate as s; s.test()"
+python -c "from scipy import integrate as s; s.test()"
 python -c "from scipy import linalg as s; s.test()"
-#python -c "from scipy import _lib as s; s.test()"  # test_import_cyles
+python -c "from scipy import _lib as s; s.test()"
 python -c "from scipy import cluster as s; s.test()"
 python -c "from scipy import constants as s; s.test()"
 python -c "from scipy import ndimage as s; s.test()"
@@ -30,11 +35,6 @@ python -c "from scipy import odr as s; s.test()"
 python -c "from scipy import sparse as s; s.test()"
 python -c "from scipy import fftpack as s; s.test()"
 python -c "from scipy import fft as s; s.test()"
-#python -c "from scipy import interpolate as s; s.test()" # interpolate._ppoly.pyx doesn't work yet.
-#python -c "from scipy import optimize as s; s.test()" # relies on 'scipy.optimize._lsq.givens_elimination'
-#python -c "from scipy import stats as s; s.test()" # relies on spatial
-#python -c "from scipy import special as s; s.test()" # relies on spatial
-#python -c "from scipy import spatial as s; s.test()" # relies on optimize
 python -c "from scipy import misc as s; s.test()"
 python -c "from scipy import signal as s; s.test()"
 python -c "from scipy import io as s; s.test()"
