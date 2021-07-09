@@ -97,16 +97,27 @@ interpnd = py3.extension_module('interpnd',
   install : true,
   subdir : 'scipy/interpolate')
 
+_ppoly_c = custom_target('_ppoly_c',
+  output: '_ppoly.c',
+  input: [
+    '_ppoly.pyx',
+    _cython_tree,
+    # _cython_lapack_pxd
+  ],
+  command: [cython, '-3', '--fast-fail',
+            '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'],
+)
 # TODO: Depends on cython_lapack.pxd which cannot 
 # be added a dependency here. Once it is possible, 
 # uncomment the below part.
-# _ppoly = py3.extension_module('_ppoly',
-#  ['_ppoly.pyx'],
-#  c_args: numpy_nodepr_api,
-#  include_directories: [incdir_numpy],
-#  dependencies: [py3_dep],
-#  install : true,
-#  subdir : 'scipy/interpolate')
+py3.extension_module('_ppoly',
+  _ppoly_c,
+  c_args: numpy_nodepr_api,
+  include_directories: [incdir_numpy],
+  dependencies: [py3_dep],
+  install : true,
+  subdir : 'scipy/interpolate'
+)
 
 _bspl = py3.extension_module('_bspl',
   ['_bspl.pyx'],
