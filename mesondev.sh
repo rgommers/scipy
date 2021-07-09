@@ -20,7 +20,7 @@ popd
 pushd $2
 
 export PYTHONPATH=$2/lib/python3.9/site-packages/
-#python -c "from scipy import linalg as s; s.test()"  # relies on sparse
+python -c "from scipy import linalg as s; s.test()"
 #python -c "from scipy import _lib as s; s.test()"  # test_import_cyles
 python -c "from scipy import cluster as s; s.test()"
 python -c "from scipy import constants as s; s.test()"

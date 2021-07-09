@@ -68,8 +68,13 @@ py3.extension_module('_flapack',
 # TODO: cblas/clapack are built *only* for ATLAS. Why? Is it still needed?
 
 # _flinalg
+flinalg_module = custom_target('flinalg_module',
+  output : '_flinalgmodule.c',
+  input : ['src/flinalg.pyf'],
+  command : [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+)
 py3.extension_module('_flinalg',
-  ['src/det.f', 'src/lu.f'],
+  ['src/det.f', 'src/lu.f', flinalg_module, fortranobject_c],
   c_args : numpy_nodepr_api,
   include_directories : [inc_np, inc_f2py],
   dependencies : [py3_dep, lapack],
