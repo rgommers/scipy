@@ -221,10 +221,8 @@ py3.extension_module('_bglu_dense',
 subdir('_lsq')
 subdir('_trlib')
 subdir('_trustregion_constr')
-#subdir('cython_optimize')
-
+subdir('cython_optimize')
 subdir('_shgo_lib')
-
 subdir('_highs')
 subdir('tests')
 

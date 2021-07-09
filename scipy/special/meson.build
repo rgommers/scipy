@@ -431,7 +431,8 @@ py3.extension_module('_test_round',
   subdir : 'scipy/special'
 )
 
-
+# Must use `custom_target`, because `py3.install_sources` does not work with
+# generated sources - see https://github.com/mesonbuild/meson/issues/7372
 npz_files = [
   ['_data_boost', 'tests/data/boost/acosh_data_ipp/acosh_data.txt',
    'boost', 'boost.npz'],
