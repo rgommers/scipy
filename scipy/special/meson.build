@@ -433,27 +433,20 @@ py3.extension_module('_test_round',
 
 
 npz_files = [
-  ['tests/data/boost', 'boost.npz'],
-  ['tests/data/gsl', 'gsl.npz'],
-  ['tests/data/local', 'local.npz'],
+  ['_data_boost', 'tests/data/boost/acosh_data_ipp/acosh_data.txt',
+   'boost', 'boost.npz'],
+  ['_data_gsl', 'tests/data/gsl/mathieu_ab.txt', 'gsl', 'gsl.npz'],
+  ['_data_local', 'tests/data/local/ellipkm1.txt', 'local', 'local.npz'],
 ]
-
-# FIXME: installed generated files into a Python package seems to be a pain
-#        `install_data()` and `custom_target()` will install into
-#        `install_dir`, which is relative to the prefix. But this is different
-#        from `subdir` in `py3.install_sources`, which is relative to the
-#        site-packages dir within the prefix!
-#        See https://github.com/mesonbuild/meson/issues/7372 for a workaround
-#foreach npz_file : npz_files
-#  custom_target(npz_file[0],
-#    output : npz_file[1],
-#    input : npz_file[0],
-#    command : [py3, 'utils/makenpz.py', '--use-timestamp', '@INPUT@', '-o', '@OUTDIR@'],
-#  )
-#    install : true,
-#    install_dir : 'scipy/special/tests/data',
-#  )
-#endforeach
+foreach npz_file : npz_files
+  custom_target(npz_file[0],
+    output : npz_file[3],
+    input : npz_file[1],
+    command : [py3, '@CURRENT_SOURCE_DIR@/utils/makenpz.py', '--use-timestamp', npz_file[2], '-o', '@OUTDIR@'],
+    install : true,
+    install_dir : py3.get_install_dir() + '/scipy/special/tests/data',
+  )
+endforeach
 
 
 python_sources = [
