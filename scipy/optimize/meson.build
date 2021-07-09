@@ -200,14 +200,27 @@ _dummy_init_optimize = custom_target('_dummy_init_optimize',
   command : ['cp', '@INPUT@', '@OUTDIR@'],
 )
 
-# TODO: depends on cython_blas.pxd, which is generated in linalg/meson.build
-#       this doesn't work yet (waiting for "structured sources" Meson PR)
-#_bglu_dense = py3.extension_module('_bglu_dense',
-#  ['_bglu_dense.pyx', _cython_tree, _dummy_init_optimize],
-#  include_directories: [inc_np],
-#  dependencies: [py3_dep],
-#  install: true,
-#  subdir: 'scipy/optimize')
+_bglu_dense_c = custom_target('_bglu_dense_c',
+  output: '_bglu_dense.c',
+  input: [
+    '_bglu_dense.pyx',
+    _cython_tree,
+    # _cython_blas_pxd
+  ],
+  command: [cython, '-3', '--fast-fail',
+            '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'],
+)
+
+py3.extension_module('_bglu_dense',
+  [_bglu_dense_c,
+   _cython_tree,
+   _dummy_init_optimize,
+   # cython_blas_pxd,
+  ],
+  include_directories: [inc_np],
+  dependencies: [py3_dep],
+  install: true,
+  subdir: 'scipy/optimize')
 
 subdir('_lsq')
 subdir('_trlib')
