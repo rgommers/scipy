@@ -69,6 +69,15 @@ rootfind_lib = static_library('rootfind',
      'Zeros/bisect.c', 
      'Zeros/brenth.c'])
 
+py3.extension_module('_zeros',
+  'zeros.c',
+  link_with : rootfind_lib,
+  c_args : numpy_nodepr_api,
+  dependencies : [py3_dep],
+  include_directories : inc_np,
+  install : true,
+  subdir : 'scipy/optimize')
+
 lbfgsb_module = custom_target('lbfgsb_module',
   output : ['_lbfgsb-f2pywrappers.f', '_lbfgsbmodule.c'],
   input : 'lbfgsb_src/lbfgsb.pyf',
