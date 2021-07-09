@@ -139,7 +139,9 @@ biasedurn = py3.extension_module('biasedurn',
   ],
   cpp_args: ['-DR_BUILD', numpy_nodepr_api],
   include_directories: [inc_np],
-  dependencies: [py3_dep, npyrandom_lib, npymath_lib]
+  dependencies: [py3_dep, npyrandom_lib, npymath_lib],
+  install: true,
+  subdir: 'scipy/stats',
 )
 
 py3.install_sources([
