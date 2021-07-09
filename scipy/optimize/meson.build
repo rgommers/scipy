@@ -53,7 +53,7 @@ rectangular_lasp = static_library('rectangular_lasp',
       cpp_args: cpp_args,
       link_args: link_args)
 
-_lasp = py3.extension_module('_lasp',
+py3.extension_module('_lsap_module',
   ['_lsap_module.c'],
   link_with : rectangular_lasp,
   c_args : numpy_nodepr_api,
