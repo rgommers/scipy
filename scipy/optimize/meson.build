@@ -212,11 +212,7 @@ _bglu_dense_c = custom_target('_bglu_dense_c',
 )
 
 py3.extension_module('_bglu_dense',
-  [_bglu_dense_c,
-   _cython_tree,
-   _dummy_init_optimize,
-   # cython_blas_pxd,
-  ],
+  _bglu_dense_c,
   include_directories: [inc_np],
   dependencies: [py3_dep],
   install: true,
