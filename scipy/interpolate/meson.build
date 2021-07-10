@@ -130,7 +130,7 @@ _bspl = py3.extension_module('_bspl',
 # TODO: Add flags for 64 bit ints
 _fitpack = py3.extension_module('_fitpack',
   ['src/_fitpackmodule.c'],
-  c_args: ['-Wno-cpp', '-Wno-maybe-uninitialized'], # TODO: Replace with numpy_nodepr_api
+  c_args: [numpy_nodepr_api, '-Wno-maybe-uninitialized'],
   link_with: [fitpack_lib],
   include_directories: ['src/', incdir_numpy],
   dependencies: [py3_dep],
