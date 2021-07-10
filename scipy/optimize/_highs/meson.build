@@ -1,3 +1,15 @@
+highs_define_macros = [
+  '-DCMAKE_BUILD_TYPE="RELEASE"',
+  '-DHiGHSRELEASE',
+  '-DIPX_ON="ON"',
+  '-DHIGHS_GITHASH="n/a"',
+  '-DHIGHS_COMPILATION_DATE="2021-07-09"',  # cannot generate dynamically
+  '-DHIGHS_VERSION_MAJOR=1',  # don't care about this, look at CMakelists.txt
+  '-DHIGHS_VERSION_MINOR=0',
+  '-DHIGHS_VERSION_PATCH=0',
+  '-DHIGHS_DIR=' + meson.current_source_dir(),
+]
+
 basiclu_lib = static_library('basiclu',
   ['src/ipm/basiclu/src/lu_build_factors.c',
    'src/ipm/basiclu/src/basiclu_solve_sparse.c',
@@ -29,7 +41,10 @@ basiclu_lib = static_library('basiclu',
    'src/ipm/basiclu/src/lu_singletons.c',
   ],
   include_directories : ['src', 'src/ipm/basiclu/include'],
-  c_args: ['-Wno-unused-variable']
+  c_args: [
+    '-Wno-unused-variable',
+    highs_define_macros,
+  ],
 )
 
 # highs_wrapper
@@ -142,11 +157,17 @@ _highs_wrapper = py3.extension_module('_highs_wrapper',
   ],
   link_with: [basiclu_lib],
   dependencies: [py3_dep],
-  cpp_args: ['-DHIGHS_VERSION_MAJOR=1', 
-             '-DHIGHS_VERSION_MINOR=0',
-             '-Wno-unused-variable',
-             '-Wno-unused-but-set-variable',
-             numpy_nodepr_api],
+  cpp_args: [
+    '-Wno-unused-variable',
+    '-Wno-unused-but-set-variable',
+    highs_define_macros,
+    '-UOPENMP',
+    '-UEXT_PRESOLVE',
+    '-USCIP_DEV',
+    '-UHiGHSDEV',
+    '-UOSI_FOUND',
+    numpy_nodepr_api,
+  ],
   install : true,
   subdir : 'scipy/optimize/_highs'
 )
