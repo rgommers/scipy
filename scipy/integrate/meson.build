@@ -5,12 +5,12 @@ fortran_ignore_warnings = [
   '-Wno-unused-variable']
 
 mach_src = ['mach/d1mach.f', 'mach/xerror.f']
-quadpack_src = ['quadpack/dqagie.f', 
+quadpack_src = ['quadpack/dqagie.f',
     'quadpack/dqk15i.f',
     'quadpack/dqawo.f',
     'quadpack/dqelg.f',
     'quadpack/dqage.f',
-    'quadpack/dqng.f', 
+    'quadpack/dqng.f',
     'quadpack/dqwgts.f',
     'quadpack/dqwgtc.f',
     'quadpack/dqag.f',
@@ -41,7 +41,7 @@ quadpack_src = ['quadpack/dqagie.f',
     'quadpack/dqawce.f',
     'quadpack/dqk21.f'
 ]
-lsoda_src = ['odepack/blkdta000.f', 
+lsoda_src = ['odepack/blkdta000.f',
     'odepack/bnorm.f',
     'odepack/cfode.f',
     'odepack/ewset.f',
@@ -61,21 +61,21 @@ vode_src = ['odepack/vode.f', 'odepack/zvode.f']
 dop_src = ['dop/dop853.f', 'dop/dopri5.f']
 quadpack_test_src = ['tests/_test_multivariate.c']
 
-mach_lib = static_library('mach_lib', 
+mach_lib = static_library('mach_lib',
     mach_src,
     fortran_args: fortran_ignore_warnings)
-quadpack_lib = static_library('quadpack_lib', 
+quadpack_lib = static_library('quadpack_lib',
     quadpack_src,
     fortran_args: fortran_ignore_warnings)
-lsoda_lib = static_library('lsoda_lib', 
+lsoda_lib = static_library('lsoda_lib',
     lsoda_src,
     c_args: '-Wno-unused-variable',
     fortran_args: fortran_ignore_warnings)
-vode_lib = static_library('vode_lib', 
+vode_lib = static_library('vode_lib',
     vode_src,
     c_args: '-Wno-unused-variable',
     fortran_args: fortran_ignore_warnings)
-dop_lib = static_library('dop_lib', 
+dop_lib = static_library('dop_lib',
     dop_src,
     c_args: '-Wno-unused-variable',
     fortran_args: fortran_ignore_warnings)
