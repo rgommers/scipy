@@ -62,7 +62,7 @@ ckdtree = py3.extension_module('ckdtree',
 
 _distance_wrap = py3.extension_module('_distance_wrap',
   'src/distance_wrap.c',
-  c_args: '-Wno-cpp', # TODO: replace with numpy_nodepr_api
+  c_args: numpy_nodepr_api,
   include_directories: [incdir_numpy, '../_lib'],
   dependencies: [py3_dep, npymath_lib],
   install : true,

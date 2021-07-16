@@ -86,7 +86,7 @@ endforeach
 spline = py3.extension_module('spline',
   ['splinemodule.c', 'S_bspline_util.c', 'D_bspline_util.c',
   'C_bspline_util.c', 'Z_bspline_util.c', 'bspline_util.c'],
-  c_args: ['-Wno-cpp'],  # TODO: replace with numpy_nodepr_api
+  c_args: numpy_nodepr_api,
   include_directories : [inc_np],
   dependencies: [py3_dep],
   install : true,
