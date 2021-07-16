@@ -97,8 +97,8 @@ interpnd = py3.extension_module('interpnd',
   install : true,
   subdir : 'scipy/interpolate')
 
-# TODO: Depends on cython_lapack.pxd which cannot 
-# be added a dependency here. Once it is possible, 
+# TODO: Depends on cython_lapack.pxd which cannot
+# be added a dependency here. Once it is possible,
 # uncomment the below part.
 # _ppoly = py3.extension_module('_ppoly',
 #  ['_ppoly.pyx'],
@@ -150,7 +150,7 @@ if use_pythran
   )
   _rbfinterp_pythran = py3.extension_module('_rbfinterp_pythran',
   [_rbfinterp_pythran],
-  cpp_args: ['-Wno-unused-function', '-Wno-unused-variable', 
+  cpp_args: ['-Wno-unused-function', '-Wno-unused-variable',
              '-Wno-deprecated-declarations',
              '-Wno-cpp', '-Wno-int-in-bool-context',
              '-Wno-unused-but-set-variable'
