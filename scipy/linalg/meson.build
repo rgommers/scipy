@@ -6,7 +6,7 @@ __init__py = custom_target('__init__py',
   command : ['cp', '@INPUT@', '@OUTDIR@'],
 )
 
-_generate_cy = custom_target('_generate_cy',
+cython_linalg = custom_target('cython_linalg',
   output : ['cython_blas.pyx',
             'cython_lapack.pyx',
             'cython_blas.pxd',
@@ -23,6 +23,7 @@ _generate_cy = custom_target('_generate_cy',
   install : true,
   install_dir: py3.get_install_dir() + 'scipy/linalg'
 )
+cython_blas_pxd = declare_dependency(sources: cython_linalg[2])
 
 # fblas
 fblas_module = custom_target('fblas_module',
@@ -160,17 +161,17 @@ py3.extension_module('_matfuncs_sqrtm_triu',
   subdir : 'scipy/linalg')
 
 fwrappers = static_library('fwrappers',
-  [_generate_cy[4],
-   _generate_cy[5],
-   _generate_cy[6],
-   _generate_cy[7],
+  [cython_linalg[4],
+   cython_linalg[5],
+   cython_linalg[6],
+   cython_linalg[7],
    g77_abi_wrappers,
   ])
 
 cython_blas = py3.extension_module('cython_blas',
-  [_generate_cy[0],  # cython_blas.pyx
-   _generate_cy[2],  # cython_blas.pxd
-   _generate_cy[4],  # _blas_subroutines.h
+  [cython_linalg[0],  # cython_blas.pyx
+   cython_linalg[2],  # cython_blas.pxd
+   cython_linalg[4],  # _blas_subroutines.h
    'fortran_defs.h',
   ],
   link_with : fwrappers,
@@ -180,9 +181,9 @@ cython_blas = py3.extension_module('cython_blas',
   subdir : 'scipy/linalg')
 
 cython_lapack = py3.extension_module('cython_lapack',
-  [_generate_cy[1],  # cython_lapack.pyx
-   _generate_cy[3],  # cython_lapack.pxd
-   _generate_cy[5],  # _lapack_subroutines.h
+  [cython_linalg[1],  # cython_lapack.pyx
+   cython_linalg[3],  # cython_lapack.pxd
+   cython_linalg[5],  # _lapack_subroutines.h
    'fortran_defs.h',
   ],
   link_with : fwrappers,
@@ -200,7 +201,7 @@ _decomp_update_pyx = custom_target('_decomp_update',
 py3.extension_module('_decomp_update',
   [_decomp_update_pyx,
    _cython_tree, __init__py,
-   _generate_cy[3],  # FIXME needs Meson fix
+   cython_linalg[3],
   ],
   include_directories : inc_np,
   dependencies : py3_dep,
@@ -252,8 +253,8 @@ py3.install_sources(
 #         # should use `py3.get_install_dir() + 'scipy/linalg'` ?
 #       see https://github.com/mesonbuild/meson/issues/3206
 #pxd_files = [
-#  _generate_cy[2],  # cython_blas.pxd
-#  _generate_cy[3],  # cython_lapack.pxd
+#  cython_linalg[2],  # cython_blas.pxd
+#  cython_linalg[3],  # cython_lapack.pxd
 #]
 #custom_target('cython_blas_lapack_pxd',
 #  input : pxd_files,
