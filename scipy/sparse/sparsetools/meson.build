@@ -18,7 +18,7 @@ py3.extension_module('_sparsetools',
    'sparsetools.cxx',
    _sparsetools_headers,
   ],
-  cpp_args : '-Wno-cpp',  # suppress numpy deprecation warnings
+  cpp_args : numpy_nodepr_api,
   include_directories : inc_np,
   dependencies : py3_dep,
   install : true,

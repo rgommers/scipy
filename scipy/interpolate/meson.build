@@ -97,8 +97,8 @@ interpnd = py3.extension_module('interpnd',
   install : true,
   subdir : 'scipy/interpolate')
 
-# TODO: Depends on cython_lapack.pxd which cannot 
-# be added a dependency here. Once it is possible, 
+# TODO: Depends on cython_lapack.pxd which cannot
+# be added a dependency here. Once it is possible,
 # uncomment the below part.
 # _ppoly = py3.extension_module('_ppoly',
 #  ['_ppoly.pyx'],
@@ -119,7 +119,7 @@ _bspl = py3.extension_module('_bspl',
 # TODO: Add flags for 64 bit ints
 _fitpack = py3.extension_module('_fitpack',
   ['src/_fitpackmodule.c'],
-  c_args: ['-Wno-cpp', '-Wno-maybe-uninitialized'], # TODO: Replace with numpy_nodepr_api
+  c_args: [numpy_nodepr_api, '-Wno-maybe-uninitialized'],
   link_with: [fitpack_lib],
   include_directories: ['src/', incdir_numpy],
   dependencies: [py3_dep],
@@ -150,7 +150,7 @@ if use_pythran
   )
   _rbfinterp_pythran = py3.extension_module('_rbfinterp_pythran',
   [_rbfinterp_pythran],
-  cpp_args: ['-Wno-unused-function', '-Wno-unused-variable', 
+  cpp_args: ['-Wno-unused-function', '-Wno-unused-variable',
              '-Wno-deprecated-declarations',
              '-Wno-cpp', '-Wno-int-in-bool-context',
              '-Wno-unused-but-set-variable'
