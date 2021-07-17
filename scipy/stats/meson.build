@@ -34,7 +34,7 @@ _stats_c = custom_target('_stats_c',
   input: [
     '_stats.pyx',
     _cython_tree,
-    # _cython_special_pxd
+    cython_special,
   ],
   command: [cython, '-3', '--fast-fail',
             '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'],
