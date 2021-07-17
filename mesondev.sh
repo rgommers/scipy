@@ -21,7 +21,8 @@ pushd $2
 
 export PYTHONPATH=$2/lib/python3.9/site-packages/
 #python -c "from scipy import optimize as s; s.test()"
-python -c "import scipy; scipy.test()"
+export OMP_NUM_THREADS=2
+python -c "import scipy; scipy.test(parallel=2)"
 popd
 
 # Notes:
