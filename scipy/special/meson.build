@@ -1,5 +1,80 @@
 # TODO: 64-bit BLAS and LAPACK
 
+_ufuncs_pxi_pxd_sources = custom_target('_ufuncs_pxi_pxd',
+  output : [
+    '__init__.py',
+    '_agm.pxd',
+    '_boxcox.pxd',
+    '_cephes.pxd',
+    '_complexstuff.pxd',
+    '_convex_analysis.pxd',
+    '_cunity.pxd',
+    '_digamma.pxd',
+    '_ellip_harm.pxd',
+    '_ellip_harm_2.pxd',
+    '_ellipk.pxd',
+    '_evalpoly.pxd',
+    '_exprel.pxd',
+    '_factorial.pxd',
+    '_hyp0f1.pxd',
+    '_hypergeometric.pxd',
+    '_lambertw.pxd',
+    '_legacy.pxd',
+    '_loggamma.pxd',
+    '_ndtri_exp.pxd',
+    '_sici.pxd',
+    '_spence.pxd',
+    '_spherical_bessel.pxd',
+    '_trig.pxd',
+    '_wright_bessel.pxd',
+    '_xlogy.pxd',
+    'orthogonal_eval.pxd',
+    'sf_error.pxd',
+    'sph_harm.pxd',
+    '_cython_special.pxi',
+    '_cython_special_custom.pxi',
+    '_ufuncs_extra_code.pxi',
+    '_ufuncs_extra_code_common.pxi',
+  ],
+  input : [
+    '__init__.py',
+    '_agm.pxd',
+    '_boxcox.pxd',
+    '_cephes.pxd',
+    '_complexstuff.pxd',
+    '_convex_analysis.pxd',
+    '_cunity.pxd',
+    '_digamma.pxd',
+    '_ellip_harm.pxd',
+    '_ellip_harm_2.pxd',
+    '_ellipk.pxd',
+    '_evalpoly.pxd',
+    '_exprel.pxd',
+    '_factorial.pxd',
+    '_hyp0f1.pxd',
+    '_hypergeometric.pxd',
+    '_lambertw.pxd',
+    '_legacy.pxd',
+    '_loggamma.pxd',
+    '_ndtri_exp.pxd',
+    '_sici.pxd',
+    '_spence.pxd',
+    '_spherical_bessel.pxd',
+    '_trig.pxd',
+    '_wright_bessel.pxd',
+    '_xlogy.pxd',
+    'orthogonal_eval.pxd',
+    'sf_error.pxd',
+    'sph_harm.pxd', 
+    '_cython_special.pxi',
+    '_cython_special_custom.pxi',
+    '_ufuncs_extra_code.pxi',
+    '_ufuncs_extra_code_common.pxi',
+  ],
+  command : ['cp', '@INPUT@', '-t', '@OUTDIR@'],
+)
+_ufuncs_pxi_pxd_dep = declare_dependency(sources: _ufuncs_pxi_pxd_sources)
+
 amos_sources = [
   'amos/dgamln.f',
   'amos/zabs.f',
@@ -250,7 +325,7 @@ py3.extension_module('specfun',
   subdir : 'scipy/special'
 )
 
-_generate_cy = custom_target('_generate_cy',
+cython_special = custom_target('cython_special',
   output : ['_ufuncs.pyx',
             '_ufuncs_defs.h',
             '_ufuncs_cxx.pyx',
@@ -264,79 +339,6 @@ _generate_cy = custom_target('_generate_cy',
   command : [py3, '@INPUT0@', '-o', '@OUTDIR@'],
 )
 
-_ufuncs_pxi_pxd_sources = custom_target('_ufuncs_pxi_pxd',
-  output : [
-    '__init__.py',
-    '_agm.pxd',
-    '_boxcox.pxd',
-    '_cephes.pxd',
-    '_complexstuff.pxd',
-    '_convex_analysis.pxd',
-    '_cunity.pxd',
-    '_digamma.pxd',
-    '_ellip_harm.pxd',
-    '_ellip_harm_2.pxd',
-    '_ellipk.pxd',
-    '_evalpoly.pxd',
-    '_exprel.pxd',
-    '_factorial.pxd',
-    '_hyp0f1.pxd',
-    '_hypergeometric.pxd',
-    '_lambertw.pxd',
-    '_legacy.pxd',
-    '_loggamma.pxd',
-    '_ndtri_exp.pxd',
-    '_sici.pxd',
-    '_spence.pxd',
-    '_spherical_bessel.pxd',
-    '_trig.pxd',
-    '_wright_bessel.pxd',
-    '_xlogy.pxd',
-    'orthogonal_eval.pxd',
-    'sf_error.pxd',
-    'sph_harm.pxd',
-    '_cython_special.pxi',
-    '_cython_special_custom.pxi',
-    '_ufuncs_extra_code.pxi',
-    '_ufuncs_extra_code_common.pxi',
-  ],
-  input : [
-    '__init__.py',
-    '_agm.pxd',
-    '_boxcox.pxd',
-    '_cephes.pxd',
-    '_complexstuff.pxd',
-    '_convex_analysis.pxd',
-    '_cunity.pxd',
-    '_digamma.pxd',
-    '_ellip_harm.pxd',
-    '_ellip_harm_2.pxd',
-    '_ellipk.pxd',
-    '_evalpoly.pxd',
-    '_exprel.pxd',
-    '_factorial.pxd',
-    '_hyp0f1.pxd',
-    '_hypergeometric.pxd',
-    '_lambertw.pxd',
-    '_legacy.pxd',
-    '_loggamma.pxd',
-    '_ndtri_exp.pxd',
-    '_sici.pxd',
-    '_spence.pxd',
-    '_spherical_bessel.pxd',
-    '_trig.pxd',
-    '_wright_bessel.pxd',
-    '_xlogy.pxd',
-    'orthogonal_eval.pxd',
-    'sf_error.pxd',
-    'sph_harm.pxd', 
-    '_cython_special.pxi',
-    '_cython_special_custom.pxi',
-    '_ufuncs_extra_code.pxi',
-    '_ufuncs_extra_code_common.pxi',
-  ],
-  command : ['cp', '@INPUT@', '-t', '@OUTDIR@'],
-)
 
 # FIXME: the generated ninja.build file is missing the dependency between
 #       copying these files into the build dir and the `.pyx -> .c` stage.
@@ -345,13 +347,19 @@ _ufuncs_pxi_pxd_sources = custom_target('_ufuncs_pxi_pxd',
 #       with `-j 1` (when the steps are run in parallel, the copying of sources
 #       seems to always happen quickly enough. This will likely only be fixed
 #       by the "structured sources" PR on the Meson repo.
-_ufuncs_pxi_pxd_dep = declare_dependency(sources: _ufuncs_pxi_pxd_sources)
-
 py3.extension_module('_ufuncs',
-  [ufuncs_sources, _generate_cy[0], _cython_tree],
+  [ufuncs_sources,
+   cython_special[0],  # _ufuncs.pyx
+  ],
   c_args : [numpy_nodepr_api, use_math_defines],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies : [py3_dep, lapack, npymath_lib, _ufuncs_pxi_pxd_dep],
+  dependencies : [
+    py3_dep,
+    lapack,
+    npymath_lib,
+    _ufuncs_pxi_pxd_dep,  # This is not added correctly by Meson (see above)
+    cython_tree,
+  ],
   link_with: [
     amos_lib,
     cdflib_lib,
@@ -365,7 +373,7 @@ py3.extension_module('_ufuncs',
 
 _ufuncs_cxx_cy = custom_target('_ufuncs_cxx_cy',
   output : '_ufuncs_cxx.cpp',
-  input : _generate_cy[2],
+  input : cython_special[2],
   command : [cython, '--cplus', '-3', '--fast-fail', '@INPUT@']
 )
 
@@ -378,7 +386,7 @@ py3.extension_module('_ufuncs_cxx',
   subdir : 'scipy/special'
 )
 
-cython_special_pxd = declare_dependency(sources: _generate_cy)
+cython_special_pxd = declare_dependency(sources: cython_special)
 special_pxd = declare_dependency(sources: _cython_tree)
 _ellip_harm_pyx = custom_target('_ellip_harm_pyx',
   output : '_ellip_harm_2.pyx',
@@ -395,7 +403,7 @@ py3.extension_module('_ellip_harm_2',
   subdir : 'scipy/special')
 
 py3.extension_module('cython_special',
-  [_generate_cy[6],  # cython_special.pyx
+  [cython_special[6],  # cython_special.pyx
    '_cosine.c',
    'amos_wrappers.c',
    'cdf_wrappers.c',
@@ -473,7 +481,7 @@ py3.install_sources(
 
 # FIXME: fails with "Argument must be string or file."
 #py3.install_sources(
-#    _generate_cy[7],  # cython_special.pxd
+#    cython_special[7],  # cython_special.pxd
 #    pure: false,
 #    subdir: 'scipy/special'
 #)

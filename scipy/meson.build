@@ -97,14 +97,18 @@ _cython_tree = custom_target('_cython_tree',
   ],
   command : ['cp', '@INPUT@', '-t', '@OUTDIR@'],
 )
+cython_tree = declare_dependency(sources: _cython_tree)
 
-# Note that subdirs with the most heavy builds should come first (that
-# parallelizes better)
+# Ordering of subdirs: special and linalg come first, because other submodules
+# have dependencies on cython_special.pxd and cython_linalg.pxd. After those,
+# subdirs with the most heavy builds should come first (that parallelizes
+# better)
+subdir('special')
+subdir('linalg')
 subdir('sparse')
 subdir('stats')
 subdir('fft')
 subdir('_lib')
-subdir('special')
 subdir('spatial')
 subdir('cluster')
 subdir('constants')
@@ -112,7 +116,6 @@ subdir('fftpack')
 subdir('integrate')
 subdir('signal')
 subdir('interpolate')
-subdir('linalg')
 subdir('ndimage')
 subdir('odr')
 subdir('optimize')
