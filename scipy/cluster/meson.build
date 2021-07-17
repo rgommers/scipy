@@ -1,4 +1,9 @@
 # TODO: these all depend on scipy.linalg.cython_blas/lapack!
+#       trying to add cython_blas_pxd will result in:
+#
+# scipy/cluster/meson.build:12: WARNING: Custom target input '['_hierarchy.pyx', <CustomTarget b917806@@_cython_tree@cus: ['/usr/bin/cp', '@INPUT@', '-t', '@OUTDIR@']>, <InternalDependency null: True>]' can't be converted to File object(s).
+# ...
+# AssertionError: Unknown source type: <InternalDependency null: True>
 
 # _hierarchy
 _hierarchy_c = custom_target('_hierarchy_c',
@@ -6,7 +11,7 @@ _hierarchy_c = custom_target('_hierarchy_c',
   input: [
     '_hierarchy.pyx',
     _cython_tree,
-    # _cython_blas_pxd, cython_lapack_pxd
+    #cython_blas_pxd, cython_lapack_pxd
   ],
   command: [cython, '-3', '--fast-fail',
             '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'],
