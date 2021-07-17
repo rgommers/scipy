@@ -161,7 +161,7 @@ if use_pythran
   )
   _rbfinterp_pythran = py3.extension_module('_rbfinterp_pythran',
   [_rbfinterp_pythran],
-  cpp_args: ['-Wno-unused-function', '-Wno-unused-variable', 
+  cpp_args: ['-Wno-unused-function', '-Wno-unused-variable',
              '-Wno-deprecated-declarations',
              '-Wno-cpp', '-Wno-int-in-bool-context',
              '-Wno-unused-but-set-variable'
