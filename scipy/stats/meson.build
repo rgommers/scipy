@@ -43,6 +43,7 @@ _stats_c = custom_target('_stats_c',
 
 _stats = py3.extension_module('_stats',
   _stats_c,
+  c_args: '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
   dependencies : [py3_dep],
   include_directories : [inc_np],
   install : true,
