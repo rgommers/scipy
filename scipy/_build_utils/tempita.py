@@ -15,10 +15,8 @@ def process_tempita(fromfile, outfile=None):
 
     """
     if outfile is None:
-        # We're dealing with a distitutils build here, write in-place
-        outfile = os.path.join(os.path.dirname(__file__),
-                               os.path.splitext(os.path.split(fromfile)[1])[0])
-
+        # We're dealing with a distutils build here, write in-place
+        outfile = os.path.splitext(fromfile)[0]
 
     from_filename = tempita.Template.from_filename
     template = from_filename(fromfile,
