@@ -13,13 +13,14 @@ _dummy_init_cyoptimize = custom_target('_dummy_init_cyoptimize',
   command : ['cp', '@INPUT@', '-t', '@OUTDIR@'],
 )
 
-# TODO: generated .pyx which has relative cimport in it doesn't work yet (see
-#       note above `_decomp_update` target in linalg/meson.build.
+# FIXME: generated .pyx which has relative cimport in it doesn't work yet (see
+#        https://github.com/mesonbuild/meson/issues/8961)
 _zeros_pyx = custom_target('_zeros_pyx',
    output : '_zeros.pyx',
    input : '_zeros.pyx.in',
-   command : [py3, tempita, '@INPUT@', '-o', '@OUTDIR@'],
- )
+   command : [py3, tempita, '@INPUT@', '-o', '@OUTDIR@',
+              '--ignore', _dummy_init_cyoptimize],
+)
 
 _zeros = py3.extension_module('_zeros',
    [_zeros_pyx, _cython_tree, _dummy_init_optimize, _dummy_init_cyoptimize],
