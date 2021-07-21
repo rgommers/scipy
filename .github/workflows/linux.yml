@@ -35,7 +35,7 @@ jobs:
     - name: Install Python packages
       run: |
         python -m pip install numpy setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist mpmath gmpy2 pythran ninja
-        python -m pip install --user git+https://github.com/mesonbuild/meson.git
+        python -m pip install --user git+https://github.com/rgommers/meson.git@fix-cython-mixed-sources
 
     - name: Build SciPy
       run: |
