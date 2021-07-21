@@ -18,7 +18,9 @@ hypergeom_ufunc = py3.extension_module('hypergeom_ufunc',
     _hypergeom_cy,
     include_directories: [include, inc_np, inc_boost],
     cpp_args: cpp_args,
-    dependencies: [py3_dep]
+    dependencies: [py3_dep],
+    install: true,
+    subdir: 'scipy/stats/_boost',
 )
 
 # nbinom_ufunc
@@ -31,7 +33,9 @@ nbinom_ufunc = py3.extension_module('nbinom_ufunc',
     _nbinom_cy,
     include_directories: [include, inc_np, inc_boost],
     cpp_args: cpp_args,
-    dependencies: [py3_dep]
+    dependencies: [py3_dep],
+    install: true,
+    subdir: 'scipy/stats/_boost',
 )
 
 # beta_ufunc
@@ -44,7 +48,9 @@ beta_ufunc = py3.extension_module('beta_ufunc',
     _beta_cy,
     include_directories: [include, inc_np, inc_boost],
     cpp_args: cpp_args,
-    dependencies: [py3_dep]
+    dependencies: [py3_dep],
+    install: true,
+    subdir: 'scipy/stats/_boost',
 )
 
 # binom_ufunc
@@ -57,7 +63,9 @@ binom_ufunc = py3.extension_module('binom_ufunc',
     _binom_cy,
     include_directories: [include, inc_np, inc_boost],
     cpp_args: cpp_args,
-    dependencies: [py3_dep]
+    dependencies: [py3_dep],
+    install: true,
+    subdir: 'scipy/stats/_boost',
 )
 
 py3.install_sources(['__init__.py'],

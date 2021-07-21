@@ -60,7 +60,6 @@ lsoda_src = ['odepack/blkdta000.f',
 vode_src = ['odepack/vode.f', 'odepack/zvode.f']
 dop_src = ['dop/dop853.f', 'dop/dopri5.f']
 quadpack_test_src = ['tests/_test_multivariate.c']
-odeint_banded_test_src = ['tests/banded5x5.f']
 
 mach_lib = static_library('mach_lib',
     mach_src,
@@ -158,12 +157,22 @@ py3.extension_module('_test_multivariate',
     subdir: 'scipy/integrate'
 )
 
+# FIXME: something is wrong with the signature file, subroutines are not used
+# _test_odeint_banded
+_test_odeint_banded_module = custom_target('_test_odeint_banded_module',
+  output : ['_test_odeint_bandedmodule.c', '_test_odeint_banded-f2pywrappers.f'],
+  input : 'tests/banded5x5.pyf',
+  command : [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+)
 py3.extension_module('_test_odeint_banded',
-    odeint_banded_test_src,
-    link_with: [lsoda_lib, mach_lib],
-    fortran_args: fortran_ignore_warnings,
-    install: true,
-    subdir: 'scipy/integrate'
+  ['tests/banded5x5.f', fortranobject_c, _test_odeint_banded_module],
+  c_args: numpy_nodepr_api,
+  link_with: [lsoda_lib, mach_lib],
+  fortran_args: '-Wno-unused-dummy-argument',
+  include_directories: [inc_np, inc_f2py],
+  dependencies: [py3_dep, lapack],
+  install: true,
+  subdir: 'scipy/integrate'
 )
 
 subdir('_ivp')

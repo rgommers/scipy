@@ -27,11 +27,15 @@ def make_biasedurn(outdir):
         dest.write(contents.format(NPY_OLD=str(bool(isNPY_OLD()))))
 
 
-def make_boost(outdir):
+def make_boost(outdir, distutils_build=False):
     # Call code generator inside _boost directory
     code_gen = pathlib.Path(__file__).parent / '_boost/include/code_gen.py'
-    subprocess.run([sys.executable, str(code_gen), '-o', outdir],
-                   check=True)
+    if distutils_build:
+        subprocess.run([sys.executable, str(code_gen), '-o', outdir,
+                        '--distutils-build', 'True'], check=True)
+    else:
+        subprocess.run([sys.executable, str(code_gen), '-o', outdir],
+                       check=True)
 
 
 if __name__ == '__main__':
@@ -41,9 +45,16 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if not args.outdir:
-        raise ValueError(f"Missing `--outdir` argument to _generate_pyx.py")
+        #raise ValueError(f"Missing `--outdir` argument to _generate_pyx.py")
+        # We're dealing with a distutils build here, write in-place:
+        outdir_abs = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
+        make_biasedurn(outdir_abs)
 
-    outdir_abs = pathlib.Path(os.getcwd()) / args.outdir
-
-    make_biasedurn(outdir_abs)
-    make_boost(outdir_abs)
+        outdir_abs_boost = outdir_abs / '_boost' / 'src'
+        if not os.path.exists(outdir_abs_boost):
+            os.makedirs(outdir_abs_boost)
+        make_boost(outdir_abs_boost, distutils_build=True)
+    else:
+        outdir_abs = pathlib.Path(os.getcwd()) / args.outdir
+        make_biasedurn(outdir_abs)
+        make_boost(outdir_abs)

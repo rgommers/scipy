@@ -1,5 +1,30 @@
 # TODO: 64-bit BLAS and LAPACK
 
+__init__py = custom_target('__init__py',
+  output : '__init__.py',
+  input : '__init__.py',
+  command : ['cp', '@INPUT@', '@OUTDIR@'],
+)
+
+cython_linalg = custom_target('cython_linalg',
+  output : ['cython_blas.pyx',
+            'cython_lapack.pyx',
+            'cython_blas.pxd',
+            'cython_lapack.pxd',
+            '_blas_subroutines.h',
+            '_lapack_subroutines.h',
+            '_blas_subroutine_wrappers.f',
+            '_lapack_subroutine_wrappers.f',
+           ],
+  input : '_generate_pyx.py',
+  command : [py3, '@INPUT@', '-o', '@OUTDIR@'],
+  # FIXME - we only want to install the .pxd files! See comments for
+  #         `pxd_files` further down.
+  install : true,
+  install_dir: py3.get_install_dir() + 'scipy/linalg'
+)
+cython_blas_pxd = declare_dependency(sources: cython_linalg[2])
+
 # fblas
 fblas_module = custom_target('fblas_module',
   output : ['_fblasmodule.c', '_fblas-f2pywrappers.f'],
@@ -44,8 +69,13 @@ py3.extension_module('_flapack',
 # TODO: cblas/clapack are built *only* for ATLAS. Why? Is it still needed?
 
 # _flinalg
+flinalg_module = custom_target('flinalg_module',
+  output : '_flinalgmodule.c',
+  input : ['src/flinalg.pyf'],
+  command : [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+)
 py3.extension_module('_flinalg',
-  ['src/det.f', 'src/lu.f'],
+  ['src/det.f', 'src/lu.f', flinalg_module, fortranobject_c],
   c_args : numpy_nodepr_api,
   include_directories : [inc_np, inc_f2py],
   dependencies : [py3_dep, lapack],
@@ -130,65 +160,37 @@ py3.extension_module('_matfuncs_sqrtm_triu',
   install : true,
   subdir : 'scipy/linalg')
 
-_generate_cy = custom_target('_generate_cy',
-  output : ['cython_blas.pyx',
-            'cython_lapack.pyx',
-            'cython_blas.pxd',
-            'cython_lapack.pxd',
-            '_blas_subroutines.h',
-            '_lapack_subroutines.h',
-            '_blas_subroutine_wrappers.f',
-            '_lapack_subroutine_wrappers.f',
-           ],
-  input : '_generate_pyx.py',
-  command : [py3, '@INPUT@', '-o', '@OUTDIR@'],
-  # FIXME - we only want to install the .pxd files! See comments for
-  #         `pxd_files` further down.
-  install : true,
-  install_dir: py3.get_install_dir() + 'scipy/linalg'
-)
-
 fwrappers = static_library('fwrappers',
-  [_generate_cy[4],
-   _generate_cy[5],
-   _generate_cy[6],
-   _generate_cy[7],
+  [cython_linalg[4],
+   cython_linalg[5],
+   cython_linalg[6],
+   cython_linalg[7],
    g77_abi_wrappers,
   ])
 
 cython_blas = py3.extension_module('cython_blas',
-  _generate_cy[0],  # cython_blas.pyx
-  # TODO: this mixed source case isn't working yet given Meson Cython support
-#  [_generate_cy[0],  # cython_blas.pyx
-#   _generate_cy[2],  # cython_blas.pxd
-#   _generate_cy[4],  # _blas_subroutines.h
-#   'fortran_defs.h',
-#  ],
+  [cython_linalg[0],  # cython_blas.pyx
+   cython_linalg[2],  # cython_blas.pxd
+   cython_linalg[4],  # _blas_subroutines.h
+   'fortran_defs.h',
+  ],
   link_with : fwrappers,
   include_directories : inc_np,
   dependencies : [py3_dep, blas],
   install : true,
   subdir : 'scipy/linalg')
 
-py3.extension_module('cython_lapack',
-  _generate_cy[1],  # cython_lapack.pyx
-  # TODO: this mixed source case isn't working yet given Meson Cython support
-#  [_generate_cy[1],  # cython_lapack.pyx
-#   _generate_cy[3],  # cython_lapack.pxd
-#   _generate_cy[5],  # _lapack_subroutines.h
-#   'fortran_defs.h',
-#  ],
+cython_lapack = py3.extension_module('cython_lapack',
+  [cython_linalg[1],  # cython_lapack.pyx
+   cython_linalg[3],  # cython_lapack.pxd
+   cython_linalg[5],  # _lapack_subroutines.h
+   'fortran_defs.h',
+  ],
   link_with : fwrappers,
   include_directories : inc_np,
   dependencies : [py3_dep, blas],
   install : true,
   subdir : 'scipy/linalg')
-
-_dummy_init2 = custom_target('_dummy_init',
-  output : '__init__.py',
-  input : '__init__.py',
-  command : ['cp', '@INPUT@', '@OUTDIR@'],
-)
 
 _decomp_update_pyx = custom_target('_decomp_update',
   output : '_decomp_update.pyx',
@@ -198,8 +200,8 @@ _decomp_update_pyx = custom_target('_decomp_update',
 
 py3.extension_module('_decomp_update',
   [_decomp_update_pyx,
-   _dummy_init, _dummy_init2,
-   _linalg_pxd,  #_generate_cy[1], _generate_cy[3]],  # FIXME needs Meson fix
+   _cython_tree, __init__py,
+   cython_linalg[3],
   ],
   include_directories : inc_np,
   dependencies : py3_dep,
@@ -251,8 +253,8 @@ py3.install_sources(
 #         # should use `py3.get_install_dir() + 'scipy/linalg'` ?
 #       see https://github.com/mesonbuild/meson/issues/3206
 #pxd_files = [
-#  _generate_cy[2],  # cython_blas.pxd
-#  _generate_cy[3],  # cython_lapack.pxd
+#  cython_linalg[2],  # cython_blas.pxd
+#  cython_linalg[3],  # cython_lapack.pxd
 #]
 #custom_target('cython_blas_lapack_pxd',
 #  input : pxd_files,

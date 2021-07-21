@@ -19,7 +19,7 @@ statlib_module = custom_target('statlib_module',
 )
 
 statlib = py3.extension_module('statlib',
-  [statlib_module],
+  [statlib_module, fortranobject_c],
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   link_with : statlib_lib,
@@ -29,12 +29,26 @@ statlib = py3.extension_module('statlib',
   subdir : 'scipy/stats')
 
 # TODO: relies on cython_special
-#_stats = py3.extension_module('_stats',
-#  ['_stats.pyx'],
-#  dependencies : [py3_dep],
-#  include_directories : [inc_np],
-#  install : true,
-#  subdir : 'scipy/stats')
+_stats_c = custom_target('_stats_c',
+  output: '_stats.c',
+  input: [
+    '_stats.pyx',
+    _cython_tree,
+    cython_special,
+  ],
+  command: [cython, '-3', '--fast-fail',
+            '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'],
+)
+
+
+_stats = py3.extension_module('_stats',
+  _stats_c,
+  c_args: '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
+  dependencies : [py3_dep],
+  include_directories : [inc_np],
+  install : true,
+  subdir : 'scipy/stats'
+)
 
 mvn_module = custom_target('mvn_module',
   output : ['mvn-f2pywrappers.f', 'mvnmodule.c'],
@@ -43,7 +57,7 @@ mvn_module = custom_target('mvn_module',
 )
 
 mvn = py3.extension_module('mvn',
-  [mvn_module, 'mvndst.f'],
+  [mvn_module, 'mvndst.f', fortranobject_c],
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   dependencies : [py3_dep],
@@ -111,7 +125,7 @@ _biasedurn_cpp = custom_target('_biasedurn_cpp',
   input : [
     _stats_gen_pyx[0],  # biasedurn.pyx
     _stats_pxd,
-    _dummy_init,
+    _cython_tree,
   ],
   command : [cython, '--cplus', '-3', '--fast-fail', '@INPUT0@', '-o', '@OUTPUT@']
 )
@@ -126,8 +140,28 @@ biasedurn = py3.extension_module('biasedurn',
   ],
   cpp_args: ['-DR_BUILD', numpy_nodepr_api],
   include_directories: [inc_np],
-  dependencies: [py3_dep, npyrandom_lib, npymath_lib]
+  dependencies: [py3_dep, npyrandom_lib, npymath_lib],
+  install: true,
+  subdir: 'scipy/stats',
 )
+
+if use_pythran
+  _hypotests_pythran = custom_target('_hypotests_pythran',
+    output: ['_hypotests_pythran.cpp'],
+    input : '_hypotests_pythran.py',
+    command : [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_hypotests_pythran.cpp'],
+  )
+  _group_columns = py3.extension_module('_hypotests_pythran',
+  _hypotests_pythran,
+  cpp_args: ['-Wno-unused-function', '-Wno-unused-variable',
+             '-Wno-deprecated-declarations', '-Wno-int-in-bool-context',
+            ] + cpp_args_pythran,
+  include_directories: [incdir_pythran, incdir_numpy],
+  dependencies: [py3_dep],
+  install: true,
+  subdir: 'scipy/stats')
+endif
+
 
 py3.install_sources([
   'qmc.py',

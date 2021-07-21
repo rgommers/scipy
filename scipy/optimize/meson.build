@@ -53,7 +53,7 @@ rectangular_lasp = static_library('rectangular_lasp',
       cpp_args: cpp_args,
       link_args: link_args)
 
-_lasp = py3.extension_module('_lasp',
+py3.extension_module('_lsap_module',
   ['_lsap_module.c'],
   link_with : rectangular_lasp,
   c_args : numpy_nodepr_api,
@@ -68,6 +68,15 @@ rootfind_lib = static_library('rootfind',
      'Zeros/ridder.c',
      'Zeros/bisect.c',
      'Zeros/brenth.c'])
+
+py3.extension_module('_zeros',
+  'zeros.c',
+  link_with : rootfind_lib,
+  c_args : numpy_nodepr_api,
+  dependencies : [py3_dep],
+  include_directories : inc_np,
+  install : true,
+  subdir : 'scipy/optimize')
 
 lbfgsb_module = custom_target('lbfgsb_module',
   output : ['_lbfgsb-f2pywrappers.f', '_lbfgsbmodule.c'],
@@ -191,22 +200,30 @@ _dummy_init_optimize = custom_target('_dummy_init_optimize',
   command : ['cp', '@INPUT@', '@OUTDIR@'],
 )
 
-# TODO: depends on cython_blas.pxd, which is generated in linalg/meson.build
-#       this doesn't work yet (waiting for "structured sources" Meson PR)
-#_bglu_dense = py3.extension_module('_bglu_dense',
-#  ['_bglu_dense.pyx', _dummy_init, _dummy_init_optimize, _linalg_pxd],
-#  include_directories: [inc_np],
-#  dependencies: [py3_dep],
-#  install: true,
-#  subdir: 'scipy/optimize')
+_bglu_dense_c = custom_target('_bglu_dense_c',
+  output: '_bglu_dense.c',
+  input: [
+    '_bglu_dense.pyx',
+    _cython_tree,
+    # _cython_blas_pxd
+  ],
+  command: [cython, '-3', '--fast-fail',
+            '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'],
+)
+
+py3.extension_module('_bglu_dense',
+  _bglu_dense_c,
+  c_args: '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
+  include_directories: [inc_np],
+  dependencies: [py3_dep],
+  install: true,
+  subdir: 'scipy/optimize')
 
 subdir('_lsq')
 subdir('_trlib')
 subdir('_trustregion_constr')
-#subdir('cython_optimize')
-
+subdir('cython_optimize')
 subdir('_shgo_lib')
-
 subdir('_highs')
 subdir('tests')
 

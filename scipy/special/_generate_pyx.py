@@ -1490,8 +1490,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if not args.outdir:
-        raise ValueError(f"Missing `--outdir` argument to _generate_pyx.py")
-
-    outdir_abs = os.path.join(os.getcwd(), args.outdir)
+        #raise ValueError(f"Missing `--outdir` argument to _generate_pyx.py")
+        # We're dealing with a distutils build here, write in-place:
+        outdir_abs = os.path.abspath(os.path.dirname(__file__))
+    else:
+        outdir_abs = os.path.join(os.getcwd(), args.outdir)
 
     main(outdir_abs)

@@ -21,7 +21,7 @@ class _MethodDef(NamedTuple):
 
 def _ufunc_gen(scipy_dist: str, types: list, ctor_args: tuple,
                filename: str, boost_dist: str, x_funcs: list,
-               no_x_funcs: list):
+               no_x_funcs: list, distutils_build: bool):
     '''
     We need methods defined for each rv_continuous/_discrete internal method:
         i.e.: _pdf, _cdf, etc.
@@ -64,6 +64,12 @@ def _ufunc_gen(scipy_dist: str, types: list, ctor_args: tuple,
 
     with open(filename, 'w') as fp:
         boost_hdr = f'boost/math/distributions/{boost_hdr_name}.hpp'
+        if distutils_build:
+            # There's no __init__.py here, so no `from .xxx cimport`
+            relimport = ''
+        else:
+            relimport = '.'
+
         fp.write(dedent(f'''\
             # distutils: language = c++
             # cython: language_level=3
@@ -79,8 +85,8 @@ def _ufunc_gen(scipy_dist: str, types: list, ctor_args: tuple,
                 PyUFunc_None,
                 {line_joiner.join(types)}
             )
-            from .templated_pyufunc cimport PyUFunc_T
-            from .func_defs cimport (
+            from {relimport}templated_pyufunc cimport PyUFunc_T
+            from {relimport}func_defs cimport (
                 {func_defs_cimports},
             )
             cdef extern from "{boost_hdr}" namespace "boost::math" nogil:
@@ -153,6 +159,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--outdir", type=str,
                         help="Path to the output directory")
+    parser.add_argument("--distutils-build", type=bool, default=False,
+                        help="Whether or not this is a distutils build")
     args = parser.parse_args()
 
     _boost_dir = pathlib.Path(__file__).resolve().parent.parent
@@ -183,4 +191,5 @@ if __name__ == '__main__':
             boost_dist=f'{b}_distribution',
             x_funcs=_x_funcs,
             no_x_funcs=_no_x_funcs,
+            distutils_build=args.distutils_build,
         )
