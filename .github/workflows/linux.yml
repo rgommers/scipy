@@ -53,5 +53,5 @@ jobs:
         #        interface. Also ensure that fails CI if tests fail (see runtests.py)
         # Avoid being in a directory which has a scipy/ dir
         pushd installdir
-        python -c "import scipy; scipy.test(parallel=2)"
+        python -c "import scipy; import sys; sys.exit(int(not scipy.test(parallel=2)))"
         popd
