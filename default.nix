@@ -28,10 +28,10 @@ let
   meson_ = meson.overrideAttrs (oldAttrs: rec {
     version = "0.59.0.rc2";
     src = fetchFromGitHub {
-    owner = "mesonbuild";
+    owner = "rgommers";
     repo = "meson";
-    rev = version;
-    sha256 = "sha256-eC3aUTvUzMS34b2yz67HJ1jADnMiLWgwGsj5/+6njAI=";
+    rev = "087870a2f15b31c56c4dc830ae856c3729f60776";
+    sha256 = "sha256-7HJjxVnryaBkRDiwMHVkOo6mahfjrGAf1JijBIZ7Ay4=";
     };
     patches = excludeIndices oldAttrs.patches [ 2 ]; # remove gir fallback path patch
   });
