@@ -42,6 +42,13 @@ jobs:
         meson setup build --prefix=$PWD/installdir
         ninja -C build
 
+    - name: Cache build dir
+      id: cache-scipy-build
+      uses: actions/cache@v2
+      with:
+        path: build
+        key: ${{ runner.os }}-${{ matrix.python-version }}
+
     - name: Install SciPy
       run: |
         meson install -C build
