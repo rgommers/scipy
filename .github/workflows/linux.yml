@@ -37,17 +37,21 @@ jobs:
         python -m pip install numpy setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist mpmath gmpy2 pythran ninja
         python -m pip install --user git+https://github.com/rgommers/meson.git@fix-cython-mixed-sources
 
-    - name: Build SciPy
-      run: |
-        meson setup build --prefix=$PWD/installdir
-        ninja -C build
-
-    - name: Cache build dir
+    - name: Build dir caching
       id: cache-scipy-build
       uses: actions/cache@v2
       with:
         path: build
         key: ${{ runner.os }}-${{ matrix.python-version }}
+
+    - name: TMP - check cache
+      if: steps.cache.outputs.cache-hit == 'true'
+      run: ls build
+
+    - name: Build SciPy
+      run: |
+        meson setup build --prefix=$PWD/installdir
+        ninja -C build
 
     - name: Install SciPy
       run: |
