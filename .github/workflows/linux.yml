@@ -45,7 +45,7 @@ jobs:
         key: ${{ runner.os }}-${{ matrix.python-version }}
 
     - name: TMP - check cache
-      if: steps.cache.outputs.cache-hit == 'true'
+      if: steps.cache-scipy-build.outputs.cache-hit == 'true'
       run: ls build
 
     - name: Build SciPy
