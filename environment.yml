@@ -13,6 +13,7 @@ dependencies:
   - ninja
   - numpy
   - openblas
+  - pkg-config
   - libblas=*=*openblas  # helps avoid pulling in MKL
   - pybind11
   - pythran>=0.9.11
