@@ -4,6 +4,36 @@ _note: these instructions are for Linux, if you are on another OS things likely
 don't work yet! macOS support should be easy, please comment if we need to
 prioritize adding that._
 
+## quickstart from scratch
+
+Clone the repo and check out the right branch:
+
+```bash
+git clone git@github.com:rgommers/scipy.git
+git submodule update --init
+git checkout meson
+```
+
+Create a conda development environment, build SciPy with Meson and run the test
+suite:
+
+```
+conda env create -f environment.yml
+conda activate scipy-dev
+python -m pip install git+https://github.com/rgommers/meson.git@scipy
+./mesondev.sh build --prefix=$PWD/install
+```
+
+## Full details and explanation
+
+Now to build SciPy, we need the `meson` branch from `@rgommers`'s fork (this is
+the integration branch until Meson support is merged into SciPy master):
+```bash
+git clone git@github.com:rgommers/scipy.git
+git submodule update --init
+git checkout meson
+```
+
 We will use conda here, because it's the easiest way to get a fully
 reproducible environment. If you do not have a conda environment yet, the
 recommended installer is
@@ -18,17 +48,10 @@ conda activate scipy-dev
 
 The one dependency that we now miss is `meson`. Support for Cython in Meson is
 very new, and we expect to also need some bug fixes and new features in the
-Meson master branch. So install latest master with `pip`:
+Meson master branch as well as fixes we may not even have submitted yet or are
+pending review. So install Meson from the `scipy` branch of `@rgommers`'s fork:
 ```bash
-python -m pip install git+https://github.com/mesonbuild/meson.git@master
-```
-
-Now to build SciPy, we need the `meson` branch from `@rgommers`'s fork (this is
-the integration branch until Meson support is merged into SciPy master):
-```bash
-git remote add rgommers https://github.com/rgommers/scipy
-git fetch rgommers
-git checkout rgommers/meson
+python -m pip install git+https://github.com/rgommers/meson.git@scipy
 ```
 
 Meson uses a configure and a build stage. To configure it for putting the build
@@ -65,12 +88,13 @@ running the tests should also work, for example:
 pytest scipy
 ```
 
-At the moment (3 July 2021) not all submodules will work, given that Meson
-support is still a work-in-progress. Within the next two weeks, everything
-should work (on Linux at least). The current status is already good enough to
+Current status (24 July) is that the full test suite passes on Linux with
+OpenBLAS. And there is CI on this fork to keep it that way. Other platforms are
+not tested yet.  The current status is already good enough to
 work on both build related issues (e.g. build warnings, debugging some C/C++
-extension) and is much smoother than working with the default `distutils` based
-build one gets with `python setup.py develop`.
+extension) and on general SciPy development. It is already a much smoother than
+working with the default `distutils`-based build one gets with
+`python setup.py develop`.
 
 The above configure-build-install-test docs are useful to understand and for
 working on build improvements (you don't need to install for that to, for
