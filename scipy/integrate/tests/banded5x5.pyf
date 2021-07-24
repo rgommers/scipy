@@ -3,10 +3,6 @@
 
 python module _test_odeint_banded ! in 
     interface  ! in :_test_odeint_banded
-        block data jacobian ! in :_test_odeint_banded:banded5x5.f
-            double precision, optional,dimension(4,5) :: bands=0.00d0
-            common /jac/ bands
-        end block data jacobian
         subroutine getbands(jac) ! in :_test_odeint_banded:banded5x5.f
             double precision dimension(4,5),intent(out) :: jac
             double precision dimension(4,5) :: bands
