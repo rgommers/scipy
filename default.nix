@@ -6,7 +6,9 @@
 , buildPythonPackage
 , gfortran
 , nose
-, pytest
+# Use a hook that implements the checkPhase calling pytest
+# instead of us calling pytest directly.
+, pytestCheckHook
 , pytest-xdist
 , numpy
 , pybind11
@@ -36,8 +38,6 @@ let
     patches = excludeIndices oldAttrs.patches [ 2 ]; # remove gir fallback path patch
   });
 
-
-
 in buildPythonPackage rec {
   pname = "scipy";
   version = "dev";
@@ -45,7 +45,7 @@ in buildPythonPackage rec {
 
   src = ./.;
 
-  checkInputs = [ nose pytest pytest-xdist ];
+  checkInputs = [ pytestCheckHook pytest-xdist ];
   nativeBuildInputs = [ cython gfortran meson_ ninja pythran pkg-config ];
   buildInputs = [ numpy.blas pybind11 boost175 ];
   propagatedBuildInputs = [ numpy ];
@@ -55,7 +55,7 @@ in buildPythonPackage rec {
     rm scipy/linalg/tests/test_lapack.py
   '';
 
-  doCheck = false;
+  doCheck = true;
 
   preBuild = ''
     ln -s ${numpy.cfg} site.cfg
@@ -66,8 +66,13 @@ in buildPythonPackage rec {
     meson = meson_;
   };
 
-  checkPhase = ''
-    pytest
+  preCheck = ''
+    pushd $out/${python.sitePackages}
+    export PYTHONPATH=$out/${python.sitePackages}:$PYTHONPATH
+  '';
+
+  postCheck = ''
+    popd
   '';
 
   SCIPY_USE_G77_ABI_WRAPPER = 1;
