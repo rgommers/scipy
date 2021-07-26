@@ -6,7 +6,7 @@ if meson.get_compiler('cpp', native: true).sizeof('void*') > 4
 endif
 
 include = include_directories('include')
-inc_boost = include_directories('..' / '..' / '_lib' / 'boost')
+boost_dep = dependency('boost')
 
 # hypergeom_ufunc
 _hypergeom_cy = custom_target('_hypergeom_cy',
@@ -16,9 +16,9 @@ _hypergeom_cy = custom_target('_hypergeom_cy',
 )
 hypergeom_ufunc = py3.extension_module('hypergeom_ufunc',
     _hypergeom_cy,
-    include_directories: [include, inc_np, inc_boost],
+    include_directories: [include, inc_np],
     cpp_args: cpp_args,
-    dependencies: [py3_dep],
+    dependencies: [py3_dep, boost_dep],
     install: true,
     subdir: 'scipy/stats/_boost',
 )
@@ -31,9 +31,9 @@ _nbinom_cy = custom_target('_nbinom_cy',
 )
 nbinom_ufunc = py3.extension_module('nbinom_ufunc',
     _nbinom_cy,
-    include_directories: [include, inc_np, inc_boost],
+    include_directories: [include, inc_np],
     cpp_args: cpp_args,
-    dependencies: [py3_dep],
+    dependencies: [py3_dep, boost_dep],
     install: true,
     subdir: 'scipy/stats/_boost',
 )
@@ -46,9 +46,9 @@ _beta_cy = custom_target('_beta_cy',
 )
 beta_ufunc = py3.extension_module('beta_ufunc',
     _beta_cy,
-    include_directories: [include, inc_np, inc_boost],
+    include_directories: [include, inc_np],
     cpp_args: cpp_args,
-    dependencies: [py3_dep],
+    dependencies: [py3_dep, boost_dep],
     install: true,
     subdir: 'scipy/stats/_boost',
 )
@@ -61,9 +61,9 @@ _binom_cy = custom_target('_binom_cy',
 )
 binom_ufunc = py3.extension_module('binom_ufunc',
     _binom_cy,
-    include_directories: [include, inc_np, inc_boost],
+    include_directories: [include, inc_np],
     cpp_args: cpp_args,
-    dependencies: [py3_dep],
+    dependencies: [py3_dep, boost_dep],
     install: true,
     subdir: 'scipy/stats/_boost',
 )

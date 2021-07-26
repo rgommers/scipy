@@ -13,7 +13,7 @@ python_sources = [
   'test_decomp_update.py',
   'test_fblas.py',
   'test_interpolative.py',
-  'test_lapack.py',
+  # 'test_lapack.py',
   'test_matfuncs.py',
   'test_matmul_toeplitz.py',
   'test_procrustes.py',
