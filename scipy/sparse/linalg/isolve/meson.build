@@ -80,14 +80,17 @@ _iterative = py3.extension_module('_iterative',
   install: true,
   subdir: 'scipy/sparse/linalg/isolve')
 
-py3.install_sources(['lsqr.py',
-  '__init__.py',
-  'lsmr.py',
-  'minres.py',
-  'lgmres.py',
-  'utils.py',
-  'iterative.py',
-  '_gcrotmk.py'],
+py3.install_sources([
+    '__init__.py',
+    '_gcrotmk.py',
+    'iterative.py',
+    'lgmres.py',
+    'lsmr.py',
+    'lsqr.py',
+    'minres.py',
+    'tfqmr.py',
+    'utils.py',
+  ],
   pure : false,
   subdir : 'scipy/sparse/linalg/isolve'
 )

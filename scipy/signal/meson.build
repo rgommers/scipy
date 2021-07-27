@@ -83,7 +83,7 @@ foreach pyx_file : pyx_files
     subdir: 'scipy/signal')
 endforeach
 
-spline = py3.extension_module('spline',
+spline = py3.extension_module('_spline',
   ['splinemodule.c', 'S_bspline_util.c', 'D_bspline_util.c',
   'C_bspline_util.c', 'Z_bspline_util.c', 'bspline_util.c'],
   c_args: numpy_nodepr_api,
@@ -101,6 +101,7 @@ py3.install_sources([
   '_peak_finding.py',
   '_savitzky_golay.py',
   '_spectral.py',
+  'spline.py',
   '_upfirdn.py',
   'bsplines.py',
   'filter_design.py',
