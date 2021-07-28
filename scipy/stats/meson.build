@@ -104,7 +104,7 @@ _stats_pxd = custom_target('_stats_pxd',
     '_stats.pxd',
     'biasedurn.pxd',
   ],
-  command : ['cp', '@INPUT@', '-t', '@OUTDIR@'],
+  command : ['cp', '@INPUT@', '@OUTDIR@'],
 )
 
 _stats_gen_pyx = custom_target('_stats_gen_pyx',

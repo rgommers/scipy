@@ -71,7 +71,7 @@ _ufuncs_pxi_pxd_sources = custom_target('_ufuncs_pxi_pxd',
     '_ufuncs_extra_code.pxi',
     '_ufuncs_extra_code_common.pxi',
   ],
-  command : ['cp', '@INPUT@', '-t', '@OUTDIR@'],
+  command : ['cp', '@INPUT@', '@OUTDIR@'],
 )
 _ufuncs_pxi_pxd_dep = declare_dependency(sources: _ufuncs_pxi_pxd_sources)
 
