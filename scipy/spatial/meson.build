@@ -54,7 +54,9 @@ endif
 
 ckdtree = py3.extension_module('ckdtree',
   ckdtree_src + [ckdtree_cpp],
-  cpp_args: cpp_args + ['-Wno-cpp'], # TODO: replace with numpy_nodepr_api
+  # Cannot use -fnovisibility=hidden for Cython cpp, because it
+  # conceals PyInit_ckdtree symbol, and prevents module load.
+  cpp_args: ['-Wno-cpp'], # TODO: replace with numpy_nodepr_api
   include_directories: [incdir_numpy, '../_lib', '../_build_utils/src', 'ckdtree/src'],
   dependencies: [py3_dep],
   install : true,
