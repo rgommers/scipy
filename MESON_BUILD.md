@@ -21,7 +21,7 @@ suite:
 conda env create -f environment.yml
 conda activate scipy-dev
 python -m pip install git+https://github.com/rgommers/meson.git@scipy
-./mesondev.sh build --prefix=$PWD/install
+./mesondev.sh build $PWD/install
 ```
 
 ## Full details and explanation
