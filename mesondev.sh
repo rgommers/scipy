@@ -19,7 +19,8 @@ popd
 # Avoid being in a directory which has a scipy/ dir
 pushd $2
 
-export PYTHONPATH=$2/lib/python3.9/site-packages/
+py_ver=$(python -c 'import sys; print("{0}.{1}".format(*sys.version_info[:2]))')
+export PYTHONPATH=$PWD/lib/python${py_ver}/site-packages
 #python -c "from scipy import optimize as s; s.test()"
 export OMP_NUM_THREADS=2
 python -c "import scipy; scipy.test(parallel=2)"
