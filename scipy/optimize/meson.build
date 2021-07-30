@@ -36,6 +36,7 @@ _minpack = py3.extension_module('_minpack',
   dependencies : [py3_dep],
   include_directories : include_dirs,
   install : true,
+  link_language : 'fortran',
   subdir : 'scipy/optimize')
 
 cpp_args = []
@@ -92,6 +93,7 @@ _lbfgsb = py3.extension_module('_lbfgsb',
   include_directories : [inc_np, inc_f2py],
   dependencies : [py3_dep, lapack],
   install: true,
+  link_language : 'fortran',
   subdir: 'scipy/optimize')
 
 moduleTNC = py3.extension_module('moduleTNC',
@@ -115,6 +117,7 @@ _cobyla = py3.extension_module('_cobyla',
   include_directories : [inc_np, inc_f2py],
   dependencies : [py3_dep],
   install: true,
+  link_language : 'fortran',
   subdir: 'scipy/optimize')
 
 minpack2_module = custom_target('minpack2_module',
@@ -130,6 +133,7 @@ minpack2 = py3.extension_module('minpack2',
   include_directories : [inc_np, inc_f2py],
   dependencies : [py3_dep],
   install: true,
+  link_language : 'fortran',
   subdir: 'scipy/optimize')
 
 slsqp_module = custom_target('slsqp_module',
@@ -145,6 +149,7 @@ _slsqp = py3.extension_module('_slsqp',
   include_directories : [inc_np, inc_f2py],
   dependencies : [py3_dep],
   install: true,
+  link_language : 'fortran',
   subdir: 'scipy/optimize')
 
 __nnls_module = custom_target('__nnls_module',
@@ -166,6 +171,7 @@ __nnls = py3.extension_module('__nnls',
   include_directories : [inc_np, inc_f2py],
   dependencies : [py3_dep],
   install: true,
+  link_language : 'fortran',
   subdir: 'scipy/optimize')
 
 if use_pythran
