@@ -24,6 +24,7 @@ py3.extension_module('__odrpack',
   c_args : numpy_nodepr_api,
   dependencies : [py3_dep, blas],
   install : true,
+  link_language : 'fortran',
   subdir : 'scipy/odr')
 
 

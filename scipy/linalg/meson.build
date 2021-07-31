@@ -38,6 +38,7 @@ py3.extension_module('_fblas',
   include_directories : [inc_np, inc_f2py],
   dependencies : [py3_dep, blas],
   install : true,
+  link_language : 'fortran',
   subdir : 'scipy/linalg')
 
 # flapack
@@ -64,6 +65,7 @@ py3.extension_module('_flapack',
   include_directories : [inc_np, inc_f2py],
   dependencies : [py3_dep, lapack],
   install : true,
+  link_language : 'fortran',
   subdir : 'scipy/linalg')
 
 # TODO: cblas/clapack are built *only* for ATLAS. Why? Is it still needed?
@@ -80,6 +82,7 @@ py3.extension_module('_flinalg',
   include_directories : [inc_np, inc_f2py],
   dependencies : [py3_dep, lapack],
   install : true,
+  link_language : 'fortran',
   subdir : 'scipy/linalg')
 
 # _interpolative
@@ -136,10 +139,11 @@ py3.extension_module('_interpolative',
                   '-Wno-unused-dummy-argument',
                   '-Wno-maybe-uninitialized',
                   ],
-# TODO: add -fallow-argument-mismatch for gfortran >= 10, see gh-11842
+  # TODO: add -fallow-argument-mismatch for gfortran >= 10, see gh-11842
   include_directories : [inc_np, inc_f2py],
   dependencies : [py3_dep, lapack],
   install : true,
+  link_language : 'fortran',
   subdir : 'scipy/linalg')
 
 # _solve_toeplitz
@@ -178,6 +182,7 @@ cython_blas = py3.extension_module('cython_blas',
   include_directories : inc_np,
   dependencies : [py3_dep, blas],
   install : true,
+  link_language : 'fortran',
   subdir : 'scipy/linalg')
 
 cython_lapack = py3.extension_module('cython_lapack',
@@ -190,6 +195,7 @@ cython_lapack = py3.extension_module('cython_lapack',
   include_directories : inc_np,
   dependencies : [py3_dep, blas],
   install : true,
+  link_language : 'fortran',
   subdir : 'scipy/linalg')
 
 _decomp_update_pyx = custom_target('_decomp_update',

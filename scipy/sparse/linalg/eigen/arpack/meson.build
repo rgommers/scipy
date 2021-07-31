@@ -100,6 +100,7 @@ _arpack = py3.extension_module('_arpack',
   include_directories: [incdir_numpy, incdir_f2py],
   dependencies: [py3_dep, lapack],
   install: true,
+  link_language : 'fortran',
   subdir: 'scipy/sparse/linalg/eigen/arpack'
 )
 

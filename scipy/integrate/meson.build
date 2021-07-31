@@ -88,6 +88,7 @@ py3.extension_module('_quadpack',
     link_with: [quadpack_lib, mach_lib],
     dependencies: [py3_dep, lapack],
     install: true,
+    link_language : 'fortran',
     subdir: 'scipy/integrate'
 )
 
@@ -99,6 +100,7 @@ py3.extension_module('_odepack',
     dependencies: [py3_dep, lapack],
     include_directories: [inc_np],
     install: true,
+    link_language : 'fortran',
     subdir: 'scipy/integrate'
 )
 
@@ -115,6 +117,7 @@ py3.extension_module('vode',
     include_directories: [inc_np, inc_f2py],
     dependencies: [py3_dep, lapack],
     install: true,
+    link_language : 'fortran',
     subdir: 'scipy/integrate'
 )
 
@@ -131,6 +134,7 @@ py3.extension_module('lsoda',
     dependencies: [py3_dep, lapack],
     include_directories: [inc_np, inc_f2py],
     install: true,
+    link_language : 'fortran',
     subdir: 'scipy/integrate'
 )
 
@@ -147,6 +151,7 @@ py3.extension_module('_dop',
     dependencies: [py3_dep],
     include_directories: [inc_np, inc_f2py],
     install: true,
+    link_language : 'fortran',
     subdir: 'scipy/integrate'
 )
 
@@ -172,6 +177,7 @@ py3.extension_module('_test_odeint_banded',
   include_directories: [inc_np, inc_f2py],
   dependencies: [py3_dep, lapack],
   install: true,
+  link_language : 'fortran',
   subdir: 'scipy/integrate'
 )
 

@@ -71,7 +71,7 @@ _ufuncs_pxi_pxd_sources = custom_target('_ufuncs_pxi_pxd',
     '_ufuncs_extra_code.pxi',
     '_ufuncs_extra_code_common.pxi',
   ],
-  command : ['cp', '@INPUT@', '-t', '@OUTDIR@'],
+  command : ['cp', '@INPUT@', '@OUTDIR@'],
 )
 _ufuncs_pxi_pxd_dep = declare_dependency(sources: _ufuncs_pxi_pxd_sources)
 
@@ -321,6 +321,7 @@ py3.extension_module('specfun',
   include_directories : [inc_np, inc_f2py],
   dependencies : py3_dep,
   link_with: specfun_lib,
+  link_language : 'fortran',
   install : true,
   subdir : 'scipy/special'
 )
@@ -368,7 +369,8 @@ py3.extension_module('_ufuncs',
     specfun_lib,
   ],
   install : true,
-  subdir : 'scipy/special'
+  link_language : 'fortran',
+  subdir : 'scipy/special',
 )
 
 _ufuncs_cxx_cy = custom_target('_ufuncs_cxx_cy',
@@ -421,6 +423,7 @@ py3.extension_module('cython_special',
     specfun_lib,
   ],
   install : true,
+  link_language : 'fortran',
   subdir : 'scipy/special'
 )
 

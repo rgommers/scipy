@@ -26,6 +26,7 @@ statlib = py3.extension_module('statlib',
   dependencies : [py3_dep],
   include_directories : [inc_np, inc_f2py],
   install : true,
+  link_language : 'fortran',
   subdir : 'scipy/stats')
 
 # TODO: relies on cython_special
@@ -63,6 +64,7 @@ mvn = py3.extension_module('mvn',
   dependencies : [py3_dep],
   include_directories : [inc_np, inc_f2py],
   install : true,
+  link_language : 'fortran',
   subdir : 'scipy/stats')
 
 _sobol = py3.extension_module('_sobol',
@@ -104,7 +106,7 @@ _stats_pxd = custom_target('_stats_pxd',
     '_stats.pxd',
     'biasedurn.pxd',
   ],
-  command : ['cp', '@INPUT@', '-t', '@OUTDIR@'],
+  command : ['cp', '@INPUT@', '@OUTDIR@'],
 )
 
 _stats_gen_pyx = custom_target('_stats_gen_pyx',

@@ -1,6 +1,6 @@
 project(
   'SciPy',
-  'c', 'cpp', 'cython', 'fortran',
+  'c', 'cpp', 'cython',
   # https://stackoverflow.com/questions/59201214/can-the-meson-project-version-be-assigned-dynamically
   version: '1.7.0.dev0+ababababab', # FIXME: git hash (see URL above).
   license: 'BSD-3',
@@ -16,6 +16,9 @@ project(
     'fortran_std=legacy',
   ],
 )
+
+# Adding at project level causes many spurious -lgfortran flags.
+add_languages('fortran')
 
 cython = find_program('cython')
 pythran = find_program('pythran')

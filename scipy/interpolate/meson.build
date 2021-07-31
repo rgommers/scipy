@@ -134,6 +134,7 @@ _fitpack = py3.extension_module('_fitpack',
   link_with: [fitpack_lib],
   include_directories: ['src/', incdir_numpy],
   dependencies: [py3_dep],
+  link_language : 'fortran',
   install : true,
   subdir : 'scipy/interpolate')
 
@@ -151,6 +152,7 @@ dfitpack = py3.extension_module('dfitpack',
   dependencies: [py3_dep, lapack],
   link_with: [fitpack_lib],
   install: true,
+  link_language : 'fortran',
   subdir: 'scipy/interpolate')
 
 if use_pythran
