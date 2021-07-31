@@ -1,7 +1,8 @@
 project(
   'SciPy',
   'c', 'cpp', 'cython', 'fortran',
-  version: '1.7.0.dev0+ababababab', # FIXME: git hash
+  # https://stackoverflow.com/questions/59201214/can-the-meson-project-version-be-assigned-dynamically
+  version: '1.7.0.dev0+ababababab', # FIXME: git hash (see URL above).
   license: 'BSD-3',
   meson_version: '>= 0.54',
   default_options: [
