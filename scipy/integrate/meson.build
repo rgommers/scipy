@@ -81,7 +81,7 @@ dop_lib = static_library('dop_lib',
     fortran_args: fortran_ignore_warnings)
 
 py3.extension_module('_quadpack',
-    ['__quadpack.h', '_quadpackmodule.c'] + quadpack_src + mach_src,
+    ['__quadpack.h', '_quadpackmodule.c'],
     c_args: numpy_nodepr_api,
     fortran_args: fortran_ignore_warnings,
     include_directories: [inc_np, '../_lib/src'],
@@ -93,7 +93,7 @@ py3.extension_module('_quadpack',
 )
 
 py3.extension_module('_odepack',
-    lsoda_src + mach_src + ['_odepackmodule.c'],
+    '_odepackmodule.c',
     c_args: numpy_nodepr_api,
     fortran_args: fortran_ignore_warnings,
     link_with: [lsoda_lib, mach_lib],
