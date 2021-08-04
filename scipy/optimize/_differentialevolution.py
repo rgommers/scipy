@@ -7,7 +7,7 @@ import warnings
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
-from scipy._lib._util import check_random_state, MapWrapper
+from scipy._lib._util import check_random_state, MapWrapper, _FunctionWrapper
 
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
@@ -956,8 +956,10 @@ class DifferentialEvolutionSolver:
             right-padded with np.inf. Has shape ``(np.size(population, 0),)``
         """
         num_members = np.size(population, 0)
+        # these are the number of function evals left to stay under the
+        # maxfun budget
         nfevs = min(num_members,
-                    self.maxfun - num_members)
+                    self.maxfun - self._nfev)
 
         energies = np.full(num_members, np.inf)
 
@@ -1332,18 +1334,6 @@ class DifferentialEvolutionSolver:
         self.random_number_generator.shuffle(idxs)
         idxs = idxs[:number_samples]
         return idxs
-
-
-class _FunctionWrapper:
-    """
-    Object to wrap user cost function, allowing picklability
-    """
-    def __init__(self, f, args):
-        self.f = f
-        self.args = [] if args is None else args
-
-    def __call__(self, x):
-        return self.f(x, *self.args)
 
 
 class _ConstraintWrapper:
