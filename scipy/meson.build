@@ -67,13 +67,32 @@ lapack = dependency('openblas')
 #       _build_utils/_fortran.py)
 g77_abi_wrappers = files('_build_utils' / 'src' / 'wrap_dummy_g77_abi.f')
 
+generate_config = custom_target(
+    'generate-config',
+    install: true,
+    build_always_stale: true,
+    build_by_default: true,
+    output : '__config__.py',
+    input : '../tools/config_utils.py',
+    command : [py3, '@INPUT@', '@OUTPUT@'],
+    install_dir: py3.get_install_dir() + '/scipy',
+)
+
+generate_version = custom_target(
+    'generate-version',
+    install: true,
+    build_always_stale: true,
+    build_by_default: true,
+    output : 'version.py',
+    input : '../tools/version_utils.py',
+    command : [py3, '@INPUT@', '@OUTPUT@'],
+    install_dir: py3.get_install_dir() + '/scipy',
+)
 
 python_sources = [
-  '__config__.py',  # TODO: generate dynamically
   '__init__.py',
   '_distributor_init.py',
   'conftest.py',
-  'version.py',  # TODO: generate dynamically
 ]
 
 py3.install_sources(
