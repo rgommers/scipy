@@ -31,12 +31,13 @@ jobs:
     - name: Install Ubuntu dependencies
       run: |
         # NOTE: not the same OpenBLAS version as in upstream CI (I'm being lazy here)
-        sudo apt-get install libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+        sudo apt-get update
+        sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
 
     - name: Install Python packages
       run: |
         python -m pip install numpy setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist mpmath gmpy2 pythran ninja
-        python -m pip install --user git+https://github.com/rgommers/meson.git@fix-cython-mixed-sources
+        python -m pip install git+https://github.com/rgommers/meson.git@fix-cython-mixed-sources
 
     - name: Build SciPy
       run: |
@@ -49,10 +50,7 @@ jobs:
 
     - name: Test SciPy
       run: |
-        export PYTHONPATH=$PWD/installdir/lib/python3.9/site-packages/
-        # FIXME: run all tests, not just one simple module - create a dev.py
-        #        interface. Also ensure that fails CI if tests fail (see runtests.py)
-        # Avoid being in a directory which has a scipy/ dir
+        export PYTHONPATH="$PWD/installdir/lib/python3.9/site-packages/"
         pushd installdir
         python -c "import scipy; import sys; sys.exit(int(not scipy.test(parallel=2)))"
         popd
