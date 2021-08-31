@@ -103,12 +103,12 @@ cython_tree = declare_dependency(sources: _cython_tree)
 # have dependencies on cython_special.pxd and cython_linalg.pxd. After those,
 # subdirs with the most heavy builds should come first (that parallelizes
 # better)
+subdir('_lib')
 subdir('special')
 subdir('linalg')
 subdir('sparse')
 subdir('stats')
 subdir('fft')
-subdir('_lib')
 subdir('spatial')
 subdir('cluster')
 subdir('constants')

@@ -100,11 +100,13 @@ _stats_pxd = custom_target('_stats_pxd',
     '__init__.py',
     '_stats.pxd',
     'biasedurn.pxd',
+    'unuran.pxd',
   ],
   input : [
     '__init__.py',
     '_stats.pxd',
     'biasedurn.pxd',
+    '_unuran/unuran.pxd',
   ],
   command : ['cp', '@INPUT@', '@OUTDIR@'],
 )
@@ -222,5 +224,6 @@ py3.install_sources([
 )
 
 subdir('_boost')
+subdir('_unuran')
 
 subdir('tests')

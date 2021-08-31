@@ -1,3 +1,21 @@
+_lib_pxd = custom_target('_lib_pxd',
+  output : [
+    '__init__.py',
+    '_ccallback_c.pxd',
+    'ccallback.pxd',
+    'messagestream.pxd',
+  ],
+  input : [
+    '__init__.py',
+    '_ccallback_c.pxd',
+    'ccallback.pxd',
+    'messagestream.pxd',
+  ],
+  command : ['cp', '@INPUT@', '@OUTDIR@'],
+)
+_lib_pxd_dep = declare_dependency(sources: _lib_pxd)
+
+
 py3.extension_module('_ccallback_c',
   '_ccallback_c.pyx',
   include_directories : 'src',
