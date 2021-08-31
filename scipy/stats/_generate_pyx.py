@@ -27,7 +27,25 @@ def make_biasedurn(outdir):
         dest.write(contents.format(NPY_OLD=str(bool(isNPY_OLD()))))
 
 
+<<<<<<< HEAD
 def make_boost(outdir, distutils_build=False):
+=======
+def make_unuran():
+    """Substitute True/False values for NPY_OLD Cython build variable."""
+    import re
+    unuran_base = (
+        pathlib.Path(__file__).parent / "_unuran" / "unuran_wrapper"
+    ).absolute()
+    with open(unuran_base.with_suffix(".pyx.templ"), "r") as src:
+        contents = src.read()
+    with open(unuran_base.with_suffix(".pyx"), "w") as dest:
+        dest.write(re.sub("DEF NPY_OLD = isNPY_OLD",
+                          f"DEF NPY_OLD = {isNPY_OLD()}",
+                          contents))
+
+
+def make_boost():
+>>>>>>> upstream/master
     # Call code generator inside _boost directory
     code_gen = pathlib.Path(__file__).parent / '_boost/include/code_gen.py'
     if distutils_build:
@@ -39,6 +57,7 @@ def make_boost(outdir, distutils_build=False):
 
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--outdir", type=str,
                         help="Path to the output directory")
@@ -58,3 +77,8 @@ if __name__ == '__main__':
         outdir_abs = pathlib.Path(os.getcwd()) / args.outdir
         make_biasedurn(outdir_abs)
         make_boost(outdir_abs)
+=======
+    make_biasedurn()
+    make_unuran()
+    make_boost()
+>>>>>>> upstream/master
