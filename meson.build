@@ -18,7 +18,7 @@ project(
 )
 
 # Adding at project level causes many spurious -lgfortran flags.
-add_languages('fortran')
+add_languages('fortran', native: false)
 
 cython = find_program('cython')
 pythran = find_program('pythran')
