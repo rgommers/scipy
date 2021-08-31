@@ -41,7 +41,7 @@ jobs:
 
     - name: Build SciPy
       run: |
-        meson setup build --prefix=$PWD/installdir
+        meson setup build --prefix=$PWD/installdir --werror
         ninja -C build -j 2
 
     - name: Install SciPy
