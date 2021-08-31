@@ -83,9 +83,14 @@ foreach pyx_file : pyx_files
     subdir: 'scipy/signal')
 endforeach
 
+bspline_util = custom_target('bspline_util',
+   output : 'bspline_util.c',
+   input : 'bspline_util.c.in',
+   command : [py3, tempita, '@INPUT@', '-o', '@OUTDIR@'],
+ )
+
 spline = py3.extension_module('_spline',
-  ['splinemodule.c', 'S_bspline_util.c', 'D_bspline_util.c',
-  'C_bspline_util.c', 'Z_bspline_util.c', 'bspline_util.c'],
+  ['splinemodule.c', bspline_util],
   c_args: numpy_nodepr_api,
   include_directories : [inc_np],
   dependencies: [py3_dep],
