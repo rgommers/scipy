@@ -14,10 +14,10 @@
  *  The ufuncs are used by the class scipy.stats.cosine_gen.
  */
 
+#include "cephes/polevl.h"
+
 #include <stdio.h>
 #include <math.h>
-
-#include "cephes/polevl.h"
 
 #if !defined(M_PI)
 #define M_PI 0x1.921fb54442d18p+1
