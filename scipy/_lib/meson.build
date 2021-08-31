@@ -63,6 +63,7 @@ python_sources = [
   '_bunch.py',
   '_ccallback.py',
   '_disjoint_set.py',
+  '_docscrape.py',
   '_gcutils.py',
   '_pep440.py',
   '_testutils.py',

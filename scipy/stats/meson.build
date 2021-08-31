@@ -168,6 +168,7 @@ endif
 
 py3.install_sources([
   'qmc.py',
+  '_axis_nan_policy.py',
   '_distn_infrastructure.py',
   '_hypotests.py',
   '__init__.py',
