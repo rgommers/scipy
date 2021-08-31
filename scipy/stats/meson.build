@@ -118,6 +118,7 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
     'hypergeom_ufunc.pyx',
     'nbinom_ufunc.pyx',
     'templated_pyufunc.pxd',
+    'unuran_wrapper.pyx',
   ],
   input : '_generate_pyx.py',
   command : [py3, '@INPUT@', '-o', '@OUTDIR@']
