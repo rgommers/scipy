@@ -107,8 +107,8 @@ _ppoly_c = custom_target('_ppoly_c',
   command: [cython, '-3', '--fast-fail',
             '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'],
 )
-# TODO: Depends on cython_lapack.pxd which cannot 
-# be added a dependency here. Once it is possible, 
+# TODO: Depends on cython_lapack.pxd which cannot
+# be added a dependency here. Once it is possible,
 # uncomment the below part.
 py3.extension_module('_ppoly',
   _ppoly_c,
@@ -130,7 +130,7 @@ _bspl = py3.extension_module('_bspl',
 # TODO: Add flags for 64 bit ints
 _fitpack = py3.extension_module('_fitpack',
   ['src/_fitpackmodule.c'],
-  c_args: [numpy_nodepr_api, '-Wno-maybe-uninitialized'],
+  c_args: numpy_nodepr_api,
   link_with: [fitpack_lib],
   include_directories: ['src/', incdir_numpy],
   dependencies: [py3_dep],

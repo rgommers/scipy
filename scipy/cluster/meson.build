@@ -20,7 +20,6 @@ slib = py3.extension_module('_hierarchy',
   _hierarchy_c,
   c_args: [
    '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
-   '-Wno-maybe-uninitialized',
   ],
   include_directories: [inc_np],
   dependencies: [py3_dep],
@@ -43,7 +42,6 @@ slib = py3.extension_module('_optimal_leaf_ordering',
   _optimal_leaf_ordering_c,
   c_args: [
    '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
-   '-Wno-maybe-uninitialized',
   ],
   include_directories: [inc_np],
   dependencies: [py3_dep],
@@ -66,7 +64,6 @@ slib = py3.extension_module('_vq',
   _vq_c,
   c_args: [
    '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
-   '-Wno-maybe-uninitialized',
   ],
   include_directories: [inc_np],
   dependencies: [py3_dep],
