@@ -187,7 +187,7 @@ superlu_lib = static_library('superlu_lib',
     '-Wno-parentheses',
     '-Wno-unused-label',
     '-Wno-implicit-function-declaration',
-    '-Wno-switch', '-Wunused-result'],
+    '-Wno-switch'],
   include_directories: ['SuperLU/SRC'],
 )
 
