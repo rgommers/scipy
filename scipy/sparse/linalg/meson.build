@@ -3,11 +3,13 @@ py3.install_sources(['_expm_multiply.py',
   'interface.py',
   '_norm.py',
   '_onenormest.py',
-  'matfuncs.py'],
+  'matfuncs.py',
+  '_svdp.py'],
   pure: false,
   subdir: 'scipy/sparse/linalg'
 )
 
+subdir('_propack')
 subdir('isolve')
 subdir('dsolve')
 subdir('eigen')
