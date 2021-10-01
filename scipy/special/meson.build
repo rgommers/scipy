@@ -375,17 +375,12 @@ py3.extension_module('_ufuncs',
   subdir : 'scipy/special',
 )
 
-_ufuncs_cxx_cy = custom_target('_ufuncs_cxx_cy',
-  output : '_ufuncs_cxx.cpp',
-  input : cython_special[2],
-  command : [cython, '--cplus', '-3', '--fast-fail', '@INPUT@']
-)
-
 py3.extension_module('_ufuncs_cxx',
-  [ufuncs_cxx_sources, _ufuncs_cxx_cy, _cython_tree],
+  [ufuncs_cxx_sources, cython_special[2], _cython_tree],
   cpp_args : [numpy_nodepr_api, use_math_defines],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
   dependencies : [py3_dep, npymath_lib, _ufuncs_pxi_pxd_dep],
+  override_options : ['cython_language=cpp'],
   install : true,
   subdir : 'scipy/special'
 )
