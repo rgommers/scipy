@@ -38,12 +38,6 @@ ckdtree_src = ['ckdtree/src/query.cxx',
   'ckdtree/src/query_ball_tree.cxx',
   'ckdtree/src/sparse_distances.cxx']
 
-ckdtree_cpp = custom_target('ckdtree_cpp',
-  output : 'ckdtree.cpp',
-  input : 'ckdtree.pyx',
-  command : [cython, '--cplus', '-3', '--fast-fail', '@INPUT@', '-o', '@OUTPUT@']
-)
-
 cpp_args = []
 compiler = meson.get_compiler('cpp')
 if compiler.get_id() == 'msvc'
@@ -53,12 +47,13 @@ elif compiler.has_argument('-fvisibility=hidden')
 endif
 
 ckdtree = py3.extension_module('ckdtree',
-  ckdtree_src + [ckdtree_cpp],
+  ckdtree_src + ['ckdtree.pyx'],
   # Cannot use -fnovisibility=hidden for Cython cpp, because it
   # conceals PyInit_ckdtree symbol, and prevents module load.
   cpp_args: ['-Wno-cpp'], # TODO: replace with numpy_nodepr_api
   include_directories: [incdir_numpy, '../_lib', '../_build_utils/src', 'ckdtree/src'],
   dependencies: [py3_dep],
+  override_options : ['cython_language=cpp'],
   install : true,
   subdir : 'scipy/spatial')
 
