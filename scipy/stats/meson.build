@@ -82,16 +82,12 @@ py3.install_sources(
 )
 
 pthread = dependency('threads')
-_qmc_cpp = custom_target('_qmc_cpp',
-  output : '_qmc_cy.cpp',
-  input : '_qmc_cy.pyx',
-  command : [cython, '--cplus', '-3', '--fast-fail', '@INPUT@', '-o', '@OUTPUT@']
-)
 _qmc_cy = py3.extension_module('_qmc_cy',
-  _qmc_cpp,
+  '_qmc_cy.pyx',
   cpp_args: '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
   dependencies : [py3_dep, pthread],
   include_directories : [inc_np],
+  override_options : ['cython_language=cpp'],
   install : true,
   subdir : 'scipy/stats')
 
@@ -125,27 +121,21 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
   input : '_generate_pyx.py',
   command : [py3, '@INPUT@', '-o', '@OUTDIR@']
 )
-_biasedurn_cpp = custom_target('_biasedurn_cpp',
-  output : 'biasedurn.cpp',
-  input : [
-    _stats_gen_pyx[0],  # biasedurn.pyx
-    _stats_pxd,
-    _cython_tree,
-  ],
-  command : [cython, '--cplus', '-3', '--fast-fail', '@INPUT0@', '-o', '@OUTPUT@']
-)
+
 biasedurn = py3.extension_module('biasedurn',
-  [_biasedurn_cpp,
+  [_stats_gen_pyx[0],
    'biasedurn/fnchyppr.cpp',
    'biasedurn/impls.cpp',
    'biasedurn/stoc1.cpp',
    'biasedurn/stoc3.cpp',
    'biasedurn/stocR.h', 
    'biasedurn/wnchyppr.cpp',
+   _stats_pxd,
   ],
   cpp_args: ['-DR_BUILD', numpy_nodepr_api],
   include_directories: [inc_np],
-  dependencies: [py3_dep, npyrandom_lib, npymath_lib],
+  dependencies: [py3_dep, npyrandom_lib, npymath_lib, cython_tree],
+  override_options : ['cython_language=cpp'],
   install: true,
   subdir: 'scipy/stats',
 )
