@@ -134,13 +134,8 @@ highs_sources = [
   'external/filereaderlp/reader.cpp'
 ]
 
-_highs_wrapper_cpp = custom_target('_highs_wrapper_cpp',
-  output : '_highs_wrapper.cpp',
-  input : 'cython/src/_highs_wrapper.pyx',
-  command : [cython, '--cplus', '-3', '--fast-fail', '@INPUT@', '-o', '@OUTPUT@']
-)
 _highs_wrapper = py3.extension_module('_highs_wrapper',
-  [_highs_wrapper_cpp, highs_sources, ipx_sources],
+  ['cython/src/_highs_wrapper.pyx', highs_sources, ipx_sources],
   include_directories: [
     inc_np,
     # highs_wrapper
@@ -168,17 +163,13 @@ _highs_wrapper = py3.extension_module('_highs_wrapper',
     '-UOSI_FOUND',
     numpy_nodepr_api,
   ],
+  override_options : ['cython_language=cpp'],
   install : true,
   subdir : 'scipy/optimize/_highs'
 )
 
-_highs_constants_cpp = custom_target('_highs_constants_cpp',
-  output : '_highs_constants.cpp',
-  input : 'cython/src/_highs_constants.pyx',
-  command : [cython, '--cplus', '-3', '--fast-fail', '@INPUT@', '-o', '@OUTPUT@']
-)
 _highs_constants = py3.extension_module('_highs_constants',
-  _highs_constants_cpp,
+  'cython/src/_highs_constants.pyx',
   include_directories: [
     'cython/src/',
     'src/',
@@ -187,6 +178,7 @@ _highs_constants = py3.extension_module('_highs_constants',
     'src/simplex/',
   ],
   dependencies: [py3_dep],
+  override_options : ['cython_language=cpp'],
   install : true,
   subdir : 'scipy/optimize/_highs'
 )
