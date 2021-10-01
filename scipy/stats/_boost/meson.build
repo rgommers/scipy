@@ -11,62 +11,42 @@ endif
 include = include_directories('include')
 inc_boost = include_directories('..' / '..' / '_lib' / 'boost')
 
-# hypergeom_ufunc
-_hypergeom_cy = custom_target('_hypergeom_cy',
-  output : 'hypergeom_ufunc.cpp',
-  input : _stats_gen_pyx[4],  # hypergeom_ufunc.pyx
-  command : [cython, '--cplus', '-3', '--fast-fail', '@INPUT@', '-o', '@OUTPUT@']
-)
 hypergeom_ufunc = py3.extension_module('hypergeom_ufunc',
-    _hypergeom_cy,
+    _stats_gen_pyx[4],
     include_directories: [include, inc_np, inc_boost],
     cpp_args: cpp_args,
     dependencies: [py3_dep],
+    override_options : ['cython_language=cpp'],
     install: true,
     subdir: 'scipy/stats/_boost',
 )
 
-# nbinom_ufunc
-_nbinom_cy = custom_target('_nbinom_cy',
-  output : 'nbinom_ufunc.cpp',
-  input : _stats_gen_pyx[5],  # nbinom_ufunc.pyx
-  command : [cython, '--cplus', '-3', '--fast-fail', '@INPUT@', '-o', '@OUTPUT@']
-)
 nbinom_ufunc = py3.extension_module('nbinom_ufunc',
-    _nbinom_cy,
+    _stats_gen_pyx[5],
     include_directories: [include, inc_np, inc_boost],
     cpp_args: cpp_args,
     dependencies: [py3_dep],
+    override_options : ['cython_language=cpp'],
     install: true,
     subdir: 'scipy/stats/_boost',
 )
 
-# beta_ufunc
-_beta_cy = custom_target('_beta_cy',
-  output : 'beta_ufunc.cpp',
-  input : _stats_gen_pyx[1],  # beta_ufunc.pyx
-  command : [cython, '--cplus', '-3', '--fast-fail', '@INPUT@', '-o', '@OUTPUT@']
-)
 beta_ufunc = py3.extension_module('beta_ufunc',
-    _beta_cy,
+    _stats_gen_pyx[1],
     include_directories: [include, inc_np, inc_boost],
     cpp_args: cpp_args,
     dependencies: [py3_dep],
+    override_options : ['cython_language=cpp'],
     install: true,
     subdir: 'scipy/stats/_boost',
 )
 
-# binom_ufunc
-_binom_cy = custom_target('_binom_cy',
-  output : 'binom_ufunc.cpp',
-  input : _stats_gen_pyx[2],  # binom_ufunc.pyx
-  command : [cython, '--cplus', '-3', '--fast-fail', '@INPUT@', '-o', '@OUTPUT@']
-)
 binom_ufunc = py3.extension_module('binom_ufunc',
-    _binom_cy,
+    _stats_gen_pyx[2],
     include_directories: [include, inc_np, inc_boost],
     cpp_args: cpp_args,
     dependencies: [py3_dep],
+    override_options : ['cython_language=cpp'],
     install: true,
     subdir: 'scipy/stats/_boost',
 )
