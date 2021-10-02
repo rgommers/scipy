@@ -4,6 +4,22 @@ fortran_ignore_warnings = [
   '-Wno-maybe-uninitialized', '-Wno-unused-label',
   '-Wno-unused-variable']
 
+_stats_pxd = custom_target('_stats_pxd',
+  output : [
+    '__init__.py',
+    '_stats.pxd',
+    'biasedurn.pxd',
+    'unuran.pxd',
+  ],
+  input : [
+    '__init__.py',
+    '_stats.pxd',
+    'biasedurn.pxd',
+    '_unuran/unuran.pxd',
+  ],
+  command : ['cp', '@INPUT@', '@OUTDIR@'],
+)
+
 statlib_lib = static_library('statlib_lib',
   ['statlib/ansari.f',
    'statlib/spearman.f',
@@ -29,22 +45,22 @@ statlib = py3.extension_module('statlib',
   link_language : 'fortran',
   subdir : 'scipy/stats')
 
-# TODO: relies on cython_special
+# Relies on cython_special
 _stats_c = custom_target('_stats_c',
   output: '_stats.c',
   input: [
     '_stats.pyx',
     _cython_tree,
-    cython_special,
+    _stats_pxd[0],  # __init__.py
+    cython_special[7],  # cython_special.pxd
   ],
   command: [cython, '-3', '--fast-fail',
             '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'],
 )
 
-
 _stats = py3.extension_module('_stats',
   _stats_c,
-  c_args: '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
+  c_args: '-Wno-cpp',  # Replace with numpy_nodepr_api after Cython 3.0 is out
   dependencies : [py3_dep],
   include_directories : [inc_np],
   install : true,
@@ -90,22 +106,6 @@ _qmc_cy = py3.extension_module('_qmc_cy',
   override_options : ['cython_language=cpp'],
   install : true,
   subdir : 'scipy/stats')
-
-_stats_pxd = custom_target('_stats_pxd',
-  output : [
-    '__init__.py',
-    '_stats.pxd',
-    'biasedurn.pxd',
-    'unuran.pxd',
-  ],
-  input : [
-    '__init__.py',
-    '_stats.pxd',
-    'biasedurn.pxd',
-    '_unuran/unuran.pxd',
-  ],
-  command : ['cp', '@INPUT@', '@OUTDIR@'],
-)
 
 _stats_gen_pyx = custom_target('_stats_gen_pyx',
   output : [
