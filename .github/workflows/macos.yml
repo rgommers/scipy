@@ -90,7 +90,7 @@ jobs:
       shell: bash -l {0}
       run: |
         conda activate scipy-dev
-        python -m pip install git+https://github.com/rgommers/meson.git@scipy
+        python -m pip install git+https://github.com/mesonbuild/meson.git@master
         CC="ccache $CC" meson setup build --prefix=$PWD/${{ env.INSTALLDIR }}
         ninja -C build -j 2
         meson install -C build
