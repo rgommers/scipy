@@ -84,52 +84,69 @@ endif
 s_examples = [
   'PROPACK/single/Examples/illc1850.coord',
   'PROPACK/single/Examples/illc1850.diag',
-  'PROPACK/single/Examples/illc1850.rra',
+  'PROPACK/single/Examples/illc1850.rra'
+]
+
+s_out = [
   'PROPACK/single/Examples/Output/Sigma_IRL.ascii',
   'PROPACK/single/Examples/Output/Sigma.ascii',
   'PROPACK/single/Examples/Output/U_IRL.ascii',
   'PROPACK/single/Examples/Output/U.ascii',
   'PROPACK/single/Examples/Output/V_IRL.ascii',
-  'PROPACK/single/Examples/Output/V.ascii',
+  'PROPACK/single/Examples/Output/V.ascii'
 ]
 
 d_examples = [
   'PROPACK/double/Examples/illc1850.coord',
   'PROPACK/double/Examples/illc1850.diag',
-  'PROPACK/double/Examples/illc1850.rra',
+  'PROPACK/double/Examples/illc1850.rra'
+]
+
+d_out = [
   'PROPACK/double/Examples/Output/Sigma_IRL.ascii',
   'PROPACK/double/Examples/Output/Sigma.ascii',
   'PROPACK/double/Examples/Output/U_IRL.ascii',
   'PROPACK/double/Examples/Output/U.ascii',
   'PROPACK/double/Examples/Output/V_IRL.ascii',
-  'PROPACK/double/Examples/Output/V.ascii',
+  'PROPACK/double/Examples/Output/V.ascii'
 ]
 
 c_examples = [
-  'PROPACK/complex8/Examples/mhd1280b.cua',
+  'PROPACK/complex8/Examples/mhd1280b.cua'
+]
+
+c_out = [
   'PROPACK/complex8/Examples/Output/Sigma_IRL.ascii',
   'PROPACK/complex8/Examples/Output/Sigma.ascii',
   'PROPACK/complex8/Examples/Output/U_IRL.ascii',
   'PROPACK/complex8/Examples/Output/U.ascii',
   'PROPACK/complex8/Examples/Output/V_IRL.ascii',
-  'PROPACK/complex8/Examples/Output/V.ascii',
+  'PROPACK/complex8/Examples/Output/V.ascii'
 ]
 
 z_examples = [
-  'PROPACK/complex16/Examples/mhd1280b.cua',
+  'PROPACK/complex16/Examples/mhd1280b.cua'
+]
+
+z_out = [
   'PROPACK/complex16/Examples/Output/Sigma_IRL.ascii',
   'PROPACK/complex16/Examples/Output/Sigma.ascii',
   'PROPACK/complex16/Examples/Output/U_IRL.ascii',
   'PROPACK/complex16/Examples/Output/U.ascii',
   'PROPACK/complex16/Examples/Output/V_IRL.ascii',
-  'PROPACK/complex16/Examples/Output/V.ascii',
+  'PROPACK/complex16/Examples/Output/V.ascii'
 ]
 
+s_example_path = 'scipy/sparse/linalg/_propack/PROPACK/single/Examples'
+d_example_path = 'scipy/sparse/linalg/_propack/PROPACK/double/Examples'
+c_example_path = 'scipy/sparse/linalg/_propack/PROPACK/complex8/Examples'
+z_example_path = 'scipy/sparse/linalg/_propack/PROPACK/complex16/Examples'
+
 elements = [
-  ['_spropack', s_src, s_examples, 'spropack.pyf'],
-  ['_dpropack', d_src, d_examples, 'dpropack.pyf'],
-  ['_cpropack', c_src, c_examples, 'cpropack.pyf'],
-  ['_zpropack', z_src, z_examples, 'zpropack.pyf']
+  ['_spropack', s_src, 'spropack.pyf', s_examples, s_example_path, s_out],
+  ['_dpropack', d_src, 'dpropack.pyf', d_examples, d_example_path, d_out],
+  ['_cpropack', c_src, 'cpropack.pyf', c_examples, c_example_path, c_out],
+  ['_zpropack', z_src, 'zpropack.pyf', z_examples, z_example_path, z_out]
 ]
 
 foreach ele: elements
@@ -140,7 +157,7 @@ foreach ele: elements
 
   propack_module = custom_target('propack_module' + ele[0],
     output : [ele[0] + '-f2pywrappers.f', ele[0] + 'module.c'],
-    input : ele[3],
+    input : ele[2],
     command : [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
   )
 
@@ -155,8 +172,14 @@ foreach ele: elements
     subdir : 'scipy/sparse/linalg/_propack'
   )
 
-  py3.install_sources(ele[2],
+  py3.install_sources(ele[3],
       pure: false,
-      subdir: 'scipy/sparse/linalg/_propack'
+      subdir: ele[4]
   )
+
+  py3.install_sources(ele[5],
+      pure: false,
+      subdir: ele[4] + '/Output'
+  )
+
 endforeach
