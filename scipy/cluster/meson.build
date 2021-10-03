@@ -14,8 +14,10 @@ _hierarchy_c = custom_target('_hierarchy_c',
     #cython_blas_pxd, cython_lapack_pxd
   ],
   command: [cython, '-3', '--fast-fail',
-            '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'],
+    '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'
+  ]
 )
+
 slib = py3.extension_module('_hierarchy',
   _hierarchy_c,
   c_args: [
@@ -36,8 +38,10 @@ _optimal_leaf_ordering_c = custom_target('_optimal_leaf_ordering',
     # _cython_blas_pxd, cython_lapack_pxd
   ],
   command: [cython, '-3', '--fast-fail',
-            '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'],
+    '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'
+  ]
 )
+
 slib = py3.extension_module('_optimal_leaf_ordering',
   _optimal_leaf_ordering_c,
   c_args: [
@@ -58,12 +62,14 @@ _vq_c = custom_target('_vq',
     # _cython_blas_pxd, cython_lapack_pxd
   ],
   command: [cython, '-3', '--fast-fail',
-            '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'],
+    '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'
+  ]
 )
+
 slib = py3.extension_module('_vq',
   _vq_c,
   c_args: [
-   '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
+   '-Wno-cpp'  # TODO: replace with numpy_nodepr_api
   ],
   include_directories: [inc_np],
   dependencies: [py3_dep],
@@ -72,10 +78,10 @@ slib = py3.extension_module('_vq',
 )
 
 
-py3.install_sources(
-  ['__init__.py',
-   'hierarchy.py',
-   'vq.py',
+py3.install_sources([
+  '__init__.py',
+  'hierarchy.py',
+  'vq.py'
   ],
   pure: false,             # Will be installed next to binaries
   subdir: 'scipy/cluster'  # Folder relative to site-packages to install to

@@ -3,12 +3,12 @@ python_sources = [
   'hierarchy_test_data.py',
   'test_disjoint_set.py',
   'test_hierarchy.py',
-  'test_vq.py',
+  'test_vq.py'
 ]
 
 
 py3.install_sources(
-    python_sources,
-    pure: false,
-    subdir: 'scipy/cluster/tests'
+  python_sources,
+  pure: false,
+  subdir: 'scipy/cluster/tests'
 )
