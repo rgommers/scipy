@@ -13,7 +13,8 @@ _hierarchy_c = custom_target('_hierarchy_c',
     _cython_tree,
     #cython_blas_pxd, cython_lapack_pxd
   ],
-  command: [cython, '-3', '--fast-fail',
+  command: [
+    cython, '-3', '--fast-fail',
     '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'
   ]
 )
@@ -37,7 +38,8 @@ _optimal_leaf_ordering_c = custom_target('_optimal_leaf_ordering',
     _cython_tree,
     # _cython_blas_pxd, cython_lapack_pxd
   ],
-  command: [cython, '-3', '--fast-fail',
+  command: [
+    cython, '-3', '--fast-fail',
     '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'
   ]
 )
@@ -61,7 +63,8 @@ _vq_c = custom_target('_vq',
     _cython_tree,
     # _cython_blas_pxd, cython_lapack_pxd
   ],
-  command: [cython, '-3', '--fast-fail',
+  command: [
+    cython, '-3', '--fast-fail',
     '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'
   ]
 )
@@ -79,9 +82,9 @@ slib = py3.extension_module('_vq',
 
 
 py3.install_sources([
-  '__init__.py',
-  'hierarchy.py',
-  'vq.py'
+    '__init__.py',
+    'hierarchy.py',
+    'vq.py'
   ],
   pure: false,             # Will be installed next to binaries
   subdir: 'scipy/cluster'  # Folder relative to site-packages to install to
