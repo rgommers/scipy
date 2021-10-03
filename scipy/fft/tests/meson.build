@@ -7,11 +7,11 @@ python_sources = [
   'test_fft_function.py',
   'test_fftlog.py',
   'test_multithreading.py',
-  'test_real_transforms.py',
+  'test_real_transforms.py'
 ]
 
 py3.install_sources(
-    python_sources,
-    pure: false,
-    subdir: 'scipy/fft/tests'
+  python_sources,
+  pure: false,
+  subdir: 'scipy/fft/tests'
 )

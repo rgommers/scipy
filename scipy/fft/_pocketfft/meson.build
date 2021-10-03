@@ -1,4 +1,5 @@
-thread_dep = dependency('threads', required : false)
+thread_dep = dependency('threads', required: false)
+
 if thread_dep.found()
   pocketfft_threads = '-DPOCKETFFT_PTHREADS'
 endif
@@ -15,19 +16,18 @@ py3.extension_module('pypocketfft',
 )
 
 
-
 python_sources = [
   '__init__.py',
   'basic.py',
   'helper.py',
-  'realtransforms.py',
+  'realtransforms.py'
 ]
 
 
 py3.install_sources(
-    python_sources,
-    pure: false,
-    subdir: 'scipy/fft/_pocketfft'
+  python_sources,
+  pure: false,
+  subdir: 'scipy/fft/_pocketfft'
 )
 
 subdir('tests')
