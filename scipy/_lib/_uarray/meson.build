@@ -5,7 +5,9 @@
 
 # FIXME: /EHsc is the default already, and for hidden use gnu_symbol_visibility
 # (see fft/_pocketfft)
+
 compiler = meson.get_compiler('cpp')
+
 if compiler.get_id() == 'msvc'
   cpp_args = '/EHsc'
 elif compiler.has_argument('-fvisibility=hidden')
@@ -14,10 +16,11 @@ endif
 
 py3.extension_module('_uarray',
   ['_uarray_dispatch.cxx', 'vectorcall.cxx'],
-  cpp_args : [cpp_args, '-Wno-terminate', '-Wno-unused-function'],
-  dependencies : py3_dep,
-  install : true,
-  subdir : 'scipy/_lib/_uarray')
+  cpp_args: [cpp_args, '-Wno-terminate', '-Wno-unused-function'],
+  dependencies: py3_dep,
+  install: true,
+  subdir: 'scipy/_lib/_uarray'
+)
 
 
 python_sources = [
@@ -26,7 +29,7 @@ python_sources = [
 ]
 
 py3.install_sources(
-    python_sources,
-    pure: false,
-    subdir: 'scipy/_lib/_uarray'
+  python_sources,
+  pure: false,
+  subdir: 'scipy/_lib/_uarray'
 )
