@@ -4,12 +4,12 @@ npz_files = [
   'carex_19_data.npz',
   'carex_20_data.npz',
   'carex_6_data.npz',
-  'gendare_20170120_data.npz',
+  'gendare_20170120_data.npz'
 ]
 
 
 py3.install_sources(
-    npz_files,
-    pure: false,
-    subdir: 'scipy/linalg/tests/data'
+  npz_files,
+  pure: false,
+  subdir: 'scipy/linalg/tests/data'
 )
