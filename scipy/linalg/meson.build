@@ -8,14 +8,14 @@ __init__py = custom_target('__init__py',
 
 cython_linalg = custom_target('cython_linalg',
   output: [
-    '_blas_subroutine_wrappers.f',
-    '_blas_subroutines.h',
-    '_lapack_subroutine_wrappers.f',
-    '_lapack_subroutines.h',
-    'cython_blas.pxd',
     'cython_blas.pyx',
+    'cython_lapack.pyx',
+    'cython_blas.pxd',
     'cython_lapack.pxd',
-    'cython_lapack.pyx'
+    '_blas_subroutines.h',
+    '_lapack_subroutines.h',
+    '_blas_subroutine_wrappers.f',
+    '_lapack_subroutine_wrappers.f'
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
