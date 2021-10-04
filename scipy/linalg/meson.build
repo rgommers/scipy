@@ -136,7 +136,7 @@ py3.extension_module('_interpolative',
     'src/id_dist/src/idzr_asvd.f',
     'src/id_dist/src/idzr_rid.f',
     'src/id_dist/src/idzr_rsvd.f',
-    'src/id_dist/src/prini.f'
+    'src/id_dist/src/prini.f',
     interpolative_module,
     fortranobject_c
   ],
@@ -144,8 +144,7 @@ py3.extension_module('_interpolative',
   fortran_args: [
     '-Wno-tabs', '-Wno-conversion', '-Wno-argument-mismatch',
     '-Wno-unused-dummy-argument', '-Wno-maybe-uninitialized'
-  ]
-                  ],
+  ],
   # TODO: add -fallow-argument-mismatch for gfortran >= 10, see gh-11842
   include_directories: [inc_np, inc_f2py],
   dependencies: [py3_dep, lapack],
