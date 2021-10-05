@@ -1,25 +1,27 @@
 # Needed to trick Cython, it won't do a relative import outside a package
 _dummy_init_cyoptimize = custom_target('_dummy_init_cyoptimize',
-  output : [
+  output: [
     '__init__.py',
     'c_zeros.pxd',
-    '_zeros.pxd',
+    '_zeros.pxd'
   ],
-  input : [
+  input: [
     '__init__.py',
     'c_zeros.pxd',
-    '_zeros.pxd',
+    '_zeros.pxd'
   ],
-  command : ['cp', '@INPUT@', '@OUTDIR@'],
+  command: ['cp', '@INPUT@', '@OUTDIR@']
 )
 
 # FIXME: generated .pyx which has relative cimport in it doesn't work yet (see
 #        https://github.com/mesonbuild/meson/issues/8961)
 _zeros_pyx = custom_target('_zeros_pyx',
-   output : '_zeros.pyx',
-   input : '_zeros.pyx.in',
-   command : [py3, tempita, '@INPUT@', '-o', '@OUTDIR@',
-              '--ignore', _dummy_init_cyoptimize],
+  output: '_zeros.pyx',
+  input: '_zeros.pyx.in',
+  command: [
+    py3, tempita, '@INPUT@', '-o', '@OUTDIR@',
+    '--ignore', _dummy_init_cyoptimize
+  ]
 )
 
 _zeros = py3.extension_module('_zeros',
@@ -30,11 +32,11 @@ _zeros = py3.extension_module('_zeros',
    subdir: 'scipy/optimize/cython_optimize'
 )
 
-py3.install_sources(
-  ['__init__.py',
-   'c_zeros.pxd', 
-   '_zeros.pxd'],
+py3.install_sources([
+    '__init__.py',
+    '_zeros.pxd',
+    'c_zeros.pxd'
+  ],
   pure: false,
   subdir: 'scipy/optimize/cython_optimize'
 )
-

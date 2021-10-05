@@ -7,8 +7,10 @@ _givens_elimination_c = custom_target('_givens_elimination_c',
     _cython_tree,
     # _cython_blas_pxd, _cython_lapack_pxd
   ],
-  command: [cython, '-3', '--fast-fail',
-            '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'],
+  command: [
+    cython, '-3', '--fast-fail',
+    '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'
+  ]
 )
 
 _lsq = py3.extension_module('givens_elimination',
@@ -19,15 +21,16 @@ _lsq = py3.extension_module('givens_elimination',
   subdir: 'scipy/optimize/_lsq'
 )
 
-py3.install_sources(
-    ['__init__.py', 
-     'least_squares.py', 
-     'trf_linear.py', 
-     'common.py', 
-     'bvls.py', 
-     'lsq_linear.py', 
-     'dogbox.py', 
-     'trf.py'],
-    pure: false,
-    subdir: 'scipy/optimize/_lsq'
+py3.install_sources([
+    '__init__.py',
+    'bvls.py',
+    'common.py',
+    'dogbox.py',
+    'least_squares.py',
+    'lsq_linear.py',
+    'trf.py',
+    'trf_linear.py'
+  ],
+  pure: false,
+  subdir: 'scipy/optimize/_lsq'
 )
