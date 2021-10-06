@@ -3,8 +3,11 @@ is_windows = host_machine.system() == 'windows'
 
 # NumPy include directory - needed in all submodules
 incdir_numpy = run_command(py3,
-  ['-c', 'import os; os.chdir(".."); import numpy; print(numpy.get_include())'],
-  check : true
+  [
+    '-c',
+    'import os; os.chdir(".."); import numpy; print(numpy.get_include())'
+  ],
+  check: true
 ).stdout().strip()
 
 inc_np = include_directories(incdir_numpy)
@@ -20,22 +23,31 @@ npyrandom_lib = meson.get_compiler('c').find_library('npyrandom', dirs: npyrando
 
 # pybind11 include directory - needed in several submodules
 incdir_pybind11 = run_command(py3,
-  ['-c', 'import pybind11; print(pybind11.get_include())'],
-  check : true
+  [
+    '-c',
+    'import pybind11; print(pybind11.get_include())'
+  ],
+  check: true
 ).stdout().strip()
 
 inc_pybind11 = include_directories(incdir_pybind11)
 
 # Pythran include directory and build flags
 use_pythran = run_command(py3,
-  ['-c', 'import os; print(os.environ.get("SCIPY_USE_PYTHRAN", 1))'],
-  check : true
+  [
+    '-c',
+    'import os; print(os.environ.get("SCIPY_USE_PYTHRAN", 1))'
+  ],
+  check: true
 ).stdout().strip() == '1'
 
 if use_pythran
   incdir_pythran = run_command(py3,
-    ['-c', 'import os; os.chdir(".."); import pythran; print(os.path.dirname(pythran.__file__));'],
-    check : true
+    [
+      '-c',
+      'import os; os.chdir(".."); import pythran; print(os.path.dirname(pythran.__file__));'
+    ],
+    check: true
   ).stdout().strip()
   inc_pythran = include_directories(incdir_pythran)
 else
@@ -68,55 +80,55 @@ lapack = dependency('openblas')
 g77_abi_wrappers = files('_build_utils' / 'src' / 'wrap_dummy_g77_abi.f')
 
 generate_config = custom_target(
-    'generate-config',
-    install: true,
-    build_always_stale: true,
-    build_by_default: true,
-    output : '__config__.py',
-    input : '../tools/config_utils.py',
-    command : [py3, '@INPUT@', '@OUTPUT@'],
-    install_dir: py3.get_install_dir() + '/scipy',
+  'generate-config',
+  install: true,
+  build_always_stale: true,
+  build_by_default: true,
+  output: '__config__.py',
+  input: '../tools/config_utils.py',
+  command: [py3, '@INPUT@', '@OUTPUT@'],
+  install_dir: py3.get_install_dir() + '/scipy'
 )
 
 #FIXME: the git revision is Unknown; script works when invoked directly, but
 #       not when it's run by Ninja. See https://github.com/rgommers/scipy/pull/57
 generate_version = custom_target(
-    'generate-version',
-    install: true,
-    build_always_stale: true,
-    build_by_default: true,
-    output : 'version.py',
-    input : '../tools/version_utils.py',
-    command : [py3, '@INPUT@', '@OUTPUT@'],
-    install_dir: py3.get_install_dir() + '/scipy',
+  'generate-version',
+  install: true,
+  build_always_stale: true,
+  build_by_default: true,
+  output: 'version.py',
+  input: '../tools/version_utils.py',
+  command: [py3, '@INPUT@', '@OUTPUT@'],
+  install_dir: py3.get_install_dir() + '/scipy'
 )
 
 python_sources = [
   '__init__.py',
   '_distributor_init.py',
-  'conftest.py',
+  'conftest.py'
 ]
 
 py3.install_sources(
-    python_sources,
-    pure: false,
-    subdir: 'scipy'
+  python_sources,
+  pure: false,
+  subdir: 'scipy'
 )
 
 
 # Needed to trick Cython, it won't do a relative import outside a package
 _cython_tree = custom_target('_cython_tree',
-  output : [
+  output: [
     '__init__.py',
     'linalg.pxd',
-    'special.pxd',
+    'special.pxd'
   ],
-  input : [
+  input: [
     '__init__.py',
     'linalg.pxd',
-    'special.pxd',
+    'special.pxd'
   ],
-  command : ['cp', '@INPUT@', '@OUTDIR@'],
+  command: ['cp', '@INPUT@', '@OUTDIR@']
 )
 cython_tree = declare_dependency(sources: _cython_tree)
 
