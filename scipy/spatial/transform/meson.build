@@ -4,7 +4,8 @@ rotation = py3.extension_module('rotation',
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],
   install: true,
-  subdir: 'scipy/spatial/transform')
+  subdir: 'scipy/spatial/transform'
+)
 
 py3.install_sources(
   'rotation.pyi',
@@ -12,10 +13,10 @@ py3.install_sources(
   subdir: 'scipy/spatial/transform'
 )
 
-py3.install_sources(
-  ['__init__.py',
-   '_rotation_groups.py',
-   '_rotation_spline.py'
+py3.install_sources([
+    '__init__.py',
+    '_rotation_groups.py',
+    '_rotation_spline.py'
   ],
   pure: false,
   subdir: 'scipy/spatial/transform'
