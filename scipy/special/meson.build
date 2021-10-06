@@ -1,7 +1,7 @@
 # TODO: 64-bit BLAS and LAPACK
 
 _ufuncs_pxi_pxd_sources = custom_target('_ufuncs_pxi_pxd',
-  output : [
+  output: [
     '__init__.py',
     '_agm.pxd',
     '_boxcox.pxd',
@@ -37,7 +37,7 @@ _ufuncs_pxi_pxd_sources = custom_target('_ufuncs_pxi_pxd',
     '_ufuncs_extra_code.pxi',
     '_ufuncs_extra_code_common.pxi',
   ],
-  input : [
+  input: [
     '__init__.py',
     '_agm.pxd',
     '_boxcox.pxd',
@@ -67,14 +67,15 @@ _ufuncs_pxi_pxd_sources = custom_target('_ufuncs_pxi_pxd',
     '_xlogy.pxd',
     'orthogonal_eval.pxd',
     'sf_error.pxd',
-    'sph_harm.pxd', 
+    'sph_harm.pxd',
     '_cython_special.pxi',
     '_cython_special_custom.pxi',
     '_ufuncs_extra_code.pxi',
-    '_ufuncs_extra_code_common.pxi',
+    '_ufuncs_extra_code_common.pxi'
   ],
-  command : ['cp', '@INPUT@', '@OUTDIR@'],
+  command: ['cp', '@INPUT@', '@OUTDIR@']
 )
+
 _ufuncs_pxi_pxd_dep = declare_dependency(sources: _ufuncs_pxi_pxd_sources)
 
 amos_sources = [
@@ -113,7 +114,7 @@ amos_sources = [
   'amos/zunk1.f',
   'amos/zunk2.f',
   'amos/zuoik.f',
-  'amos/zwrsk.f',
+  'amos/zwrsk.f'
 ]
 
 cdflib_sources = [
@@ -180,7 +181,7 @@ cdflib_sources = [
   'cdflib/rlog.f',
   'cdflib/rlog1.f',
   'cdflib/spmpar.f',
-  'cdflib/stvaln.f',
+  'cdflib/stvaln.f'
 ]
 
 cephes_sources = [
@@ -248,13 +249,13 @@ cephes_sources = [
   'cephes/yn.c',
   'cephes/yv.c',
   'cephes/zeta.c',
-  'cephes/zetac.c',
+  'cephes/zetac.c'
 ]
 
 mach_sources = [
   'mach/d1mach.f',
   'mach/i1mach.f',
-  'mach/xerror.f',
+  'mach/xerror.f'
 ]
 
 ufuncs_sources = [
@@ -262,7 +263,7 @@ ufuncs_sources = [
   'amos_wrappers.c',
   'cdf_wrappers.c',
   'specfun_wrappers.c',
-  'sf_error.c',
+  'sf_error.c'
 ]
 
 ufuncs_cxx_sources = [
@@ -270,7 +271,7 @@ ufuncs_cxx_sources = [
   '_wright.cxx',
   'Faddeeva.cc',
   'sf_error.c',
-  'wright.cc',
+  'wright.cc'
 ]
 
 
@@ -284,7 +285,7 @@ cephes_lib = static_library('cephes',
   cephes_sources,
   c_args: use_math_defines,
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies : py3_dep,
+  dependencies: py3_dep
 )
 
 amos_lib = static_library('amos',
@@ -297,13 +298,13 @@ cdflib_lib = static_library('cdflib',
   fortran_args: [
     '-Wno-maybe-uninitialized',
     '-Wno-unused-label',
-    '-Wno-intrinsic-shadow',
-  ],
+    '-Wno-intrinsic-shadow'
+  ]
 )
 
 mach_lib = static_library('mach',
   mach_sources,
-  fortran_args: ['-Wno-unused-dummy-argument', '-Wno-maybe-uninitialized'],
+  fortran_args: ['-Wno-unused-dummy-argument', '-Wno-maybe-uninitialized']
 )
 
 specfun_lib = static_library('specfun',
@@ -312,34 +313,35 @@ specfun_lib = static_library('specfun',
 )
 
 specfun_module = custom_target('specfun_module',
-  output : 'specfunmodule.c',
-  input : 'specfun.pyf',
-  command : [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+  output: 'specfunmodule.c',
+  input: 'specfun.pyf',
+  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 py3.extension_module('specfun',
   [specfun_module, fortranobject_c],
-  c_args : numpy_nodepr_api,
-  include_directories : [inc_np, inc_f2py],
-  dependencies : py3_dep,
+  c_args: numpy_nodepr_api,
+  include_directories: [inc_np, inc_f2py],
+  dependencies: py3_dep,
   link_with: specfun_lib,
-  link_language : 'fortran',
-  install : true,
-  subdir : 'scipy/special'
+  link_language: 'fortran',
+  install: true,
+  subdir: 'scipy/special'
 )
 
 cython_special = custom_target('cython_special',
-  output : ['_ufuncs.pyx',
-            '_ufuncs_defs.h',
-            '_ufuncs_cxx.pyx',
-            '_ufuncs_cxx.pxd',
-            '_ufuncs_cxx_defs.h',
-            '_ufuncs.pyi',
-            'cython_special.pyx',
-            'cython_special.pxd'
-           ],
-  input : ['_generate_pyx.py', 'functions.json', 'add_newdocs.py'],
-  command : [py3, '@INPUT0@', '-o', '@OUTDIR@'],
+  output: [
+    '_ufuncs.pyx',
+    '_ufuncs_defs.h',
+    '_ufuncs_cxx.pyx',
+    '_ufuncs_cxx.pxd',
+    '_ufuncs_cxx_defs.h',
+    '_ufuncs.pyi',
+    'cython_special.pyx',
+    'cython_special.pxd'
+  ],
+  input: ['_generate_pyx.py', 'functions.json', 'add_newdocs.py'],
+  command: [py3, '@INPUT0@', '-o', '@OUTDIR@']
 )
 
 
@@ -351,109 +353,131 @@ cython_special = custom_target('cython_special',
 #       seems to always happen quickly enough. This will likely only be fixed
 #       by the "structured sources" PR on the Meson repo.
 py3.extension_module('_ufuncs',
-  [ufuncs_sources,
-   cython_special[0],  # _ufuncs.pyx
+  [
+    ufuncs_sources,
+    cython_special[0],  # _ufuncs.pyx
   ],
-  c_args : [numpy_nodepr_api, use_math_defines],
+  c_args: [numpy_nodepr_api, use_math_defines],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies : [
+  dependencies: [
     py3_dep,
     lapack,
     npymath_lib,
     _ufuncs_pxi_pxd_dep,  # This is not added correctly by Meson (see above)
-    cython_tree,
+    cython_tree
   ],
   link_with: [
     amos_lib,
     cdflib_lib,
     cephes_lib,
     mach_lib,
-    specfun_lib,
+    specfun_lib
   ],
-  install : true,
-  link_language : 'fortran',
-  subdir : 'scipy/special',
+  install: true,
+  link_language: 'fortran',
+  subdir: 'scipy/special'
 )
 
 py3.extension_module('_ufuncs_cxx',
   [ufuncs_cxx_sources, cython_special[2], _cython_tree],
-  cpp_args : [numpy_nodepr_api, use_math_defines],
+  cpp_args: [numpy_nodepr_api, use_math_defines],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies : [py3_dep, npymath_lib, _ufuncs_pxi_pxd_dep],
-  override_options : ['cython_language=cpp'],
-  install : true,
-  subdir : 'scipy/special'
+  dependencies: [py3_dep, npymath_lib, _ufuncs_pxi_pxd_dep],
+  override_options: ['cython_language=cpp'],
+  install: true,
+  subdir: 'scipy/special'
 )
 
 cython_special_pxd = declare_dependency(sources: cython_special)
 special_pxd = declare_dependency(sources: _cython_tree)
+
 _ellip_harm_pyx = custom_target('_ellip_harm_pyx',
-  output : '_ellip_harm_2.pyx',
-  input : '_ellip_harm_2.pyx',
-  command : ['cp', '@INPUT@', '@OUTDIR@'],
+  output: '_ellip_harm_2.pyx',
+  input: '_ellip_harm_2.pyx',
+  command: ['cp', '@INPUT@', '@OUTDIR@']
 )
 
 py3.extension_module('_ellip_harm_2',
   [_ellip_harm_pyx, 'sf_error.c'],
-  c_args : numpy_nodepr_api,
+  c_args: numpy_nodepr_api,
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies : [py3_dep, lapack, special_pxd],
-  install : true,
-  subdir : 'scipy/special')
+  dependencies: [py3_dep, lapack, special_pxd],
+  install: true,
+  subdir: 'scipy/special'
+)
 
 py3.extension_module('cython_special',
-  [cython_special[6],  # cython_special.pyx
-   '_cosine.c',
-   'amos_wrappers.c',
-   'cdf_wrappers.c',
-   'specfun_wrappers.c',
-   'sf_error.c',
+  [
+    cython_special[6],  # cython_special.pyx
+    '_cosine.c',
+    'amos_wrappers.c',
+    'cdf_wrappers.c',
+    'specfun_wrappers.c',
+    'sf_error.c'
   ],
-  c_args : [numpy_nodepr_api, use_math_defines],
+  c_args: [numpy_nodepr_api, use_math_defines],
   include_directories: [inc_np, '../_lib', '../_build_utils/src', 'cephes'],
-  dependencies : [py3_dep, npymath_lib, lapack],
+  dependencies: [py3_dep, npymath_lib, lapack],
   link_with: [
     amos_lib,
     cdflib_lib,
     cephes_lib,
     mach_lib,
-    specfun_lib,
+    specfun_lib
   ],
-  install : true,
-  link_language : 'fortran',
-  subdir : 'scipy/special'
+  install: true,
+  link_language: 'fortran',
+  subdir: 'scipy/special'
 )
 
 py3.extension_module('_comb',
   '_comb.pyx',
-  dependencies : py3_dep,
-  install : true,
-  subdir : 'scipy/special'
+  dependencies: py3_dep,
+  install: true,
+  subdir: 'scipy/special'
 )
 
 py3.extension_module('_test_round',
   '_test_round.pyx',
   include_directories: [inc_np, 'cephes', '../_lib', '../_build_utils/src'],
-  dependencies : [py3_dep, npymath_lib],
-  install : true,
-  subdir : 'scipy/special'
+  dependencies: [py3_dep, npymath_lib],
+  install: true,
+  subdir: 'scipy/special'
 )
 
 # Must use `custom_target`, because `py3.install_sources` does not work with
 # generated sources - see https://github.com/mesonbuild/meson/issues/7372
 npz_files = [
-  ['_data_boost', 'tests/data/boost/acosh_data_ipp/acosh_data.txt',
-   'boost', 'boost.npz'],
-  ['_data_gsl', 'tests/data/gsl/mathieu_ab.txt', 'gsl', 'gsl.npz'],
-  ['_data_local', 'tests/data/local/ellipkm1.txt', 'local', 'local.npz'],
+  [
+    '_data_boost',
+    'tests/data/boost/acosh_data_ipp/acosh_data.txt',
+    'boost',
+    'boost.npz'
+  ],
+  [
+    '_data_gsl',
+    'tests/data/gsl/mathieu_ab.txt',
+    'gsl',
+    'gsl.npz'
+  ],
+  [
+    '_data_local',
+    'tests/data/local/ellipkm1.txt',
+    'local',
+    'local.npz'
+  ],
 ]
-foreach npz_file : npz_files
+
+foreach npz_file: npz_files
   custom_target(npz_file[0],
-    output : npz_file[3],
-    input : npz_file[1],
-    command : [py3, '@CURRENT_SOURCE_DIR@/utils/makenpz.py', '--use-timestamp', npz_file[2], '-o', '@OUTDIR@'],
-    install : true,
-    install_dir : py3.get_install_dir() + '/scipy/special/tests/data',
+    output: npz_file[3],
+    input: npz_file[1],
+    command: [
+      py3, '@CURRENT_SOURCE_DIR@/utils/makenpz.py',
+      '--use-timestamp', npz_file[2], '-o', '@OUTDIR@'
+    ],
+    install: true,
+    install_dir: py3.get_install_dir() + '/scipy/special/tests/data'
   )
 endforeach
 
@@ -470,13 +494,13 @@ python_sources = [
   'basic.py',
   'orthogonal.py',
   'sf_error.py',
-  'spfun_stats.py',
+  'spfun_stats.py'
 ]
 
 py3.install_sources(
-    python_sources,
-    pure: false,
-    subdir: 'scipy/special'
+  python_sources,
+  pure: false,
+  subdir: 'scipy/special'
 )
 
 # FIXME: fails with "Argument must be string or file."
