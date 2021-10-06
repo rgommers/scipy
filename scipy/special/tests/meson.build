@@ -43,13 +43,12 @@ python_sources = [
   'test_trig.py',
   'test_wright_bessel.py',
   'test_wrightomega.py',
-  'test_zeta.py',
+  'test_zeta.py'
 ]
 
 
 py3.install_sources(
-    python_sources,
-    pure: false,
-    subdir: 'scipy/special/tests'
+  python_sources,
+  pure: false,
+  subdir: 'scipy/special/tests'
 )
-
