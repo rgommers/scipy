@@ -1,8 +1,10 @@
-py3.install_sources(['stable-cdf-sample-data.npy',
-    'studentized_range_mpmath_ref.json',
-    'stable-pdf-sample-data.npy'],
-    pure : false,
-    subdir : 'scipy/stats/tests/data'
+py3.install_sources([
+    'stable-cdf-sample-data.npy',
+    'stable-pdf-sample-data.npy',
+    'studentized_range_mpmath_ref.json'
+  ],
+  pure: false,
+  subdir: 'scipy/stats/tests/data'
 )
 
 subdir('nist_anova')
