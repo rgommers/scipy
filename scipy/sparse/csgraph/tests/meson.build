@@ -8,12 +8,12 @@ python_sources = [
   'test_reordering.py',
   'test_shortest_path.py',
   'test_spanning_tree.py',
-  'test_traversal.py',
+  'test_traversal.py'
 ]
 
 
 py3.install_sources(
-    python_sources,
-    pure: false,
-    subdir: 'scipy/sparse/csgraph/tests'
+  python_sources,
+  pure: false,
+  subdir: 'scipy/sparse/csgraph/tests'
 )

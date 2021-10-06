@@ -1,15 +1,16 @@
 _csparsetools_pyx = custom_target('_csparsetools_pyx',
-  output : '_csparsetools.pyx',
-  input : '_csparsetools.pyx.in',
-  command : [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
+  output: '_csparsetools.pyx',
+  input: '_csparsetools.pyx.in',
+  command: [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 py3.extension_module('_csparsetools',
   _csparsetools_pyx,
-  include_directories : inc_np,
-  dependencies : py3_dep,
-  install : true,
-  subdir : 'scipy/sparse')
+  include_directories: inc_np,
+  dependencies: py3_dep,
+  install: true,
+  subdir: 'scipy/sparse'
+)
 
 python_sources = [
   '__init__.py',
@@ -29,14 +30,14 @@ python_sources = [
   'lil.py',
   'sparsetools.py',
   'spfuncs.py',
-  'sputils.py',
+  'sputils.py'
 ]
 
 
 py3.install_sources(
-    python_sources,
-    pure: false,
-    subdir: 'scipy/sparse'
+  python_sources,
+  pure: false,
+  subdir: 'scipy/sparse'
 )
 
 subdir('sparsetools')
