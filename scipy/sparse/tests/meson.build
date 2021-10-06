@@ -8,23 +8,23 @@ python_sources = [
   'test_matrix_io.py',
   'test_sparsetools.py',
   'test_spfuncs.py',
-  'test_sputils.py',
+  'test_sputils.py'
 ]
 
 
 py3.install_sources(
-    python_sources,
-    pure: false,
-    subdir: 'scipy/sparse/tests'
+  python_sources,
+  pure: false,
+  subdir: 'scipy/sparse/tests'
 )
 
 data_sources = [
   'data/csc_py2.npz',
-  'data/csc_py3.npz',
+  'data/csc_py3.npz'
 ]
 
 py3.install_sources(
-    data_sources,
-    pure: false,
-    subdir: 'scipy/sparse/tests/data'
+  data_sources,
+  pure: false,
+  subdir: 'scipy/sparse/tests/data'
 )
