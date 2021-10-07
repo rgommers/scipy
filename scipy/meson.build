@@ -115,6 +115,11 @@ py3.install_sources(
   subdir: 'scipy'
 )
 
+py3.install_sources(
+  ['_build_utils/tests/test_scipy_version.py'],
+  pure: false,
+  subdir:'scipy/_lib/tests'
+)
 
 # Needed to trick Cython, it won't do a relative import outside a package
 _cython_tree = custom_target('_cython_tree',
