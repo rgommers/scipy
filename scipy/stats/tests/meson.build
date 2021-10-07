@@ -2,6 +2,7 @@ py3.install_sources([
   '__init__.py',
   'common_tests.py',
   'studentized_range_mpmath_ref.py',
+  'test_axis_nan_policy.py',
   'test_binned_statistic.py',
   'test_bootstrap.py',
   'test_contingency.py',
@@ -21,6 +22,7 @@ py3.install_sources([
   'test_qmc.py',
   'test_rank.py',
   'test_relative_risk.py',
+  'test_sampling.py',
   'test_stats.py',
   'test_tukeylambda_stats.py'
 ],

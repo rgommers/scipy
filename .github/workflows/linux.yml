@@ -93,6 +93,12 @@ jobs:
       shell: bash -l {0}
       run: ccache -s
 
+    - name: Check installation
+      run: |
+        pushd tools
+        python check_installation.py ${{ env.INSTALLDIR }}
+        popd
+
     - name: Test SciPy
       run: |
         export PYTHONPATH="$PWD/installdir/lib/python3.9/site-packages/"
