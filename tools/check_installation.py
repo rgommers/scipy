@@ -25,7 +25,7 @@ def main(argv):
                 installed_test_files[test_file])
     print("----------- All the test files were installed --------------")
 
-def get_parent_dir(current_path, levels = 1):
+def get_parent_dir(current_path, levels=1):
     current_new = current_path
     for i in range(levels + 1):
         current_new = os.path.dirname(current_new)

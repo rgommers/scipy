@@ -118,7 +118,7 @@ py3.install_sources(
 py3.install_sources(
   ['_build_utils/tests/test_scipy_version.py'],
   pure: false,
-  subdir:'scipy/_lib/tests'
+  subdir: 'scipy/_lib/tests'
 )
 
 # Needed to trick Cython, it won't do a relative import outside a package

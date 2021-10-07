@@ -25,7 +25,7 @@ py3.install_sources([
   'test_sampling.py',
   'test_stats.py',
   'test_tukeylambda_stats.py'
-],
+  ],
   pure: false,
   subdir: 'scipy/stats/tests'
 )
