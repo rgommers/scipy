@@ -13,13 +13,13 @@ def main(argv):
     for test_file in scipy_test_files.keys():
         if not test_file in installed_test_files.keys():
             print("%s is not installed" % scipy_test_files[test_file])
-            #raise
-    print("-"*30)
+            raise
     for test_file in installed_test_files.keys():
         if not test_file in scipy_test_files.keys():
-            print("%s is installed at improper location" % installed_test_files[test_file])
-            #raise
-    #print("All the test files were installed")
+            print("%s is installed at improper location" %
+                installed_test_files[test_file])
+            raise
+    print("All the test files were installed")
 
 def get_parent_dir(current_path, levels = 1):
     current_new = current_path
