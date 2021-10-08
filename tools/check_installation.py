@@ -1,3 +1,20 @@
+"""
+Script for checking if all the test files are installed after building.
+
+Examples::
+
+    $ python check_installation.py install_directory_name
+        install_directory_name: It the name of the directory where scipy is
+                                installed after building.
+
+Note
+====
+
+This script assumes that ``scipy`` and ``install_directory`` are present under
+the same parent folder.
+
+"""
+
 import os
 import glob
 import sys
