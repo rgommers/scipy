@@ -12,9 +12,6 @@ Examples::
 Notes
 =====
 
-This script assumes that ``scipy`` and ``install_directory`` are present under
-the same parent folder.
-
 The script will stop on encountering the first missing file in the install dir,
 it will not give a full listing. This should be okay, because the script is
 meant for use in CI so it's not like many files will be missing at once.
@@ -51,14 +48,6 @@ def main(install_dir):
         if not test_file in installed_test_files.keys():
             raise Exception("%s is not installed" % scipy_test_files[test_file])
 
-    # FIXME: this is the reverse test, but it does not seem possible to make
-    # this fail unless a file is installed twice (which is hard to do). If I
-    # move a file somewhere else, the check above already fails. So is this
-    # needed?
-    for test_file in installed_test_files.keys():
-        if not test_file in scipy_test_files.keys():
-            raise Exception("%s is installed at improper location" %
-                installed_test_files[test_file])
     print("----------- All the test files were installed --------------")
 
 
