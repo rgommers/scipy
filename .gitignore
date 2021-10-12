@@ -77,6 +77,8 @@ setup.cfg
 .libs
 .eggs
 pip-wheel-metadata
+# install directory for Meson
+installdir/
 
 # Paver generated files #
 #########################
@@ -245,6 +247,7 @@ scipy/sparse/sparsetools/csr_impl.h
 scipy/sparse/sparsetools/other_impl.h
 scipy/sparse/sparsetools/sparsetools_impl.h
 scipy/spatial/ckdtree.cxx
+scipy/spatial/ckdtree.cpp
 scipy/spatial/ckdtree.h
 scipy/spatial/_hausdorff.c
 scipy/spatial/qhull.c
@@ -292,3 +295,13 @@ scipy/optimize/cython_optimize/_zeros.pyx
 scipy/optimize/lbfgsb/_lbfgsbmodule.c
 scipy/optimize/_highs/cython/src/_highs_wrapper.cxx
 scipy/optimize/_highs/cython/src/_highs_constants.cxx
+scipy/optimize/_highs/cython/src/_highs_wrapper.cpp
+scipy/optimize/_highs/cython/src/_highs_constants.cpp
+scipy/optimize/_highs/cython/src/_highs_wrapper.c
+scipy/optimize/_highs/cython/src/_highs_constants.c
+scipy/stats/_qmc_cy.cxx
+scipy/stats/_qmc_cy.cpp
+scipy/stats/_qmc_cy.c
+scipy/stats/biasedurn.cxx
+scipy/stats/biasedurn.cpp
+scipy/stats/biasedurn.c
