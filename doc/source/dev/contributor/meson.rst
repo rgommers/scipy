@@ -103,3 +103,5 @@ If want the "all-in-one" command for all of the above, run::
 It's worth pointing out that Meson has [very good documentation](https://mesonbuild.com/);
 it's worth reading and is often the best source of answers for "how to do X".
 
+For running the Linux Meson CI job locally, one can use the ``act`` tool, see
+:ref:`using-act`.
