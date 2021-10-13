@@ -22,7 +22,7 @@ suite::
 
   conda env create -f environment_meson.yml
   conda activate scipy-meson
-  ./mesondev.sh build $PWD/install
+  python dev.py
 
 
 Full details and explanation
@@ -85,21 +85,52 @@ running the tests should also work, for example::
 
   pytest --pyargs scipy
 
-Current status (12 Oct '21) is that the full test suite passes on Linux and
-macOS with OpenBLAS, without any build warnings. There is CI (one job in SciPy
-master, and more on ``@rgommers``'s fork) to keep it that way.
+Current status (24 Dec '21) is that the full test suite passes on Linux, macOS
+and Windows with OpenBLAS, without any build warnings. There is CI (one job in
+SciPy master, and more on ``@rgommers``'s fork) to keep it that way.
 The current status is already good enough to work on both build related issues
 (e.g. build warnings, debugging some C/C++ extension) and on general SciPy
 development. It is already a much smoother/faster experience than
 working with the default ``distutils``-based build one gets with
 ``python setup.py develop`` - especially when working on compiled code.
 
+
+The ``dev.py`` interface
+========================
+
 The above configure-build-install-test docs are useful to understand how the
 Meson build works, and for working on build improvements.
-If want the "all-in-one" command for all of the above, run::
+If you want the "all-in-one" command for all of the above, run::
 
-  ./mesondev.sh build --prefix=$PWD/installdir
+  python dev.py
 
-It's worth pointing out that Meson has [very good documentation](https://mesonbuild.com/);
-it's worth reading and is often the best source of answers for "how to do X".
+This interface has many options, allowing you to perform all regular
+development-related tasks (building, running tests, building docs, running
+benchmarks, etc.). Here we document a few of the most commonly used options;
+run ``python dev.py --help`` for more details.
 
+Use the following command to build and install `scipy`::
+
+  python dev.py --build-only
+
+To run the tests use (``-n`` is short for ``--no-build``)::
+
+  python dev.py -n
+
+To run the tests for a particular submodule(let's say ``optimize``), you can use::
+
+  python dev.py -n -s optimize
+
+
+To learn more about Meson
+=========================
+
+It's worth pointing out that Meson has `very good documentation <https://mesonbuild.com/>`__;
+it pays off to read it, and is often the best source of answers for "how to do X".
+
+To learn more about the design principles Meson uses, the recent talks linked
+from `mesonbuild.com/Videos <https://mesonbuild.com/Videos.html>`__ are a good
+resource.
+
+For running the Linux Meson CI job locally, one can use the ``act`` tool, see
+:ref:`using-act`.
