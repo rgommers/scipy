@@ -133,7 +133,7 @@ _cython_tree = custom_target('_cython_tree',
     'linalg.pxd',
     'special.pxd'
   ],
-  command: ['cp', '@INPUT@', '@OUTDIR@']
+  command: [copier, '@INPUT@', '@OUTDIR@']
 )
 cython_tree = declare_dependency(sources: _cython_tree)
 

@@ -3,7 +3,7 @@
 __init__py = custom_target('__init__py',
   output: '__init__.py',
   input: '__init__.py',
-  command: ['cp', '@INPUT@', '@OUTDIR@']
+  command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
 cython_linalg = custom_target('cython_linalg',
