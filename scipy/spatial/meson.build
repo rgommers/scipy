@@ -1,7 +1,7 @@
 _spatial_pxd = custom_target('_spatial_pxd',
   output: ['qhull.pxd', 'setlist.pxd'],
   input: ['qhull.pxd', 'setlist.pxd'],
-  command: ['cp', '@INPUT@', '@OUTDIR@']
+  command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
 qhull_src = [

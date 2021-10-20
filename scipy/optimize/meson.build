@@ -232,7 +232,7 @@ endif
 _dummy_init_optimize = custom_target('_dummy_init_optimize',
   output: '__init__.py',
   input: '__init__.py',
-  command: ['cp', '@INPUT@', '@OUTDIR@']
+  command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
 _bglu_dense_c = custom_target('_bglu_dense_c',

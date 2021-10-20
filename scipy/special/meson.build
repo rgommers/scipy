@@ -73,7 +73,7 @@ _ufuncs_pxi_pxd_sources = custom_target('_ufuncs_pxi_pxd',
     '_ufuncs_extra_code.pxi',
     '_ufuncs_extra_code_common.pxi'
   ],
-  command: ['cp', '@INPUT@', '@OUTDIR@']
+  command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
 _ufuncs_pxi_pxd_dep = declare_dependency(sources: _ufuncs_pxi_pxd_sources)
@@ -394,7 +394,7 @@ special_pxd = declare_dependency(sources: _cython_tree)
 _ellip_harm_pyx = custom_target('_ellip_harm_pyx',
   output: '_ellip_harm_2.pyx',
   input: '_ellip_harm_2.pyx',
-  command: ['cp', '@INPUT@', '@OUTDIR@']
+  command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
 py3.extension_module('_ellip_harm_2',

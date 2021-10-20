@@ -24,6 +24,7 @@ cython = find_program('cython')
 pythran = find_program('pythran')
 generate_f2pymod = files('tools/generate_f2pymod.py')
 tempita = files('scipy/_build_utils/tempita.py')
+copier = find_program(['cp', 'scipy/_build_utils/copyfiles.py'])
 
 # https://mesonbuild.com/Python-module.html
 py_mod = import('python')

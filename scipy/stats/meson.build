@@ -18,7 +18,7 @@ _stats_pxd = custom_target('_stats_pxd',
     'biasedurn.pxd',
     '_unuran/unuran.pxd',
   ],
-  command: ['cp', '@INPUT@', '@OUTDIR@']
+  command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
 statlib_lib = static_library('statlib_lib',
