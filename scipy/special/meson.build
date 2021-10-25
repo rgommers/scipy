@@ -275,8 +275,8 @@ ufuncs_cxx_sources = [
 ]
 
 
-if is_windows and host_machine.cpu_family() == 'x86'
-  use_math_defines = ['-DUSE_MATH_DEFINES']
+if is_windows
+  use_math_defines = ['-D_USE_MATH_DEFINES']
 else
   use_math_defines = []
 endif

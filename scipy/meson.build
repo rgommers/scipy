@@ -1,6 +1,16 @@
 # Platform detection
 is_windows = host_machine.system() == 'windows'
 
+# Manual add of MS_WIN64 macro when not using MSVC.
+# https://bugs.python.org/issue28267
+if is_windows and meson.get_compiler('c').get_id() == 'gcc'
+  add_global_link_arguments('-lucrt', '-static', language: ['c', 'cpp', 'fortran'])
+  bitness = run_command('_build_utils/gcc_build_bitness.py').stdout().strip()
+  if bitness == '64'
+    add_global_arguments('-DMS_WIN64', language: ['c', 'cpp', 'fortran'])
+  endif
+endif
+
 # NumPy include directory - needed in all submodules
 incdir_numpy = run_command(py3,
   [
