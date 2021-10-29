@@ -1,13 +1,24 @@
 # Platform detection
 is_windows = host_machine.system() == 'windows'
 
-# Manual add of MS_WIN64 macro when not using MSVC.
-# https://bugs.python.org/issue28267
-if is_windows and meson.get_compiler('c').get_id() == 'gcc'
-  add_global_link_arguments('-lucrt', '-static', language: ['c', 'cpp', 'fortran'])
-  bitness = run_command('_build_utils/gcc_build_bitness.py').stdout().strip()
-  if bitness == '64'
-    add_global_arguments('-DMS_WIN64', language: ['c', 'cpp', 'fortran'])
+if is_windows
+  if meson.get_compiler('c').get_id() == 'gcc'
+    add_global_link_arguments('-lucrt', '-static', language: ['c', 'cpp', 'fortran'])
+    # Manual add of MS_WIN64 macro when not using MSVC.
+    # https://bugs.python.org/issue28267
+    bitness = run_command('_build_utils/gcc_build_bitness.py').stdout().strip()
+    if bitness == '64'
+      add_global_arguments('-DMS_WIN64', language: ['c', 'cpp', 'fortran'])
+    endif
+  endif
+  if meson.get_compiler('fortran').get_id() == 'gcc'
+    # Flag needed to work around BLAS and LAPACK Gfortran dependence on
+    # undocumented C feature when passing single character string
+    # arguments.
+    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90329
+    # https://github.com/wch/r-source/blob/838f9d5a7be08f2a8c08e47bcd28756f5d0aac90/src/gnuwin32/MkRules.rules#L121
+    add_global_arguments('-fno-optimize-sibling-calls',
+      language: ['fortran'])
   endif
 endif
 
