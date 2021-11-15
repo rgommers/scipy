@@ -313,12 +313,12 @@ specfun_lib = static_library('specfun',
 )
 
 specfun_module = custom_target('specfun_module',
-  output: 'specfunmodule.c',
+  output: '_specfunmodule.c',
   input: 'specfun.pyf',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
-py3.extension_module('specfun',
+py3.extension_module('_specfun',
   [specfun_module, fortranobject_c],
   c_args: numpy_nodepr_api,
   include_directories: [inc_np, inc_f2py],
@@ -340,7 +340,7 @@ cython_special = custom_target('cython_special',
     'cython_special.pyx',
     'cython_special.pxd'
   ],
-  input: ['_generate_pyx.py', 'functions.json', 'add_newdocs.py'],
+  input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
   command: [py3, '@INPUT0@', '-o', '@OUTDIR@']
 )
 
@@ -489,6 +489,9 @@ python_sources = [
   '_lambertw.py',
   '_logsumexp.py',
   '_mptestutils.py',
+  '_orthogonal.py',
+  '_sf_error.py',
+  '_spfun_stats.py',
   '_spherical_bessel.py',
   '_testutils.py',
   'basic.py',
