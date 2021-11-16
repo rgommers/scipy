@@ -10,7 +10,7 @@ py3.install_sources([
     'test_streams.py'
   ],
   pure: false,
-  subdir: 'scipy/io/matlab/tests'
+  subdir: 'scipy/io/_matlab/tests'
 )
 
 py3.install_sources([
@@ -126,5 +126,5 @@ py3.install_sources([
     'data/testvec_4_GLNX86.mat'
   ],
   pure: false,
-  subdir: 'scipy/io/matlab/tests/data'
+  subdir: 'scipy/io/_matlab/tests/data'
 )
