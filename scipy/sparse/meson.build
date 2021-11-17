@@ -21,6 +21,7 @@ python_sources = [
   '_coo.py',
   '_csc.py',
   '_csr.py',
+  '_data.py',
   '_dia.py',
   '_dok.py',
   '_extract.py',

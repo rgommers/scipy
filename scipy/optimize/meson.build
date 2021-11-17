@@ -315,6 +315,8 @@ py3.install_sources([
   'lbfgsb.py',
   'linesearch.py',
   'minpack.py',
+  'minpack2.py',
+  'moduleTNC.py',
   'nonlin.py',
   'optimize.py',
   'slsqp.py',

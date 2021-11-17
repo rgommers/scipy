@@ -221,7 +221,10 @@ py3.install_sources([
     '_quadrature.py',
     '_odepack_py.py',
     '_quadpack_py.py',
-    'setup.py'
+    'dop.py',
+    'lsoda.py',
+    'setup.py',
+    'vode.py',
   ],
   pure: false,
   subdir: 'scipy/integrate'

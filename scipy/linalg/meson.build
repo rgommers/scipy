@@ -231,6 +231,15 @@ py3.extension_module('_decomp_update',
   subdir: 'scipy/linalg'
 )
 
+_cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
+  ['_cythonized_array_utils.pyx'],
+  c_args: numpy_nodepr_api,
+  dependencies: [py3_dep],
+  include_directories: [inc_np],
+  install: true,
+  subdir: 'scipy/linalg'
+)
+
 python_sources = [
   '__init__.py',
   '_basic.py',
@@ -278,6 +287,11 @@ py3.install_sources(
   subdir: 'scipy/linalg'
 )
 
+py3.install_sources(
+  ['_cythonized_array_utils.pyi'],
+  pure: false,
+  subdir: 'scipy/linalg'
+)
 
 # TODO: install (only) these pxd files. Neither py3.install_sources nor
 #       install_data accept generated data files. What

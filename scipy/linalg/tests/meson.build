@@ -4,6 +4,7 @@ python_sources = [
   'test_blas.py',
   'test_cython_blas.py',
   'test_cython_lapack.py',
+  'test_cythonized_array_utils.py',
   'test_decomp.py',
   'test_decomp_cholesky.py',
   'test_decomp_cossin.py',

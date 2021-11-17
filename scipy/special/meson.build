@@ -484,6 +484,7 @@ endforeach
 
 python_sources = [
   '__init__.py',
+  '_add_newdocs.py',
   '_basic.py',
   '_ellip_harm.py',
   '_lambertw.py',
@@ -494,9 +495,11 @@ python_sources = [
   '_spfun_stats.py',
   '_spherical_bessel.py',
   '_testutils.py',
+  'add_newdocs.py',
   'basic.py',
   'orthogonal.py',
   'sf_error.py',
+  'specfun.py',
   'spfun_stats.py'
 ]
 

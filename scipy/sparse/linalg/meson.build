@@ -6,7 +6,10 @@ py3.install_sources([
     '_norm.py',
     '_onenormest.py',
     '_svdp.py',
+    'dsolve.py',
+    'eigen.py',
     'interface.py',
+    'isolve.py',
     'matfuncs.py'
   ],
   pure: false,
