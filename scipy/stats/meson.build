@@ -119,7 +119,7 @@ _qmc_cy = py3.extension_module('_qmc_cy',
 
 _stats_gen_pyx = custom_target('_stats_gen_pyx',
   output: [
-    'biasedurn.pyx',
+    '_biasedurn.pyx',
     'beta_ufunc.pyx',
     'binom_ufunc.pyx',
     'func_defs.pxd',
