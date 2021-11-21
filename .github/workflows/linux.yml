@@ -77,17 +77,9 @@ jobs:
         restore-keys: |
           ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-
 
-    - name: Setup build
+    - name: Setup build and install scipy
       run: |
-        meson setup build --prefix=$PWD/${{ env.INSTALLDIR }} --werror
-
-    - name: Build SciPy
-      run: |
-        ninja -C build -j 2
-
-    - name: Install SciPy
-      run: |
-        meson install -C build
+        python dev.py -j 2 --build-only --werror
 
     - name: Ccache performance
       shell: bash -l {0}
