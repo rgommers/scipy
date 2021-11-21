@@ -83,6 +83,8 @@ def main(argv):
                         help="more verbosity")
     parser.add_argument("--no-build", "-n", action="store_true", default=False,
                         help="do not build the project (use system installed version)")
+    parser.add_argument("--werror", action="store_true", default=False,
+                        help="Treat warnings as errors")
     parser.add_argument("--build-only", "-b", action="store_true", default=False,
                         help="just build, do not run any tests")
     parser.add_argument("--doctests", action="store_true", default=False,
@@ -429,6 +431,8 @@ def build_project(args):
     # Check if meson is already setup
     if not os.path.exists(os.path.join(build_dir, 'build.ninja')):
         cmd = ["meson", "setup", "build", "--prefix", PATH_INSTALLED]
+        if(args.werror):
+            cmd += ["--werror"]
         ret = subprocess.call(cmd)
         if ret != 0:
             print("Meson setup build failed")
