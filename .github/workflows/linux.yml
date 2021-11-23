@@ -94,6 +94,4 @@ jobs:
     - name: Test SciPy
       run: |
         export PYTHONPATH="$PWD/installdir/lib/python3.9/site-packages/"
-        pushd ${{ env.INSTALLDIR }}
         python dev.py -n -j 2
-        popd
