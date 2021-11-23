@@ -74,8 +74,7 @@ except ImportError:  # old Python
     from imp import new_module
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
-PATH_INSTALLED = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                   'installdir')
+
 
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
@@ -87,6 +86,11 @@ def main(argv):
                         help="Treat warnings as errors")
     parser.add_argument("--build-only", "-b", action="store_true", default=False,
                         help="just build, do not run any tests")
+    parser.add_argument("--setup-build", "-rb", action="store_true", default=False,
+                        help="setup meson build from scratch and re-builds again. "
+                        "It should be provided when you change options like: "
+                        " '--werror' or '--installdir=somedir'"
+                        )
     parser.add_argument("--doctests", action="store_true", default=False,
                         help="Run doctests in module")
     parser.add_argument("--refguide-check", action="store_true", default=False,
@@ -104,6 +108,9 @@ def main(argv):
     parser.add_argument("--mode", "-m", default="fast",
                         help="'fast', 'full', or something that could be "
                              "passed to nosetests -A [default: fast]")
+    parser.add_argument("--installdir", default="installdir",
+                        help="name of the directory where scipy will be"
+                        " installed [default: installdir]")
     parser.add_argument("--submodule", "-s", default=None,
                         help="Submodule whose tests to run (cluster,"
                              " constants, ...)")
@@ -297,6 +304,8 @@ def main(argv):
         __import__(PROJECT_MODULE)
         test = sys.modules[PROJECT_MODULE].test
         version = sys.modules[PROJECT_MODULE].__version__
+        mod_path = sys.modules[PROJECT_MODULE].__file__
+        mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
 
     if args.submodule:
         tests = [PROJECT_MODULE + "." + args.submodule]
@@ -320,7 +329,8 @@ def main(argv):
     cwd = os.getcwd()
     try:
         os.chdir(test_dir)
-        print("Running tests for {} version:{}".format(PROJECT_MODULE, version))
+        print("Running tests for {} version:{}, installed at:{}".format(
+                    PROJECT_MODULE, version, mod_path))
         result = test(args.mode,
                       verbose=args.verbose,
                       extra_argv=extra_argv,
@@ -338,6 +348,54 @@ def main(argv):
     else:
         sys.exit(1)
 
+
+def setup_build(args, env, PATH_INSTALLED):
+    cmd = ["meson", "setup", "build", "--prefix", PATH_INSTALLED]
+    if args.werror:
+        cmd += ["--werror"]
+    log_filename = os.path.join(ROOT_DIR, 'meson-setup.log')
+    start_time = datetime.datetime.now()
+    if args.show_build_log:
+        ret = subprocess.call(cmd, env=env, cwd=ROOT_DIR)
+    else:
+        print("Setting up meson build, see meson-setup.log...")
+        with open(log_filename, 'w') as log:
+            p = subprocess.Popen(cmd, env=env, stdout=log, stderr=log,
+                                 cwd=ROOT_DIR)
+
+        try:
+            # Wait for it to finish, and print something to indicate the
+            # process is alive, but only if the log file has grown (to
+            # allow continuous integration environments kill a hanging
+            # process accurately if it produces no output)
+            last_blip = time.time()
+            last_log_size = os.stat(log_filename).st_size
+            while p.poll() is None:
+                time.sleep(0.5)
+                if time.time() - last_blip > 60:
+                    log_size = os.stat(log_filename).st_size
+                    if log_size > last_log_size:
+                        elapsed = datetime.datetime.now() - start_time
+                        print("    ... setting meson build in progress ({0} "
+                              "elapsed)".format(elapsed))
+                        last_blip = time.time()
+                        last_log_size = log_size
+
+            ret = p.wait()
+        except:  # noqa: E722
+            p.terminate()
+            raise
+    elapsed = datetime.datetime.now() - start_time
+
+    if ret == 0:
+        print("Meson build setup OK")
+    else:
+        if not show_build_log:
+            with open(log_filename, 'r') as f:
+                print(f.read())
+        print("Meson build setup failed! ({0} elapsed)".format(elapsed))
+        sys.exit(1)
+    return
 
 
 def install_project(show_build_log):
@@ -429,14 +487,11 @@ def build_project(args):
 
     build_dir = os.path.join(ROOT_DIR, 'build')
     # Check if meson is already setup
-    if not os.path.exists(os.path.join(build_dir, 'build.ninja')):
-        cmd = ["meson", "setup", "build", "--prefix", PATH_INSTALLED]
-        if(args.werror):
-            cmd += ["--werror"]
-        ret = subprocess.call(cmd)
-        if ret != 0:
-            print("Meson setup build failed")
-            sys.exit(1)
+    PATH_INSTALLED = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                       args.installdir)
+    if (args.setup_build or
+            not os.path.exists(os.path.join(build_dir, 'build.ninja'))):
+        setup_build(args, env, PATH_INSTALLED)
 
     from distutils.sysconfig import get_python_lib
     site_dir = get_python_lib(prefix=PATH_INSTALLED, plat_specific=True)

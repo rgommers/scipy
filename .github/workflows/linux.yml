@@ -79,7 +79,7 @@ jobs:
 
     - name: Setup build and install scipy
       run: |
-        python dev.py -j 2 --build-only --werror
+        python dev.py -rb --installdir ${{ env.INSTALLDIR }} -j 2 --build-only --werror
 
     - name: Ccache performance
       shell: bash -l {0}
@@ -95,5 +95,5 @@ jobs:
       run: |
         export PYTHONPATH="$PWD/installdir/lib/python3.9/site-packages/"
         pushd ${{ env.INSTALLDIR }}
-        python -c "import scipy; import sys; sys.exit(int(not scipy.test(parallel=2)))"
+        python dev.py -n -j 2
         popd
