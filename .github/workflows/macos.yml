@@ -91,7 +91,7 @@ jobs:
       run: |
         conda activate scipy-dev
         python -m pip install meson==0.60.0rc1
-        CC="ccache $CC" python dev.py -rb --installdir ${{ env.INSTALLDIR }} -j 2 --build-only
+        CC="ccache $CC" python dev.py -j 2 --build-only
 
     - name: Test Scipy
       shell: bash -l {0}

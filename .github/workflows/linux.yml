@@ -79,7 +79,7 @@ jobs:
 
     - name: Setup build and install scipy
       run: |
-        python dev.py -rb --installdir ${{ env.INSTALLDIR }} -j 2 --build-only --werror
+        python dev.py -j 2 --build-only --werror
 
     - name: Ccache performance
       shell: bash -l {0}

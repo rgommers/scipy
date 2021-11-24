@@ -68,12 +68,22 @@ import shutil
 import subprocess
 import time
 import datetime
+import importlib
+
 try:
     from types import ModuleType as new_module
 except ImportError:  # old Python
     from imp import new_module
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+PATH_INSTALLED = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                   'installdir')
+
+# To import runtests.py
+fname = os.path.join(ROOT_DIR, 'runtests.py')
+spec = importlib.util.spec_from_file_location('runtests', str(fname))
+runtests = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(runtests)
 
 
 def main(argv):
@@ -86,11 +96,6 @@ def main(argv):
                         help="Treat warnings as errors")
     parser.add_argument("--build-only", "-b", action="store_true", default=False,
                         help="just build, do not run any tests")
-    parser.add_argument("--setup-build", "-rb", action="store_true", default=False,
-                        help="setup meson build from scratch and re-builds again. "
-                        "It should be provided when you change options like: "
-                        " '--werror' or '--installdir=somedir'"
-                        )
     parser.add_argument("--doctests", action="store_true", default=False,
                         help="Run doctests in module")
     parser.add_argument("--refguide-check", action="store_true", default=False,
@@ -108,9 +113,6 @@ def main(argv):
     parser.add_argument("--mode", "-m", default="fast",
                         help="'fast', 'full', or something that could be "
                              "passed to nosetests -A [default: fast]")
-    parser.add_argument("--installdir", default="installdir",
-                        help="name of the directory where scipy will be"
-                        " installed [default: installdir]")
     parser.add_argument("--submodule", "-s", default=None,
                         help="Submodule whose tests to run (cluster,"
                              " constants, ...)")
@@ -167,7 +169,7 @@ def main(argv):
 
     if args.lcov_html:
         # generate C code coverage output
-        lcov_generate()
+        runtests.lcov_generate()
         sys.exit(0)
 
     if args.pythonpath:
@@ -175,7 +177,7 @@ def main(argv):
             sys.path.insert(0, p)
 
     if args.gcov:
-        gcov_reset_counters()
+        runtests.gcov_reset_counters()
 
     if args.debug and args.bench:
         print("*** Benchmarks should not be run against debug version; "
@@ -260,7 +262,7 @@ def main(argv):
                   % (scipy.__version__, scipy.__file__))
             cmd = ['asv', 'run', '--dry-run', '--show-stderr',
                    '--python=same'] + bench_args
-            retval = run_asv(cmd)
+            retval = runtests.run_asv(cmd)
             sys.exit(retval)
         else:
             if len(args.bench_compare) == 1:
@@ -295,7 +297,7 @@ def main(argv):
 
             cmd = ['asv', 'continuous', '--show-stderr', '--factor', '1.05',
                    commit_a, commit_b] + bench_args
-            run_asv(cmd)
+            runtests.run_asv(cmd)
             sys.exit(1)
 
     if args.build_only:
@@ -349,7 +351,7 @@ def main(argv):
         sys.exit(1)
 
 
-def setup_build(args, env, PATH_INSTALLED):
+def setup_build(args, env):
     cmd = ["meson", "setup", "build", "--prefix", PATH_INSTALLED]
     if args.werror:
         cmd += ["--werror"]
@@ -486,12 +488,10 @@ def build_project(args):
                 ' --coverage'
 
     build_dir = os.path.join(ROOT_DIR, 'build')
+
     # Check if meson is already setup
-    PATH_INSTALLED = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                       args.installdir)
-    if (args.setup_build or
-            not os.path.exists(os.path.join(build_dir, 'build.ninja'))):
-        setup_build(args, env, PATH_INSTALLED)
+    if not os.path.exists(os.path.join(build_dir, 'build.ninja')):
+        setup_build(args, env)
 
     from distutils.sysconfig import get_python_lib
     site_dir = get_python_lib(prefix=PATH_INSTALLED, plat_specific=True)
@@ -549,63 +549,6 @@ def build_project(args):
     return site_dir
 
 
-#
-# GCOV support
-#
-def gcov_reset_counters():
-    print("Removing previous GCOV .gcda files...")
-    build_dir = os.path.join(ROOT_DIR, 'build')
-    for dirpath, dirnames, filenames in os.walk(build_dir):
-        for fn in filenames:
-            if fn.endswith('.gcda') or fn.endswith('.da'):
-                pth = os.path.join(dirpath, fn)
-                os.unlink(pth)
-
-#
-# LCOV support
-#
-
-
-LCOV_OUTPUT_FILE = os.path.join(ROOT_DIR, 'build', 'lcov.out')
-LCOV_HTML_DIR = os.path.join(ROOT_DIR, 'build', 'lcov')
-
-
-def lcov_generate():
-    try:
-        os.unlink(LCOV_OUTPUT_FILE)
-    except OSError:
-        pass
-    try:
-        shutil.rmtree(LCOV_HTML_DIR)
-    except OSError:
-        pass
-
-    print("Capturing lcov info...")
-    subprocess.call(['lcov', '-q', '-c',
-                     '-d', os.path.join(ROOT_DIR, 'build'),
-                     '-b', ROOT_DIR,
-                     '--output-file', LCOV_OUTPUT_FILE])
-
-    print("Generating lcov HTML output...")
-    ret = subprocess.call(['genhtml', '-q', LCOV_OUTPUT_FILE,
-                           '--output-directory', LCOV_HTML_DIR,
-                           '--legend', '--highlight'])
-    if ret != 0:
-        print("genhtml failed!")
-    else:
-        print("HTML output generated under build/lcov/")
-
-
-@contextlib.contextmanager
-def working_dir(new_dir):
-    current_dir = os.getcwd()
-    try:
-        os.chdir(new_dir)
-        yield
-    finally:
-        os.chdir(current_dir)
-
-
 def run_mypy(args):
     if args.no_build:
         raise ValueError('Cannot run mypy with --no-build')
@@ -623,7 +566,7 @@ def run_mypy(args):
         os.path.dirname(os.path.abspath(__file__)),
         "mypy.ini",
     )
-    with working_dir(site_dir):
+    with runtests.working_dir(site_dir):
         # By default mypy won't color the output since it isn't being
         # invoked from a tty.
         os.environ['MYPY_FORCE_COLOR'] = '1'
@@ -637,37 +580,6 @@ def run_mypy(args):
     print(report, end='')
     print(errors, end='', file=sys.stderr)
     return status
-
-
-def run_asv(cmd):
-    cwd = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                       'benchmarks')
-    # Always use ccache, if installed
-    env = dict(os.environ)
-    env['PATH'] = os.pathsep.join(EXTRA_PATH +
-                                  env.get('PATH', '').split(os.pathsep))
-    # Control BLAS/LAPACK threads
-    env['OPENBLAS_NUM_THREADS'] = '1'
-    env['MKL_NUM_THREADS'] = '1'
-
-    # Limit memory usage
-    sys.path.insert(0, cwd)
-    from benchmarks.common import set_mem_rlimit
-    try:
-        set_mem_rlimit()
-    except (ImportError, RuntimeError):
-        pass
-
-    # Run
-    try:
-        return subprocess.call(cmd, env=env, cwd=cwd)
-    except OSError as err:
-        if err.errno == errno.ENOENT:
-            print("Error when running '%s': %s\n" % (" ".join(cmd), str(err),))
-            print("You need to install Airspeed Velocity (https://airspeed-velocity.github.io/asv/)")
-            print("to run Scipy benchmarks")
-            return 1
-        raise
 
 
 if __name__ == "__main__":
