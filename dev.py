@@ -61,6 +61,7 @@ import multiprocessing
 # In case we are run from the source directory, we don't want to import the
 # project from there:
 sys.path.pop(0)
+current_sys_path = sys.path.copy()
 
 from argparse import ArgumentParser, REMAINDER
 import contextlib
@@ -85,6 +86,8 @@ spec = importlib.util.spec_from_file_location('runtests', str(fname))
 runtests = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(runtests)
 
+# Reassign sys.path as it is changed by importlib above
+sys.path = current_sys_path
 
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
