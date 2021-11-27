@@ -69,7 +69,7 @@ import shutil
 import subprocess
 import time
 import datetime
-import importlib
+import importlib.util
 
 try:
     from types import ModuleType as new_module
