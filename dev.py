@@ -395,7 +395,7 @@ def setup_build(args, env):
     if ret == 0:
         print("Meson build setup OK")
     else:
-        if not show_build_log:
+        if not args.show_build_log:
             with open(log_filename, 'r') as f:
                 print(f.read())
         print("Meson build setup failed! ({0} elapsed)".format(elapsed))
