@@ -355,50 +355,18 @@ def main(argv):
 
 
 def setup_build(args, env):
+    """
+    Setting up meson-build
+    """
     cmd = ["meson", "setup", "build", "--prefix", PATH_INSTALLED]
     if args.werror:
         cmd += ["--werror"]
-    log_filename = os.path.join(ROOT_DIR, 'meson-setup.log')
-    start_time = datetime.datetime.now()
-    if args.show_build_log:
-        ret = subprocess.call(cmd, env=env, cwd=ROOT_DIR)
-    else:
-        print("Setting up meson build, see meson-setup.log...")
-        with open(log_filename, 'w') as log:
-            p = subprocess.Popen(cmd, env=env, stdout=log, stderr=log,
-                                 cwd=ROOT_DIR)
-
-        try:
-            # Wait for it to finish, and print something to indicate the
-            # process is alive, but only if the log file has grown (to
-            # allow continuous integration environments kill a hanging
-            # process accurately if it produces no output)
-            last_blip = time.time()
-            last_log_size = os.stat(log_filename).st_size
-            while p.poll() is None:
-                time.sleep(0.5)
-                if time.time() - last_blip > 60:
-                    log_size = os.stat(log_filename).st_size
-                    if log_size > last_log_size:
-                        elapsed = datetime.datetime.now() - start_time
-                        print("    ... setting meson build in progress ({0} "
-                              "elapsed)".format(elapsed))
-                        last_blip = time.time()
-                        last_log_size = log_size
-
-            ret = p.wait()
-        except:  # noqa: E722
-            p.terminate()
-            raise
-    elapsed = datetime.datetime.now() - start_time
-
+    # Setting up meson build
+    ret = subprocess.call(cmd, env=env, cwd=ROOT_DIR)
     if ret == 0:
         print("Meson build setup OK")
     else:
-        if not args.show_build_log:
-            with open(log_filename, 'r') as f:
-                print(f.read())
-        print("Meson build setup failed! ({0} elapsed)".format(elapsed))
+        print("Meson build setup failed! ({0} elapsed)")
         sys.exit(1)
     return
 
@@ -503,48 +471,13 @@ def build_project(args):
     if args.parallel > 1:
         cmd += ["-j", str(args.parallel)]
 
-    log_filename = os.path.join(ROOT_DIR, 'meson-build.log')
-    start_time = datetime.datetime.now()
-    if args.show_build_log:
-        ret = subprocess.call(cmd, env=env, cwd=ROOT_DIR)
-    else:
-        print("Building with ninja-backend, see meson-build.log...")
-        with open(log_filename, 'w') as log:
-            p = subprocess.Popen(cmd, env=env, stdout=log, stderr=log,
-                                 cwd=ROOT_DIR)
-
-        try:
-            # Wait for it to finish, and print something to indicate the
-            # process is alive, but only if the log file has grown (to
-            # allow continuous integration environments kill a hanging
-            # process accurately if it produces no output)
-            last_blip = time.time()
-            last_log_size = os.stat(log_filename).st_size
-            while p.poll() is None:
-                time.sleep(0.5)
-                if time.time() - last_blip > 60:
-                    log_size = os.stat(log_filename).st_size
-                    if log_size > last_log_size:
-                        elapsed = datetime.datetime.now() - start_time
-                        print("    ... build in progress ({0} "
-                              "elapsed)".format(elapsed))
-                        last_blip = time.time()
-                        last_log_size = log_size
-
-            ret = p.wait()
-        except:  # noqa: E722
-            p.terminate()
-            raise
-
-    elapsed = datetime.datetime.now() - start_time
+    # Building with ninja-backend
+    ret = subprocess.call(cmd, env=env, cwd=ROOT_DIR)
 
     if ret == 0:
         print("Build OK")
     else:
-        if not args.show_build_log:
-            with open(log_filename, 'r') as f:
-                print(f.read())
-        print("Build failed! ({0} elapsed)".format(elapsed))
+        print("Build failed!")
         sys.exit(1)
 
     install_project(args.show_build_log)
