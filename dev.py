@@ -306,11 +306,29 @@ def main(argv):
     if args.build_only:
         sys.exit(0)
     else:
-        __import__(PROJECT_MODULE)
-        test = sys.modules[PROJECT_MODULE].test
-        version = sys.modules[PROJECT_MODULE].__version__
-        mod_path = sys.modules[PROJECT_MODULE].__file__
-        mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
+        try:
+            __import__(PROJECT_MODULE)
+            test = sys.modules[PROJECT_MODULE].test
+            version = sys.modules[PROJECT_MODULE].__version__
+            mod_path = sys.modules[PROJECT_MODULE].__file__
+            mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
+        except ImportError:
+            current_python_path = os.environ.get('PYTHONPATH', None)
+            print("Unable to import {} from: {}".format(PROJECT_MODULE,
+                                                       current_python_path))
+            from distutils.sysconfig import get_python_lib
+            site_dir = get_python_lib(prefix=PATH_INSTALLED, plat_specific=True)
+            print("Trying to import scipy from development installed path at:",
+                  site_dir)
+            sys.path.insert(0, site_dir)
+            os.environ['PYTHONPATH'] = \
+                os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
+            __import__(PROJECT_MODULE)
+            test = sys.modules[PROJECT_MODULE].test
+            version = sys.modules[PROJECT_MODULE].__version__
+            mod_path = sys.modules[PROJECT_MODULE].__file__
+            mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
+
 
     if args.submodule:
         tests = [PROJECT_MODULE + "." + args.submodule]

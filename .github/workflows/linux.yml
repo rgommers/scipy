@@ -93,5 +93,4 @@ jobs:
 
     - name: Test SciPy
       run: |
-        export PYTHONPATH="$PWD/installdir/lib/python3.9/site-packages/"
         python dev.py -n -j 2

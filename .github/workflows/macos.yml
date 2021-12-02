@@ -97,7 +97,6 @@ jobs:
       shell: bash -l {0}
       run: |
         conda activate scipy-dev
-        export PYTHONPATH="$PWD/installdir/lib/python3.9/site-packages/"
         python dev.py -n -j 2
 
     - name: Ccache statistics
