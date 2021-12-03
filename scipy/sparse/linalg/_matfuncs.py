@@ -11,9 +11,6 @@ Sparse matrix functions
 __all__ = ['expm', 'inv']
 
 import numpy as np
-
-import scipy.special
-from scipy._lib._util import float_factorial
 from scipy.linalg._basic import solve, solve_triangular
 
 from scipy.sparse._base import isspmatrix
@@ -36,19 +33,19 @@ def inv(A):
 
     Parameters
     ----------
-    A : (M,M) ndarray or sparse matrix
+    A : (M, M) sparse matrix
         square matrix to be inverted
 
     Returns
     -------
-    Ainv : (M,M) ndarray or sparse matrix
+    Ainv : (M, M) sparse matrix
         inverse of `A`
 
     Notes
     -----
     This computes the sparse inverse of `A`. If the inverse of `A` is expected
     to be non-sparse, it will likely be faster to convert `A` to dense and use
-    scipy.linalg.inv.
+    `scipy.linalg.inv`.
 
     Examples
     --------
@@ -69,10 +66,11 @@ def inv(A):
     .. versionadded:: 0.12.0
 
     """
-    #check input
+    # Check input
     if not (scipy.sparse.isspmatrix(A) or is_pydata_spmatrix(A)):
         raise TypeError('Input must be a sparse matrix')
 
+    # Use sparse direct solver to solve "AX = I" accurately
     I = _ident_like(A)
     Ainv = spsolve(A, I)
     return Ainv
@@ -95,7 +93,7 @@ def _onenorm_matrix_power_nnm(A, p):
         The 1-norm of the matrix power p of A.
 
     """
-    # check input
+    # Check input
     if int(p) != p or p < 0:
         raise ValueError('expected non-negative integer p')
     p = int(p)
@@ -344,6 +342,7 @@ class _ExpmPadeHelper:
     other properties of the matrix.
 
     """
+
     def __init__(self, A, structure=None, use_exact_onenorm=False):
         """
         Initialize the object.
@@ -839,8 +838,13 @@ def _ell(A, m):
 
     # The c_i are explained in (2.2) and (2.6) of the 2005 expm paper.
     # They are coefficients of terms of a generating function series expansion.
-    choose_2m_m = scipy.special.comb(2*m, m, exact=True)
-    abs_c_recip = float(choose_2m_m) * float_factorial(2*m + 1)
+    c_i = {3: 100800.,
+           5: 10059033600.,
+           7: 4487938430976000.,
+           9: 5914384781877411840000.,
+           13: 113250775606021113483283660800000000.
+           }
+    abs_c_recip = c_i[m]
 
     # This is explained after Eq. (1.2) of the 2009 expm paper.
     # It is the "unit roundoff" of IEEE double precision arithmetic.

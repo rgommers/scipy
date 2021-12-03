@@ -6,7 +6,10 @@ import warnings
 from . import _spfuncs
 
 
-__all__ = ['count_blocks', 'estimate_blocksize']  # noqa: F822
+__all__ = [  # noqa: F822
+    'isspmatrix_csr', 'csr_matrix', 'isspmatrix_csc', 'csr_count_blocks',
+    'estimate_blocksize', 'count_blocks'
+]
 
 
 def __dir__():
