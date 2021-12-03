@@ -97,6 +97,7 @@ jobs:
       shell: bash -l {0}
       run: |
         conda activate scipy-dev
+        export OMP_NUM_THREADS=2
         python dev.py -n -j 2
 
     - name: Ccache statistics
