@@ -2,7 +2,7 @@ streams = py3.extension_module('streams',
   ['streams.pyx'],
   dependencies: [py3_dep],
   install: true,
-  subdir: 'scipy/io/_matlab'
+  subdir: 'scipy/io/matlab'
 )
 
 mio_utils = py3.extension_module('mio_utils',
@@ -11,7 +11,7 @@ mio_utils = py3.extension_module('mio_utils',
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],
   install: true,
-  subdir: 'scipy/io/_matlab'
+  subdir: 'scipy/io/matlab'
 )
 
 mio5_utils = py3.extension_module('mio5_utils',
@@ -20,7 +20,7 @@ mio5_utils = py3.extension_module('mio5_utils',
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],
   install: true,
-  subdir: 'scipy/io/_matlab'
+  subdir: 'scipy/io/matlab'
 )
 
 py3.install_sources([
@@ -33,7 +33,7 @@ py3.install_sources([
     'miobase.py'
   ],
   pure: false,
-  subdir: 'scipy/io/_matlab'
+  subdir: 'scipy/io/matlab'
 )
 
 subdir('tests')

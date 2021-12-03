@@ -44,6 +44,6 @@ py3.install_sources([
 )
 
 subdir('tests')
-subdir('_matlab')
+subdir('matlab')
 subdir('arff')
 subdir('_harwell_boeing')
