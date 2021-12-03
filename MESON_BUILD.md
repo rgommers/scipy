@@ -21,7 +21,7 @@ suite:
 conda env create -f environment.yml
 conda activate scipy-dev
 python -m pip install git+https://github.com/rgommers/meson.git@scipy
-./mesondev.sh build $PWD/install
+python dev.py
 ```
 
 ## Full details and explanation
@@ -130,7 +130,7 @@ python dev.py -n -s optimize
 #### You can also build, install and test `scipy` using the single command:
 
 ```bash
-python dev.py -n
+python dev.py
 ```
 
 <br> </br>
