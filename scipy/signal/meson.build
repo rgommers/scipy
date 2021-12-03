@@ -117,6 +117,7 @@ py3.install_sources([
     '__init__.py',
     '_arraytools.py',
     '_bsplines.py',
+    '_czt.py',
     '_filter_design.py',
     '_fir_filter_design.py',
     '_lti_conversion.py',

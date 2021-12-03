@@ -34,7 +34,6 @@ py3.install_sources([
     '_netcdf.py',
     'harwell_boeing.py',
     'idl.py',
-    'matlab.py',
     'mmio.py',
     'netcdf.py',
     'wavfile.py'

@@ -14,6 +14,7 @@ py3.extension_module('_csparsetools',
 
 python_sources = [
   '__init__.py',
+  '_arrays.py',
   '_base.py',
   '_bsr.py',
   '_compressed.py',
