@@ -34,11 +34,6 @@ changed_installed_path = {
         'scipy/_lib/tests/test_scipy_version.py'
 }
 
-# Temporary skipping this test installation until test failures are fixed.
-# See details at: https://github.com/scipy/scipy/pull/14868#issuecomment-964444731
-# Discussion at: https://github.com/rgommers/scipy/pull/93
-# Remove the SKIP_EIGEN_TEST once they are fixed
-SKIP_EIGEN_TEST = '_eigen/tests/test_svds.py'
 
 def main(install_dir):
     INSTALLED_DIR = os.path.join(ROOT_DIR, install_dir)
@@ -51,8 +46,6 @@ def main(install_dir):
     # Check test files detected in repo are installed
     for test_file in scipy_test_files.keys():
         if not test_file in installed_test_files.keys():
-            if test_file.endswith(SKIP_EIGEN_TEST):
-                continue
             raise Exception("%s is not installed" % scipy_test_files[test_file])
 
     print("----------- All the test files were installed --------------")
