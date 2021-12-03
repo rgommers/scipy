@@ -214,6 +214,7 @@ py3.install_sources([
     'mstats_extras.py',
     'mvn.py',
     'qmc.py',
+    'sampling.py',
     'statlib.py',
     'stats.py'
   ],
