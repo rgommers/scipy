@@ -4,7 +4,7 @@ _note: these instructions are for Linux, if you are on another OS things likely
 don't work yet! macOS support should be easy, please comment if we need to
 prioritize adding that._
 
-## quickstart from scratch
+## Quickstart from scratch
 
 Clone the repo and check out the right branch:
 
@@ -98,12 +98,41 @@ working with the default `distutils`-based build one gets with
 
 The above configure-build-install-test docs are useful to understand and for
 working on build improvements (you don't need to install for that to, for
-example, see the build succeeds and a build warning has disappeared); if you
-want the "all-in-one" command for the above, run:
+example, see the build succeeds and a build warning has disappeared).
+
+# Another way to build and test SciPy with Meson (All in one)
+
+Here, we will use python script `dev.py` which is much similar to `runtests.py`,
+but uses `meson` for building and installing `scipy`.
+
+## To build and install SciPy
+
+Use the following command to build and install `scipy`:
+
 ```bash
-./mesondev.sh build --prefix=$PWD/installdir
+python dev.py --build-only
 ```
 
+## To test SciPy
+
+Now to run the tests use:
+
+```bash
+python dev.py -n
+```
+
+To run the tests for a particular submodule(let's say `optimize`), you can use:
+
+```bash
+python dev.py -n -s optimize
+```
+
+#### You can also build, install and test `scipy` using the single command:
+
+```bash
+python dev.py -n
+```
+
+<br> </br>
 It's worth pointing out that Meson has [very good documentation](https://mesonbuild.com/);
 it's worth reading and is often the best source of answers for "how to do X".
-
