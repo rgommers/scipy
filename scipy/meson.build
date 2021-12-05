@@ -2,8 +2,13 @@
 is_windows = host_machine.system() == 'windows'
 
 if is_windows
+  # For mingw-w64, link statically against the UCRT.
+  gcc_link_args = ['-lucrt', '-static']
   if meson.get_compiler('c').get_id() == 'gcc'
-    add_global_link_arguments('-lucrt', '-static', language: ['c', 'cpp', 'fortran'])
+    add_global_link_arguments(gcc_link_args, language: ['c', 'cpp'])
+    # Force gcc to float64 long doubles for compatibility with MSVC
+    # builds, for C only.
+    add_global_arguments('-mlong-double-64', language: 'c')
     # Manual add of MS_WIN64 macro when not using MSVC.
     # https://bugs.python.org/issue28267
     bitness = run_command('_build_utils/gcc_build_bitness.py').stdout().strip()
@@ -12,6 +17,7 @@ if is_windows
     endif
   endif
   if meson.get_compiler('fortran').get_id() == 'gcc'
+    add_global_link_arguments(gcc_link_args, language: ['fortran'])
     # Flag needed to work around BLAS and LAPACK Gfortran dependence on
     # undocumented C feature when passing single character string
     # arguments.
