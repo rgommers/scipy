@@ -223,6 +223,8 @@ py3.install_sources([
     '_quadpack_py.py',
     'dop.py',
     'lsoda.py',
+    'odepack.py',
+    'quadpack.py',
     'setup.py',
     'vode.py',
   ],
