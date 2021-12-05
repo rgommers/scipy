@@ -269,6 +269,7 @@ ufuncs_sources = [
 ufuncs_cxx_sources = [
   '_faddeeva.cxx',
   '_wright.cxx',
+  'ellint_carlson_wrap.cxx',
   'Faddeeva.cc',
   'sf_error.c',
   'wright.cc'
@@ -378,11 +379,28 @@ py3.extension_module('_ufuncs',
   subdir: 'scipy/special'
 )
 
+ellint_files = [
+  'ellint_carlson_wrap.hh',
+  'ellint_carlson_cpp_lite/_rc.hh',
+  'ellint_carlson_cpp_lite/_rd.hh',
+  'ellint_carlson_cpp_lite/_rf.hh',
+  'ellint_carlson_cpp_lite/_rg.hh',
+  'ellint_carlson_cpp_lite/_rj.hh',
+  'ellint_carlson_cpp_lite/ellint_argcheck.hh',
+  'ellint_carlson_cpp_lite/ellint_arith_aux.hh',
+  'ellint_carlson_cpp_lite/ellint_arithmetic.hh',
+  'ellint_carlson_cpp_lite/ellint_carlson.hh',
+  'ellint_carlson_cpp_lite/ellint_common.hh',
+  'ellint_carlson_cpp_lite/ellint_typing.hh',
+]
+
+ellint_dep = declare_dependency(sources: ellint_files)
+
 py3.extension_module('_ufuncs_cxx',
   [ufuncs_cxx_sources, cython_special[2], _cython_tree],
   cpp_args: [numpy_nodepr_api, use_math_defines],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies: [py3_dep, npymath_lib, _ufuncs_pxi_pxd_dep],
+  dependencies: [py3_dep, npymath_lib, _ufuncs_pxi_pxd_dep, ellint_dep],
   override_options: ['cython_language=cpp'],
   install: true,
   subdir: 'scipy/special'
