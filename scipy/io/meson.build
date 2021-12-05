@@ -34,7 +34,6 @@ py3.install_sources([
     '_netcdf.py',
     'harwell_boeing.py',
     'idl.py',
-    'matlab.py',
     'mmio.py',
     'netcdf.py',
     'wavfile.py'
@@ -44,6 +43,6 @@ py3.install_sources([
 )
 
 subdir('tests')
-subdir('_matlab')
+subdir('matlab')
 subdir('arff')
 subdir('_harwell_boeing')
