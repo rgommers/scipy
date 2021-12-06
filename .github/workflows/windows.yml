@@ -40,6 +40,9 @@ jobs:
           pip install numpy cython pybind11 pythran meson ninja
       - name: openblas-libs
         run: |
+          # Download and install pre-built OpenBLAS library
+          # Built with mingw-w64, -ucrt -static.
+          # https://github.com/matthew-brett/openblas-libs/blob/ucrt-build/build_openblas.ps1
           choco install unzip
           pip install gdown
           gdown --id 1G3jwxMY4ZVRqvz6owl0kmw_Innmr4ZnV
