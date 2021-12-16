@@ -309,7 +309,7 @@ use the classes to create a reusable function instead.
 from . import _sigtools, windows
 from ._waveforms import *
 from ._max_len_seq import max_len_seq
-from ._upfirdn import upfirdn
+from ._multimethods import upfirdn
 
 from ._spline import (  # noqa: F401
     cspline2d,
@@ -319,6 +319,7 @@ from ._spline import (  # noqa: F401
     symiirorder2,
 )
 
+from ._backend import *
 from ._bsplines import *
 from ._filter_design import *
 from ._fir_filter_design import *
