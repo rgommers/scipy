@@ -117,7 +117,7 @@ _lbfgsb = py3.extension_module('_lbfgsb',
 )
 
 moduleTNC = py3.extension_module('_moduleTNC',
-  ['tnc/tnc.h', 'tnc/moduleTNC.c', 'tnc/tnc.c'],
+  ['tnc/tnc.h', 'tnc/moduleTNC.pyx', 'tnc/tnc.c'],
   c_args: numpy_nodepr_api,
   include_directories: [inc_np, inc_f2py],
   dependencies: [py3_dep],
