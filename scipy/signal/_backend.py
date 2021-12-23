@@ -1,6 +1,6 @@
 import scipy._lib.uarray as ua
 from scipy.signal import _api
-
+import numpy as np
 
 __all__ = [
     'register_backend', 'set_backend',
@@ -11,13 +11,32 @@ __all__ = [
 class _ScipySignalBackend:
     __ua_domain__ = "numpy.scipy.signal"
 
+
     @staticmethod
     def __ua_function__(method, args, kwargs):
         fn = getattr(_api, method.__name__, None)
 
         if fn is None:
-            return NotImplemented
+            raise NotImplementedError
+            return
         return fn(*args, **kwargs)
+
+
+    # @ua.wrap_single_convertor
+    # def __ua_convert__(value, dispatch_type, coerce):
+    #     if value is None:
+    #         return None
+    #
+    #     if dispatch_type is np.ndarray:
+    #         if not coerce and not isinstance(value, np.ndarray):
+    #             raise NotImplementedError
+    #
+    #         return np.asarray(value)
+    #
+    #     if dispatch_type is np.dtype:
+    #         return np.dtype(value)
+    #
+    #     return value
 
 
 _named_backends = {
