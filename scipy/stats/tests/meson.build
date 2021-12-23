@@ -24,7 +24,8 @@ py3.install_sources([
     'test_relative_risk.py',
     'test_sampling.py',
     'test_stats.py',
-    'test_tukeylambda_stats.py'
+    'test_tukeylambda_stats.py',
+    'test_variation.py'
   ],
   pure: false,
   subdir: 'scipy/stats/tests'

@@ -203,6 +203,7 @@ py3.install_sources([
     '_stats_mstats_common.py',
     '_stats_py.py',
     '_tukeylambda_stats.py',
+    '_variation.py',
     '_wilcoxon_data.py',
     'biasedurn.py',
     'contingency.py',
