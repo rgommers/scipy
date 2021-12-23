@@ -43,10 +43,11 @@ incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
 inc_f2py = include_directories(incdir_f2py)
 fortranobject_c = incdir_f2py / 'fortranobject.c'
 
+cc = meson.get_compiler('c')
 npymath_path = incdir_numpy / '..' / 'lib'
-npymath_lib = meson.get_compiler('c').find_library('npymath', dirs: npymath_path)
+npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 npyrandom_path = incdir_numpy / '..' / '..' / 'random' / 'lib'
-npyrandom_lib = meson.get_compiler('c').find_library('npyrandom', dirs: npyrandom_path)
+npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path)
 
 # pybind11 include directory - needed in several submodules
 incdir_pybind11 = run_command(py3,
