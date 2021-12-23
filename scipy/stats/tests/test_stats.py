@@ -2940,39 +2940,6 @@ class TestMoments:
         mm = stats.moment(a, 2, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(mm, [1.25, np.nan], atol=1e-15)
 
-    def test_variation(self):
-        # variation = samplestd / mean
-        y = stats.variation(self.scalar_testcase)
-        assert_approx_equal(y, 0.0)
-        y = stats.variation(self.testcase)
-        assert_approx_equal(y, 0.44721359549996, 10)
-
-        x = np.arange(10.)
-        x[9] = np.nan
-        assert_equal(stats.variation(x), np.nan)
-        assert_almost_equal(stats.variation(x, nan_policy='omit'),
-                            0.6454972243679028)
-        assert_raises(ValueError, stats.variation, x, nan_policy='raise')
-        assert_raises(ValueError, stats.variation, x, nan_policy='foobar')
-
-    def test_variation_propagate_nan(self):
-        # Check that the shape of the result is the same for inputs
-        # with and without nans, cf gh-5817
-        a = np.arange(8).reshape(2, -1).astype(float)
-        a[1, 0] = np.nan
-        vv = stats.variation(a, axis=1, nan_policy="propagate")
-        np.testing.assert_allclose(vv, [0.7453559924999299, np.nan], atol=1e-15)
-
-    def test_variation_ddof(self):
-        # test variation with delta degrees of freedom
-        # regression test for gh-13341
-        a = array([1, 2, 3, 4, 5])
-        nan_a = array([1, 2, 3, np.nan, 4, 5, np.nan])
-        y = stats.variation(a, ddof=1)
-        nan_y = stats.variation(nan_a, nan_policy="omit", ddof=1)
-        assert_approx_equal(y, 0.5270462766947299)
-        np.testing.assert_equal(y, nan_y)
-
     def test_skewness(self):
         # Scalar test case
         y = stats.skew(self.scalar_testcase)
@@ -3900,6 +3867,7 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15, mode='asymp')
         self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15, mode='exact')
 
+    @pytest.mark.xslow
     def test_gh11184_bigger(self):
         # 10000, 10001, exact two-sided
         np.random.seed(123456)
@@ -3910,7 +3878,7 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'greater', 0.10597913208679133, 2.7947433906389253e-41, mode='asymp')
         self._testOne(x, y, 'less', 0.09658002199780022, 2.7947433906389253e-41, mode='asymp')
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_gh12999(self):
         np.random.seed(123456)
         for x in range(1000, 12000, 1000):
@@ -7159,7 +7127,7 @@ class TestMGCStat:
         assert_approx_equal(stat, obs_stat, significant=1)
         assert_approx_equal(pvalue, obs_pvalue, significant=1)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_twosamp(self):
         np.random.seed(12345678)
 

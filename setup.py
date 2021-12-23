@@ -24,9 +24,10 @@ import subprocess
 import textwrap
 import warnings
 import sysconfig
-from distutils.version import LooseVersion
 from tools.version_utils import write_version_py
 from tools.version_utils import IS_RELEASE_BRANCH
+import importlib
+
 
 if sys.version_info[:2] < (3, 8):
     raise RuntimeError("Python version >= 3.8 required.")
@@ -44,6 +45,7 @@ Programming Language :: Python
 Programming Language :: Python :: 3
 Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
+Programming Language :: Python :: 3.10
 Topic :: Software Development :: Libraries
 Topic :: Scientific/Engineering
 Operating System :: Microsoft :: Windows
@@ -53,9 +55,6 @@ Operating System :: Unix
 Operating System :: MacOS
 
 """
-
-
-
 
 
 # BEFORE importing setuptools, remove MANIFEST. Otherwise it may not be
@@ -69,7 +68,6 @@ if os.path.exists('MANIFEST'):
 # avoid attempting to load components that aren't built yet.  While ugly, it's
 # a lot more robust than what was previously being used.
 builtins.__SCIPY_SETUP__ = True
-
 
 
 def check_submodules():
@@ -142,7 +140,8 @@ def get_build_ext_override():
             from pythran.dist import PythranBuildExt
             BaseBuildExt = PythranBuildExt[npy_build_ext]
             # Version check - a too old Pythran will give problems
-            if LooseVersion(pythran.__version__) < LooseVersion('0.9.12'):
+            importlib.import_module('scipy/_lib/_pep440')
+            if _pep440.parse(pythran.__version__) < _pep440.Version('0.9.12'):
                 raise RuntimeError("The installed `pythran` is too old, >= "
                                    "0.9.12 is needed, {} detected. Please "
                                    "upgrade Pythran, or use `export "
@@ -253,7 +252,7 @@ def generate_cython():
         try:
             # Note, pip may not be installed or not have been used
             import pip
-            if LooseVersion(pip.__version__) < LooseVersion('18.0.0'):
+            if _pep440.parse(pip.__version__) < _pep440.Version('18.0.0'):
                 raise RuntimeError("Cython not found or too old. Possibly due "
                                    "to `pip` being too old, found version {}, "
                                    "needed is >= 18.0.0.".format(

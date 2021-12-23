@@ -1110,10 +1110,6 @@ class TestOptimizeSimple(CheckOptimize):
         # Check that arrays passed to callbacks are not modified
         # inplace by the optimizer afterward
 
-        # cobyla doesn't have callback
-        if method == 'cobyla':
-            return
-
         if method in ('fmin_tnc', 'fmin_l_bfgs_b'):
             func = lambda x: (optimize.rosen(x), optimize.rosen_der(x))
         else:
@@ -1425,6 +1421,20 @@ class TestOptimizeSimple(CheckOptimize):
             if np.array_equal(self.trace[i - 1], self.trace[i]):
                 raise RuntimeError(
                     "Duplicate evaluations made by {}".format(method))
+
+
+@pytest.mark.parametrize(
+    'method',
+    ['l-bfgs-b', 'tnc', 'Powell', 'Nelder-Mead']
+)
+def test_minimize_with_scalar(method):
+    # checks that minimize works with a scalar being provided to it.
+    def f(x):
+        return np.sum(x ** 2)
+
+    res = optimize.minimize(f, 17, bounds=[(-100, 100)], method=method)
+    assert res.success
+    assert_allclose(res.x, [0.0], atol=1e-5)
 
 
 class TestLBFGSBBounds:
