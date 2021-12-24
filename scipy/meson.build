@@ -127,7 +127,7 @@ generate_version = custom_target(
   build_by_default: true,
   output: 'version.py',
   input: '../tools/version_utils.py',
-  command: [py3, '@INPUT@', '@OUTPUT@'],
+  command: [py3, '@INPUT@', '--source-root', '@SOURCE_ROOT@'],
   install_dir: py3.get_install_dir() + '/scipy'
 )
 
