@@ -459,7 +459,7 @@ def setup_package():
         req_py = '>={}'.format(python_minversion)
 
     # Rewrite the version file every time
-    write_version_py()
+    write_version_py('.')
 
     cmdclass = {'sdist': sdist_checked}
 
