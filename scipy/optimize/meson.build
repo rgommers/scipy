@@ -116,9 +116,8 @@ _lbfgsb = py3.extension_module('_lbfgsb',
   subdir: 'scipy/optimize'
 )
 
-# NOTE: this should be renamed back to _moduleTNC once gh-15269 is merged
-moduleTNC = py3.extension_module('moduleTNC',
-  ['tnc/tnc.h', 'tnc/moduleTNC.pyx', 'tnc/tnc.c'],
+moduleTNC = py3.extension_module('_moduleTNC',
+  ['tnc/tnc.h', 'tnc/_moduleTNC.pyx', 'tnc/tnc.c'],
   c_args: numpy_nodepr_api,
   include_directories: [inc_np, inc_f2py, 'tnc'],
   dependencies: [py3_dep],
