@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 """
-The test script is adopted from: https://github.com/scipy/scipy/blob/master/runtests.py
-
 dev.py [OPTIONS] [-- ARGS]
 
-Run tests, building the project first with "meson"
+Run tests, building the project first with Meson
 
 Examples::
 
