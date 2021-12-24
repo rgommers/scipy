@@ -166,6 +166,11 @@ dfitpack = py3.extension_module('dfitpack',
 )
 
 if use_pythran
+  if cc.has_argument('-Wno-unused-but-set-variable')
+    Wno_unused_but_set = ['-Wno-unused-but-set-variable']
+  else
+    Wno_unused_but_set = []
+  endif
   _rbfinterp_pythran = custom_target('_rbfinterp_pythran',
     output: ['_rbfinterp_pythran.cpp'],
     input: '_rbfinterp_pythran.py',
@@ -178,7 +183,7 @@ if use_pythran
       '-Wno-unused-function', '-Wno-unused-variable',
       '-Wno-deprecated-declarations',
       '-Wno-cpp', '-Wno-int-in-bool-context',
-      '-Wno-unused-but-set-variable'
+      Wno_unused_but_set
     ] + cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
     dependencies: [py3_dep],

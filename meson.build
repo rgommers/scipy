@@ -11,11 +11,18 @@ project(
     'cpp_std=c++14',  # TODO: use c++11 if 14 is not available
     # TODO: the below -Wno flags are all needed to silence warnings in
     # f2py-generated code. This should be fixed in f2py itself.
-    'c_args=-Wno-unused-function -Wno-conversion -Wno-unused-but-set-variable -Wno-misleading-indentation -Wno-incompatible-pointer-types',
+    'c_args=-Wno-unused-function -Wno-conversion -Wno-misleading-indentation -Wno-incompatible-pointer-types',
     'fortran_args=-Wno-conversion',
     'fortran_std=legacy',
   ],
 )
+
+cc = meson.get_compiler('c')
+# This argument is called -Wno-unused-but-set-variable by GCC, however Clang
+# doesn't recognize that.
+if cc.has_argument('-Wno-unused-but-set-variable')
+  add_global_arguments('-Wno-unused-but-set-variable', language : 'c')
+endif
 
 # Adding at project level causes many spurious -lgfortran flags.
 add_languages('fortran', native: false)
