@@ -55,106 +55,6 @@ stages:
   variables:
     AZURE_CI: 'true'
   jobs:
-  - job: prerelease_deps_coverage_64bit_blas
-    pool:
-      vmImage: 'ubuntu-18.04'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.8'
-        addToPath: true
-        architecture: 'x64'
-    - template: ci/azure-travis-template.yaml
-      parameters:
-        test_mode: full
-        coverage: true
-        numpy_spec: "--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
-        other_spec: "--pre --upgrade --timeout=60"
-        use_64bit_blas: true
-  - job: refguide_asv_check
-    pool:
-      vmImage: 'ubuntu-20.04'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9'
-        addToPath: true
-        architecture: 'x64'
-    - template: ci/azure-travis-template.yaml
-      parameters:
-        test_mode: fast
-        numpy_spec: "--upgrade numpy"
-        refguide_check: true
-        asv_check: true
-        use_wheel: true
-  - job: source_distribution
-    pool:
-      vmImage: 'ubuntu-20.04'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9'
-        addToPath: true
-        architecture: 'x64'
-    - template: ci/azure-travis-template.yaml
-      parameters:
-        test_mode: fast
-        numpy_spec: "numpy==1.19.3"
-        use_sdist: true
-  - job: wheel_optimized_gcc6
-    pool:
-      vmImage: 'ubuntu-18.04'
-    variables:
-      # The following is needed for optimized "-OO" test run but since we use
-      # pytest-xdist plugin for load scheduling its workers don't pick up the
-      # flag. This environment variable starts all Py instances in -OO mode.
-      PYTHONOPTIMIZE: 2
-      # Use gcc version 6
-      CC: gcc-6
-      CXX: g++-6
-    steps:
-    - script: |
-        set -euo pipefail
-        sudo apt update -y
-        sudo apt install -y g++-6 gcc-6
-      displayName: 'Install GCC 6'
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.8'
-        addToPath: true
-        architecture: 'x64'
-    - template: ci/azure-travis-template.yaml
-      parameters:
-        test_mode: fast
-        numpy_spec: "numpy==1.17.3"
-        use_wheel: true
-  - job: Lint
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
-    pool:
-      vmImage: 'ubuntu-20.04'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9'
-        addToPath: true
-        architecture: 'x64'
-    - script: >-
-        python -m pip install
-        flake8==3.9.2
-      displayName: 'Install tools'
-      failOnStderr: false
-    - script: |
-        set -euo pipefail
-        flake8 scipy benchmarks/benchmarks
-        # for Travis CI we used to do: git fetch --unshallow
-        # but apparently Azure clones are not as shallow
-        # so does not appear to be needed to fetch maintenance
-        # branches (which Azure logs show being checked out
-        # in Checkout stage)
-        python tools/lint_diff.py --branch origin/$(System.PullRequest.TargetBranch)
-        tools/unicode-check.py
-      displayName: 'Run Lint Checks'
-      failOnStderr: true
   - job: Linux_Python_38_32bit_full
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
     pool:
@@ -226,12 +126,6 @@ stages:
             BITS: 64
             OPENBLAS64_: $(OPENBLAS)
             SCIPY_USE_PYTHRAN: 1
-          Python310-64bit-full:
-            PYTHON_VERSION: '3.10'
-            PYTHON_ARCH: 'x64'
-            TEST_MODE: full
-            BITS: 64
-            SCIPY_USE_PYTHRAN: 0
     steps:
     - task: UsePythonVersion@0
       inputs:
