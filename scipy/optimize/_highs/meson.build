@@ -197,12 +197,6 @@ else
   Wno_unused_but_set = []
 endif
 
-if host_machine.system() == 'linux'
-  highs_flags = ['-Wno-sign-compare', '-Wno-switch', '-Wno-format-truncation', '-Wno-non-virtual-dtor', '-Wno-class-memaccess']
-else
-  highs_flags = []
-endif
-
 _highs_wrapper = py3.extension_module('_highs_wrapper',
   ['cython/src/_highs_wrapper.pyx', highs_sources, ipx_sources],
   include_directories: [
@@ -225,7 +219,11 @@ _highs_wrapper = py3.extension_module('_highs_wrapper',
   dependencies: [py3_dep],
   cpp_args: [
     '-Wno-unused-variable',
-    highs_flags,
+    '-Wno-sign-compare',
+    '-Wno-switch',
+    '-Wno-format-truncation',
+    '-Wno-non-virtual-dtor',
+    '-Wno-class-memaccess',
     Wno_unused_but_set,
     highs_define_macros,
     '-UOPENMP',
