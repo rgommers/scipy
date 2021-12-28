@@ -56,14 +56,24 @@ basiclu_lib = static_library('basiclu',
   ]
 )
 
-
+# Deal with non-portable (or GCC-specific) compiler flags
 if cc.has_argument('-Wno-unused-but-set-variable')
   Wno_unused_but_set = ['-Wno-unused-but-set-variable']
 else
   Wno_unused_but_set = []
 endif
 
-highs_flags = ['-Wno-sign-compare', '-Wno-switch', '-Wno-format-truncation', '-Wno-non-virtual-dtor', '-Wno-class-memaccess']
+highs_flags = [
+  '-Wno-sign-compare',
+  '-Wno-switch',
+  '-Wno-non-virtual-dtor',
+]
+if cpp.has_argument('-Wno-format-truncation')
+  highs_flags += '-Wno-format-truncation'
+endif
+if cpp.has_argument('-Wno-class-memaccess')  # added in GCC 8
+  highs_flags += '-Wno-class-memaccess'
+endif
 
 ipx_lib = static_library('ipx',
   [
