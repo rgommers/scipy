@@ -54,7 +54,7 @@ jobs:
           meson build --prefix=$PWD\build
       - name: meson-build
         run: |
-          ninja -j 128 -C build
+          ninja -j 24 -C build
       - name: meson-install
         run: |
           cd build
