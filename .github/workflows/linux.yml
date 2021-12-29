@@ -53,7 +53,7 @@ jobs:
 
   test_numpy_main:
     name: NumPy main
-    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]') && !contains(github.ref, 'maintenance/') && !contains(github.base_ref, 'maintenance/')"
+    if: "github.repository == 'rgommers/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]') && !contains(github.ref, 'maintenance/') && !contains(github.base_ref, 'maintenance/')"
     runs-on: ubuntu-latest
     strategy:
       matrix:
