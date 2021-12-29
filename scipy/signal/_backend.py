@@ -7,6 +7,13 @@ __all__ = [
     'set_global_backend', 'skip_backend'
 ]
 
+class scalar_or_array:
+    """
+    Special case argument that can be either a scalar or array
+    for __ua_convert__.
+    """
+    pass
+
 
 class _ScipySignalBackend:
     __ua_domain__ = "numpy.scipy.signal"
@@ -17,26 +24,34 @@ class _ScipySignalBackend:
         fn = getattr(_api, method.__name__, None)
 
         if fn is None:
-            raise NotImplementedError
-            return
+            return NotImplemented
+
         return fn(*args, **kwargs)
 
 
-    # @ua.wrap_single_convertor
-    # def __ua_convert__(value, dispatch_type, coerce):
-    #     if value is None:
-    #         return None
-    #
-    #     if dispatch_type is np.ndarray:
-    #         if not coerce and not isinstance(value, np.ndarray):
-    #             raise NotImplementedError
-    #
-    #         return np.asarray(value)
-    #
-    #     if dispatch_type is np.dtype:
-    #         return np.dtype(value)
-    #
-    #     return value
+    @ua.wrap_single_convertor
+    def __ua_convert__(value, dispatch_type, coerce):
+        if value is None:
+            return None
+
+        if dispatch_type is np.ndarray:
+            if not coerce and not isinstance(value, np.ndarray):
+                return NotImplemented
+
+            return np.asarray(value)
+
+        elif dispatch_type is np.dtype:
+            return np.dtype(value)
+
+        elif dispatch_type is scalar_or_array:
+            if np.isscalar(value):
+                return value
+            elif not coerce and not isinstance(value, np.ndarray):
+                return NotImplemented
+
+            return value
+
+        return value
 
 
 _named_backends = {
@@ -52,7 +67,7 @@ def _backend_from_arg(backend):
             raise ValueError('Unknown backend {}'.format(backend)) from e
 
     if backend.__ua_domain__ != 'numpy.scipy.signal':
-        raise ValueError('Backend does not implement "numpy.scipy.singal"')
+        raise ValueError('Backend does not implement "numpy.scipy.signal"')
 
     return backend
 
@@ -67,7 +82,7 @@ def register_backend(backend):
     ua.register_backend(backend)
 
 
-def set_backend(backend, coerce=False, only=False):
+def set_backend(backend, coerce=True, only=False):
     backend = _backend_from_arg(backend)
     return ua.set_backend(backend, coerce=coerce, only=only)
 
@@ -77,4 +92,4 @@ def skip_backend(backend):
     return ua.skip_backend(backend)
 
 
-set_global_backend('scipy', try_last=True)
+set_global_backend('scipy', coerce=True, try_last=True)

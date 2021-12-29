@@ -1,8 +1,8 @@
 import functools
 import numpy as np
-from scipy._lib.uarray import all_of_type, create_multimethod
+from scipy._lib.uarray import Dispatchable, all_of_type, create_multimethod
 from scipy.signal import _api
-
+from scipy.signal._backend import scalar_or_array
 
 __all__ = [
     'upfirdn', 'sepfir2d', 'correlate', 'correlation_lags', 'correlate2d',
@@ -18,6 +18,12 @@ __all__ = [
 
 _create_signal = functools.partial(create_multimethod,
                                    domain="numpy.scipy.signal")
+
+_mark_scalar_or_array = functools.partial(
+                            Dispatchable,
+                            dispatch_type=scalar_or_array,
+                            coercible=True
+                        )
 
 
 def _get_docs(func):
@@ -152,7 +158,7 @@ def _volume_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def medfilt(volume, kernel_size=None):
-    return volume
+    return (volume, )
 
 
 def _im_replacer(args, kwargs, dispatchables):
@@ -166,7 +172,7 @@ def _im_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def wiener(im, mysize=None, noise=None):
-    return im
+    return (im, )
 
 
 def _input_replacer(args, kwargs, dispatchables):
@@ -180,7 +186,7 @@ def _input_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def medfilt2d(input, kernel_size=3):
-    return input
+    return (input, )
 
 
 def _b_a_x_replacer(args, kwargs, dispatchables):
@@ -245,18 +251,21 @@ def _x_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def hilbert(x, N=None, axis=-1):
-    return x
+    return (x, )
 
 
 @_create_signal(_x_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def hilbert2(x, N=None):
-    return x
+    return (x, )
 
 
 def _p_replacer(args, kwargs, dispatchables):
     def self_method(p, *args, **kwargs):
+        print('pppp', p)
+        print('pppaaa', np.asarray(p))
+        print('dddp', dispatchables, dispatchables[0])
         return (dispatchables[0], ) + args, kwargs
 
     return self_method(*args, **kwargs)
@@ -266,14 +275,14 @@ def _p_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def cmplx_sort(p):
-    return p
+    return (p, )
 
 
 @_create_signal(_p_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def unique_roots(p, tol=1e-3, rtype='min'):
-    return p
+    return (p, )
 
 
 def _r_p_k_replacer(args, kwargs, dispatchables):
@@ -337,7 +346,7 @@ def _x_num_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def resample(x, num, t=None, axis=0, window=None, domain='time'):
-    return x, num
+    return x, Dispatchable(num, int)
 
 
 def _x_up_down_replacer(args, kwargs, dispatchables):
@@ -381,7 +390,7 @@ def _data_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
-    return data
+    return (data, )
 
 
 def _sos_replacer(args, kwargs, dispatchables):
@@ -395,7 +404,7 @@ def _sos_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def sosfilt_zi(sos):
-    return sos
+    return (sos, )
 
 
 def _sos_x_replacer(args, kwargs, dispatchables):
@@ -428,4 +437,4 @@ def _x_q_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
-    return x, q
+    return x, Dispatchable(q, int)
