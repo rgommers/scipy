@@ -457,7 +457,7 @@ def generate_fused_type(codes):
 
     Parameters
     ----------
-    typecodes : str
+    codes : str
         Valid inputs to CY_TYPES (i.e. f, d, g, ...).
 
     """

@@ -24,7 +24,7 @@ import subprocess
 import textwrap
 import warnings
 import sysconfig
-from tools.version_utils import write_version_py
+from tools.version_utils import write_version_py, get_version_info
 from tools.version_utils import IS_RELEASE_BRANCH
 import importlib
 
@@ -447,7 +447,7 @@ def setup_package():
     # Rationale: SciPy builds without deprecation warnings with N; deprecations
     #            in N+1 will turn into errors in N+3
     # For Python versions, if releases is (e.g.) <=3.9.x, set bound to 3.10
-    np_minversion = '1.17.3'
+    np_minversion = '1.18.5'
     np_maxversion = '9.9.99'
     python_minversion = '3.8'
     python_maxversion = '3.10'
@@ -521,7 +521,7 @@ def setup_package():
 
         # Version number is added to metadata inside configuration() if build
         # is run.
-        metadata['version'] = get_version_info()[0]
+        metadata['version'] = get_version_info('.')[0]
 
     setup(**metadata)
 
