@@ -21,6 +21,7 @@ class tuple_str_array:
     Special case argument that can be either a string, tuple or array
     for __ua_convert__.
     """
+    pass
 
 
 class _ScipySignalBackend:
