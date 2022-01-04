@@ -7,12 +7,20 @@ __all__ = [
     'set_global_backend', 'skip_backend'
 ]
 
+
 class scalar_or_array:
     """
     Special case argument that can be either a scalar or array
     for __ua_convert__.
     """
     pass
+
+
+class tuple_str_array:
+    """
+    Special case argument that can be either a string, tuple or array
+    for __ua_convert__.
+    """
 
 
 class _ScipySignalBackend:
@@ -49,7 +57,15 @@ class _ScipySignalBackend:
             elif not coerce and not isinstance(value, np.ndarray):
                 return NotImplemented
 
-            return value
+            return np.asarray(value)
+
+        elif dispatch_type is tuple_str_array:
+            if np.isscalar(value) or isinstance(value, (str, tuple)):
+                return value
+            elif not coerce and not isinstance(value, np.ndarray):
+                return NotImplemented
+
+            return np.asarray(value)
 
         return value
 

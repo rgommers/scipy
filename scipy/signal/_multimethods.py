@@ -2,7 +2,7 @@ import functools
 import numpy as np
 from scipy._lib.uarray import Dispatchable, all_of_type, create_multimethod
 from scipy.signal import _api
-from scipy.signal._backend import scalar_or_array
+from scipy.signal._backend import scalar_or_array, tuple_str_array
 
 __all__ = [
     'upfirdn', 'sepfir2d', 'correlate', 'correlation_lags', 'correlate2d',
@@ -16,12 +16,20 @@ __all__ = [
 ]
 
 
-_create_signal = functools.partial(create_multimethod,
-                                   domain="numpy.scipy.signal")
+_create_signal = functools.partial(
+                    create_multimethod,
+                    domain="numpy.scipy.signal"
+                 )
 
 _mark_scalar_or_array = functools.partial(
                             Dispatchable,
                             dispatch_type=scalar_or_array,
+                            coercible=True
+                        )
+
+_mark_tuple_str_array = functools.partial(
+                            Dispatchable,
+                            dispatch_type=tuple_str_array,
                             coercible=True
                         )
 
@@ -73,35 +81,45 @@ def _in1_in2_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def correlate(in1, in2, mode='full', method='auto'):
-    return in1, in2
+    return _mark_scalar_or_array(in1), _mark_scalar_or_array(in2)
 
 
-@_create_signal(_in1_in2_replacer)
+def _in1_in2_axes_replacer(args, kwargs, dispatchables):
+    def self_method(in1, in2, mode="full", axes=None, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1],
+                mode, dispatchables[2]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_in1_in2_axes_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def fftconvolve(in1, in2, mode="full", axes=None):
-    return in1, in2
+    return (_mark_scalar_or_array(in1), _mark_scalar_or_array(in2),
+           _mark_scalar_or_array(axes))
 
 
-@_create_signal(_in1_in2_replacer)
+@_create_signal(_in1_in2_axes_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def oaconvolve(in1, in2, mode="full", axes=None):
-    return in1, in2
+    return (_mark_scalar_or_array(in1), _mark_scalar_or_array(in2),
+           _mark_scalar_or_array(axes))
 
 
 @_create_signal(_in1_in2_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def choose_conv_method(in1, in2, mode='full', measure=False):
-    return in1, in2
+    return _mark_scalar_or_array(in1), _mark_scalar_or_array(in2)
 
 
 @_create_signal(_in1_in2_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def convolve(in1, in2, mode='full', method='auto'):
-    return in1, in2
+    return _mark_scalar_or_array(in1), _mark_scalar_or_array(in2)
 
 
 @_create_signal(_in1_in2_replacer)
@@ -129,7 +147,7 @@ def _in1len_in2len_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def correlation_lags(in1_len, in2_len, mode='full'):
-    return in1_len, in2_len
+    return _mark_scalar_or_array(in1_len), _mark_scalar_or_array(in2_len)
 
 
 def _a_domain_rank_replacer(args, kwargs, dispatchables):
@@ -144,49 +162,64 @@ def _a_domain_rank_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def order_filter(a, domain, rank):
-    return a, domain, rank
+    return a, _mark_scalar_or_array(domain), Dispatchable(rank, int)
 
 
-def _volume_replacer(args, kwargs, dispatchables):
-    def self_method(volume, *args, **kwargs):
-        return (dispatchables[0], ) + args, kwargs
+def _volume_kernelsize_replacer(args, kwargs, dispatchables):
+    def self_method(volume, kernel_size=None, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
 
-@_create_signal(_volume_replacer)
+@_create_signal(_volume_kernelsize_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def medfilt(volume, kernel_size=None):
-    return (volume, )
+    return volume, _mark_scalar_or_array(kernel_size)
 
 
-def _im_replacer(args, kwargs, dispatchables):
-    def self_method(im, *args, **kwargs):
-        return (dispatchables[0], ) + args, kwargs
+def _im_mysize_replacer(args, kwargs, dispatchables):
+    def self_method(im, mysize=None, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
 
-@_create_signal(_im_replacer)
+@_create_signal(_im_mysize_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def wiener(im, mysize=None, noise=None):
-    return (im, )
+    return im, _mark_scalar_or_array(mysize)
 
 
-def _input_replacer(args, kwargs, dispatchables):
-    def self_method(input, *args, **kwargs):
-        return (dispatchables[0], ) + args, kwargs
+def _input_kernelsize_replacer(args, kwargs, dispatchables):
+    def self_method(input, kernel_size=3, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
 
-@_create_signal(_input_replacer)
+@_create_signal(_input_kernelsize_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def medfilt2d(input, kernel_size=3):
-    return (input, )
+    return input, _mark_scalar_or_array(kernel_size)
+
+
+def _b_a_x_axis_zi_replacer(args, kwargs, dispatchables):
+    def self_method(b, a, x, axis=-1, zi=None, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1], dispatchables[2],
+                dispatchables[3], dispatchables[4]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_b_a_x_axis_zi_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def lfilter(b, a, x, axis=-1, zi=None):
+    return b, a, x, Dispatchable(axis, int), _mark_scalar_or_array(zi)
 
 
 def _b_a_x_replacer(args, kwargs, dispatchables):
@@ -200,31 +233,25 @@ def _b_a_x_replacer(args, kwargs, dispatchables):
 @_create_signal(_b_a_x_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
-def lfilter(b, a, x, axis=-1, zi=None):
-    return b, a, x
-
-
-@_create_signal(_b_a_x_replacer)
-@all_of_type(np.ndarray)
-@_get_docs
 def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
              irlen=None):
     return b, a, x
 
 
-def _b_a_y_replacer(args, kwargs, dispatchables):
-    def self_method(b, a, y, *args, **kwargs):
+def _b_a_y_x_replacer(args, kwargs, dispatchables):
+    def self_method(b, a, y, x=None, *args, **kwargs):
         return (dispatchables[0], dispatchables[1],
-                dispatchables[2]) + args, kwargs
+                dispatchables[2], dispatchables[3]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
 
-@_create_signal(_b_a_y_replacer)
+@_create_signal(_b_a_y_x_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def lfiltic(b, a, y, x=None):
-    return b, a, y
+    return b, a, y, x
+
 
 def _signal_divisor_replacer(args, kwargs, dispatchables):
     def self_method(signal, divisor, *args, **kwargs):
@@ -237,7 +264,7 @@ def _signal_divisor_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def deconvolve(signal, divisor):
-    return signal, divisor
+    return _mark_scalar_or_array(signal), _mark_scalar_or_array(divisor)
 
 
 def _x_replacer(args, kwargs, dispatchables):
@@ -263,9 +290,6 @@ def hilbert2(x, N=None):
 
 def _p_replacer(args, kwargs, dispatchables):
     def self_method(p, *args, **kwargs):
-        print('pppp', p)
-        print('pppaaa', np.asarray(p))
-        print('dddp', dispatchables, dispatchables[0])
         return (dispatchables[0], ) + args, kwargs
 
     return self_method(*args, **kwargs)
@@ -275,7 +299,7 @@ def _p_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def cmplx_sort(p):
-    return (p, )
+    return (_mark_scalar_or_array(p), )
 
 
 @_create_signal(_p_replacer)
@@ -335,34 +359,37 @@ def lfilter_zi(b, a):
     return b, a
 
 
-def _x_num_replacer(args, kwargs, dispatchables):
-    def self_method(x, num, *args, **kwargs):
-        return (dispatchables[0], dispatchables[1]) + args, kwargs
+def _x_num_t_window_replacer(args, kwargs, dispatchables):
+    def self_method(x, num, t=None, axis=0, window=None, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1], dispatchables[2],
+                axis, dispatchables[3]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
 
-@_create_signal(_x_num_replacer)
+@_create_signal(_x_num_t_window_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def resample(x, num, t=None, axis=0, window=None, domain='time'):
-    return x, Dispatchable(num, int)
+    return x, Dispatchable(num, int), t, _mark_scalar_or_array(window)
 
 
-def _x_up_down_replacer(args, kwargs, dispatchables):
-    def self_method(x, up, down, *args, **kwargs):
-        return (dispatchables[0], dispatchables[1],
-                dispatchables[2]) + args, kwargs
+def _x_up_down_window_replacer(args, kwargs, dispatchables):
+    def self_method(x, up, down, axis=0, window=('kaiser', 5.0),
+                    *args, **kwargs):
+        return (dispatchables[0], dispatchables[1], dispatchables[2],
+                axis, dispatchables[3]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
 
-@_create_signal(_x_up_down_replacer)
+@_create_signal(_x_up_down_window_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
                   padtype='constant', cval=None):
-    return x, up, down
+    return (x, Dispatchable(up, int), Dispatchable(down, int),
+            _mark_tuple_str_array(window))
 
 
 def _events_period_replacer(args, kwargs, dispatchables):
@@ -376,21 +403,23 @@ def _events_period_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def vectorstrength(events, period):
-    return events, period
+    return events, _mark_scalar_or_array(period)
 
 
-def _data_replacer(args, kwargs, dispatchables):
-    def self_method(data, *args, **kwargs):
-        return (dispatchables[0], ) + args, kwargs
+def _data_axis_type_bp_replacer(args, kwargs, dispatchables):
+    def self_method(data, axis=-1, type='linear', bp=0, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1],
+                dispatchables[2], dispatchables[3]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
 
-@_create_signal(_data_replacer)
+@_create_signal(_data_axis_type_bp_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
-    return (data, )
+    return (data, Dispatchable(axis, int), Dispatchable(type, str),
+            _mark_scalar_or_array(bp))
 
 
 def _sos_replacer(args, kwargs, dispatchables):
@@ -407,17 +436,27 @@ def sosfilt_zi(sos):
     return (sos, )
 
 
+def _sos_x_zi_replacer(args, kwargs, dispatchables):
+    def self_method(sos, x, axis=-1, zi=None, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1],
+                axis, dispatchables[2]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_sos_x_zi_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def sosfilt(sos, x, axis=-1, zi=None):
+    return sos, x, _mark_scalar_or_array(zi)
+
+
 def _sos_x_replacer(args, kwargs, dispatchables):
     def self_method(sos, x, *args, **kwargs):
         return (dispatchables[0], dispatchables[1]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
-@_create_signal(_sos_x_replacer)
-@all_of_type(np.ndarray)
-@_get_docs
-def sosfilt(sos, x, axis=-1, zi=None):
-    return sos, x
 
 @_create_signal(_sos_x_replacer)
 @all_of_type(np.ndarray)
