@@ -307,7 +307,6 @@ use the classes to create a reusable function instead.
 
 """
 from . import _sigtools, windows
-from ._waveforms import *
 from ._max_len_seq import max_len_seq
 from ._multimethods import *
 

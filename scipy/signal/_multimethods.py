@@ -5,14 +5,19 @@ from scipy.signal import _api
 from scipy.signal._backend import scalar_or_array, tuple_str_array
 
 __all__ = [
-    'upfirdn', 'sepfir2d', 'correlate', 'correlation_lags', 'correlate2d',
+    'upfirdn', 'sepfir2d',
+    # signaltools
+    'correlate', 'correlation_lags', 'correlate2d',
     'convolve', 'convolve2d', 'fftconvolve', 'oaconvolve',
     'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
     'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2',
     'cmplx_sort', 'unique_roots', 'invres', 'invresz', 'residue',
     'residuez', 'resample', 'resample_poly', 'detrend',
     'lfilter_zi', 'sosfilt_zi', 'sosfiltfilt', 'choose_conv_method',
-    'filtfilt', 'decimate', 'vectorstrength'
+    'filtfilt', 'decimate', 'vectorstrength',
+    # waveforms
+    'sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
+    'unit_impulse'
 ]
 
 
@@ -477,3 +482,93 @@ def _x_q_replacer(args, kwargs, dispatchables):
 @_get_docs
 def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     return x, Dispatchable(q, int)
+
+
+############################### waveforms ######################################
+
+
+def _t_width_replacer(args, kwargs, dispatchables):
+    def self_method(t, width=1, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_t_width_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def sawtooth(t, width=1):
+    return _mark_scalar_or_array(t), _mark_scalar_or_array(width)
+
+
+def _t_duty_replacer(args, kwargs, dispatchables):
+    def self_method(t, duty=0.5, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_t_duty_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def square(t, duty=0.5):
+    return _mark_scalar_or_array(t), _mark_scalar_or_array(duty)
+
+
+def _t_replacer(args, kwargs, dispatchables):
+    def self_method(t, *args, **kwargs):
+        return (dispatchables[0],) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_t_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
+               retenv=False):
+    return (_mark_scalar_or_array(t), )
+
+
+def _t_f0_t1_f1_replacer(args, kwargs, dispatchables):
+    def self_method(t, f0, t1, f1, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1], dispatchables[2],
+                dispatchables[3]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_t_f0_t1_f1_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
+    return (_mark_scalar_or_array(t), Dispatchable(f0, float),
+            Dispatchable(t1, float), Dispatchable(f1, float))
+
+
+def _t_poly_replacer(args, kwargs, dispatchables):
+    def self_method(t, poly, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_t_poly_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def sweep_poly(t, poly, phi=0):
+    return t, poly
+
+
+def _shape_idx_replacer(args, kwargs, dispatchables):
+    def self_method(shape, idx=None, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_shape_idx_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def unit_impulse(shape, idx=None, dtype=float):
+    return _mark_tuple_str_array(shape), _mark_tuple_str_array(idx)
