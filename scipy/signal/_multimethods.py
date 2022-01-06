@@ -17,7 +17,10 @@ __all__ = [
     'filtfilt', 'decimate', 'vectorstrength',
     # waveforms
     'sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
-    'unit_impulse'
+    'unit_impulse',
+    # spectrum analysis
+    'periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
+    'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA',
 ]
 
 
@@ -572,3 +575,128 @@ def _shape_idx_replacer(args, kwargs, dispatchables):
 @_get_docs
 def unit_impulse(shape, idx=None, dtype=float):
     return _mark_tuple_str_array(shape), _mark_tuple_str_array(idx)
+
+
+############################ spectrum analysis #################################
+
+def _x_y_freqs_replacer(args, kwargs, dispatchables):
+    def self_method(x, y, freqs, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1],
+                dispatchables[2]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_x_y_freqs_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def lombscargle(x, y, freqs, precenter=False, normalize=False):
+    return x, y, freqs
+
+
+def _x_fs_window_replacer(args, kwargs, dispatchables):
+    def self_method(x, fs=1.0, window='', *args, **kwargs):
+        return (dispatchables[0], dispatchables[1],
+                dispatchables[2]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_x_fs_window_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
+                return_onesided=True, scaling='density', axis=-1):
+    return x, Dispatchable(fs, float), _mark_tuple_str_array(window)
+
+
+@_create_signal(_x_fs_window_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
+          detrend='constant', return_onesided=True, scaling='density',
+          axis=-1, average='mean'):
+    return x, Dispatchable(fs, float), _mark_tuple_str_array(window)
+
+
+@_create_signal(_x_fs_window_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
+                nfft=None, detrend='constant', return_onesided=True,
+                scaling='density', axis=-1, mode='psd'):
+    return x, Dispatchable(fs, float), _mark_tuple_str_array(window)
+
+
+@_create_signal(_x_fs_window_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
+         detrend=False, return_onesided=True, boundary='zeros', padded=True,
+         axis=-1):
+    return x, Dispatchable(fs, float), _mark_tuple_str_array(window)
+
+
+def _x_y_fs_window_replacer(args, kwargs, dispatchables):
+    def self_method(x, y, fs=1.0, window='', *args, **kwargs):
+        return (dispatchables[0], dispatchables[1], dispatchables[2],
+                dispatchables[3]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_x_y_fs_window_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
+        detrend='constant', return_onesided=True, scaling='density',
+        axis=-1, average='mean'):
+    return x, y, Dispatchable(fs, float), _mark_tuple_str_array(window)
+
+
+@_create_signal(_x_y_fs_window_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
+              nfft=None, detrend='constant', axis=-1):
+    return x, y, Dispatchable(fs, float), _mark_tuple_str_array(window)
+
+
+def _window_nperseg_noverlap_replacer(args, kwargs, dispatchables):
+    def self_method(window, nperseg, noverlap, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1],
+                dispatchables[2]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_window_nperseg_noverlap_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def check_COLA(window, nperseg, noverlap, tol=1e-10):
+    return (_mark_tuple_str_array(window), Dispatchable(nperseg, int),
+            Dispatchable(noverlap, int))
+
+
+@_create_signal(_window_nperseg_noverlap_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def check_NOLA(window, nperseg, noverlap, tol=1e-10):
+    return (_mark_tuple_str_array(window), Dispatchable(nperseg, int),
+            Dispatchable(noverlap, int))
+
+
+def _Zxx_fs_window_replacer(args, kwargs, dispatchables):
+    def self_method(Zxx, fs=1.0, window='', *args, **kwargs):
+        return (dispatchables[0], dispatchables[1],
+                dispatchables[2]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_Zxx_fs_window_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
+          input_onesided=True, boundary=True, time_axis=-1, freq_axis=-2):
+    return Zxx, Dispatchable(fs, float), _mark_tuple_str_array(window)

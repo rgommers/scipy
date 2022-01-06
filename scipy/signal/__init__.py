@@ -324,7 +324,6 @@ from ._fir_filter_design import *
 from ._ltisys import *
 from ._lti_conversion import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter
-from ._spectral_py import *
 from ._wavelets import *
 from ._peak_finding import *
 from ._czt import *

@@ -26,7 +26,10 @@ method_names = [
     'filtfilt', 'decimate', 'vectorstrength',
     # waveforms
     'sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
-    'unit_impulse'
+    'unit_impulse',
+    # spectrum analysis
+    'periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
+    'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA',
 ]
 
 for name in method_names:
