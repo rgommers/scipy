@@ -8,17 +8,9 @@ __all__ = [
 ]
 
 
-class scalar_or_array:
+class scalar_tuple_array:
     """
-    Special case argument that can be either a scalar or array
-    for __ua_convert__.
-    """
-    pass
-
-
-class tuple_str_array:
-    """
-    Special case argument that can be either a string, tuple or array
+    Special case argument that can be either a scalar, tuple or array
     for __ua_convert__.
     """
     pass
@@ -52,15 +44,7 @@ class _ScipySignalBackend:
         elif dispatch_type is np.dtype:
             return np.dtype(value)
 
-        elif dispatch_type is scalar_or_array:
-            if np.isscalar(value):
-                return value
-            elif not coerce and not isinstance(value, np.ndarray):
-                return NotImplemented
-
-            return np.asarray(value)
-
-        elif dispatch_type is tuple_str_array:
+        elif dispatch_type is scalar_tuple_array:
             if np.isscalar(value) or isinstance(value, (str, tuple)):
                 return value
             elif not coerce and not isinstance(value, np.ndarray):

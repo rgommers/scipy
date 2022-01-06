@@ -2,7 +2,7 @@ import functools
 import numpy as np
 from scipy._lib.uarray import Dispatchable, all_of_type, create_multimethod
 from scipy.signal import _api
-from scipy.signal._backend import scalar_or_array, tuple_str_array
+from scipy.signal._backend import scalar_tuple_array
 
 __all__ = [
     'upfirdn', 'sepfir2d',
@@ -29,15 +29,10 @@ _create_signal = functools.partial(
                     domain="numpy.scipy.signal"
                  )
 
-_mark_scalar_or_array = functools.partial(
-                            Dispatchable,
-                            dispatch_type=scalar_or_array,
-                            coercible=True
-                        )
 
-_mark_tuple_str_array = functools.partial(
+_mark_scalar_tuple_array = functools.partial(
                             Dispatchable,
-                            dispatch_type=tuple_str_array,
+                            dispatch_type=scalar_tuple_array,
                             coercible=True
                         )
 
@@ -89,7 +84,7 @@ def _in1_in2_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def correlate(in1, in2, mode='full', method='auto'):
-    return _mark_scalar_or_array(in1), _mark_scalar_or_array(in2)
+    return _mark_scalar_tuple_array(in1), _mark_scalar_tuple_array(in2)
 
 
 def _in1_in2_axes_replacer(args, kwargs, dispatchables):
@@ -104,30 +99,30 @@ def _in1_in2_axes_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def fftconvolve(in1, in2, mode="full", axes=None):
-    return (_mark_scalar_or_array(in1), _mark_scalar_or_array(in2),
-           _mark_scalar_or_array(axes))
+    return (_mark_scalar_tuple_array(in1), _mark_scalar_tuple_array(in2),
+           _mark_scalar_tuple_array(axes))
 
 
 @_create_signal(_in1_in2_axes_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def oaconvolve(in1, in2, mode="full", axes=None):
-    return (_mark_scalar_or_array(in1), _mark_scalar_or_array(in2),
-           _mark_scalar_or_array(axes))
+    return (_mark_scalar_tuple_array(in1), _mark_scalar_tuple_array(in2),
+           _mark_scalar_tuple_array(axes))
 
 
 @_create_signal(_in1_in2_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def choose_conv_method(in1, in2, mode='full', measure=False):
-    return _mark_scalar_or_array(in1), _mark_scalar_or_array(in2)
+    return _mark_scalar_tuple_array(in1), _mark_scalar_tuple_array(in2)
 
 
 @_create_signal(_in1_in2_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def convolve(in1, in2, mode='full', method='auto'):
-    return _mark_scalar_or_array(in1), _mark_scalar_or_array(in2)
+    return _mark_scalar_tuple_array(in1), _mark_scalar_tuple_array(in2)
 
 
 @_create_signal(_in1_in2_replacer)
@@ -155,7 +150,7 @@ def _in1len_in2len_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def correlation_lags(in1_len, in2_len, mode='full'):
-    return _mark_scalar_or_array(in1_len), _mark_scalar_or_array(in2_len)
+    return _mark_scalar_tuple_array(in1_len), _mark_scalar_tuple_array(in2_len)
 
 
 def _a_domain_rank_replacer(args, kwargs, dispatchables):
@@ -170,7 +165,7 @@ def _a_domain_rank_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def order_filter(a, domain, rank):
-    return a, _mark_scalar_or_array(domain), Dispatchable(rank, int)
+    return a, _mark_scalar_tuple_array(domain), Dispatchable(rank, int)
 
 
 def _volume_kernelsize_replacer(args, kwargs, dispatchables):
@@ -184,7 +179,7 @@ def _volume_kernelsize_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def medfilt(volume, kernel_size=None):
-    return volume, _mark_scalar_or_array(kernel_size)
+    return volume, _mark_scalar_tuple_array(kernel_size)
 
 
 def _im_mysize_replacer(args, kwargs, dispatchables):
@@ -198,7 +193,7 @@ def _im_mysize_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def wiener(im, mysize=None, noise=None):
-    return im, _mark_scalar_or_array(mysize)
+    return im, _mark_scalar_tuple_array(mysize)
 
 
 def _input_kernelsize_replacer(args, kwargs, dispatchables):
@@ -212,7 +207,7 @@ def _input_kernelsize_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def medfilt2d(input, kernel_size=3):
-    return input, _mark_scalar_or_array(kernel_size)
+    return input, _mark_scalar_tuple_array(kernel_size)
 
 
 def _b_a_x_axis_zi_replacer(args, kwargs, dispatchables):
@@ -227,7 +222,7 @@ def _b_a_x_axis_zi_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def lfilter(b, a, x, axis=-1, zi=None):
-    return b, a, x, Dispatchable(axis, int), _mark_scalar_or_array(zi)
+    return b, a, x, Dispatchable(axis, int), _mark_scalar_tuple_array(zi)
 
 
 def _b_a_x_replacer(args, kwargs, dispatchables):
@@ -272,7 +267,7 @@ def _signal_divisor_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def deconvolve(signal, divisor):
-    return _mark_scalar_or_array(signal), _mark_scalar_or_array(divisor)
+    return _mark_scalar_tuple_array(signal), _mark_scalar_tuple_array(divisor)
 
 
 def _x_replacer(args, kwargs, dispatchables):
@@ -307,7 +302,7 @@ def _p_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def cmplx_sort(p):
-    return (_mark_scalar_or_array(p), )
+    return (_mark_scalar_tuple_array(p), )
 
 
 @_create_signal(_p_replacer)
@@ -379,7 +374,7 @@ def _x_num_t_window_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def resample(x, num, t=None, axis=0, window=None, domain='time'):
-    return x, Dispatchable(num, int), t, _mark_scalar_or_array(window)
+    return x, Dispatchable(num, int), t, _mark_scalar_tuple_array(window)
 
 
 def _x_up_down_window_replacer(args, kwargs, dispatchables):
@@ -397,7 +392,7 @@ def _x_up_down_window_replacer(args, kwargs, dispatchables):
 def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
                   padtype='constant', cval=None):
     return (x, Dispatchable(up, int), Dispatchable(down, int),
-            _mark_tuple_str_array(window))
+            _mark_scalar_tuple_array(window))
 
 
 def _events_period_replacer(args, kwargs, dispatchables):
@@ -411,7 +406,7 @@ def _events_period_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def vectorstrength(events, period):
-    return events, _mark_scalar_or_array(period)
+    return events, _mark_scalar_tuple_array(period)
 
 
 def _data_axis_type_bp_replacer(args, kwargs, dispatchables):
@@ -427,7 +422,7 @@ def _data_axis_type_bp_replacer(args, kwargs, dispatchables):
 @_get_docs
 def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     return (data, Dispatchable(axis, int), Dispatchable(type, str),
-            _mark_scalar_or_array(bp))
+            _mark_scalar_tuple_array(bp))
 
 
 def _sos_replacer(args, kwargs, dispatchables):
@@ -456,7 +451,7 @@ def _sos_x_zi_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def sosfilt(sos, x, axis=-1, zi=None):
-    return sos, x, _mark_scalar_or_array(zi)
+    return sos, x, _mark_scalar_tuple_array(zi)
 
 
 def _sos_x_replacer(args, kwargs, dispatchables):
@@ -501,7 +496,7 @@ def _t_width_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def sawtooth(t, width=1):
-    return _mark_scalar_or_array(t), _mark_scalar_or_array(width)
+    return _mark_scalar_tuple_array(t), _mark_scalar_tuple_array(width)
 
 
 def _t_duty_replacer(args, kwargs, dispatchables):
@@ -515,7 +510,7 @@ def _t_duty_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def square(t, duty=0.5):
-    return _mark_scalar_or_array(t), _mark_scalar_or_array(duty)
+    return _mark_scalar_tuple_array(t), _mark_scalar_tuple_array(duty)
 
 
 def _t_replacer(args, kwargs, dispatchables):
@@ -530,7 +525,7 @@ def _t_replacer(args, kwargs, dispatchables):
 @_get_docs
 def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
                retenv=False):
-    return (_mark_scalar_or_array(t), )
+    return (_mark_scalar_tuple_array(t), )
 
 
 def _t_f0_t1_f1_replacer(args, kwargs, dispatchables):
@@ -545,7 +540,7 @@ def _t_f0_t1_f1_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
-    return (_mark_scalar_or_array(t), Dispatchable(f0, float),
+    return (_mark_scalar_tuple_array(t), Dispatchable(f0, float),
             Dispatchable(t1, float), Dispatchable(f1, float))
 
 
@@ -574,7 +569,7 @@ def _shape_idx_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def unit_impulse(shape, idx=None, dtype=float):
-    return _mark_tuple_str_array(shape), _mark_tuple_str_array(idx)
+    return _mark_scalar_tuple_array(shape), _mark_scalar_tuple_array(idx)
 
 
 ############################ spectrum analysis #################################
@@ -607,7 +602,7 @@ def _x_fs_window_replacer(args, kwargs, dispatchables):
 @_get_docs
 def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
                 return_onesided=True, scaling='density', axis=-1):
-    return x, Dispatchable(fs, float), _mark_tuple_str_array(window)
+    return x, Dispatchable(fs, float), _mark_scalar_tuple_array(window)
 
 
 @_create_signal(_x_fs_window_replacer)
@@ -616,7 +611,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
 def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
           detrend='constant', return_onesided=True, scaling='density',
           axis=-1, average='mean'):
-    return x, Dispatchable(fs, float), _mark_tuple_str_array(window)
+    return x, Dispatchable(fs, float), _mark_scalar_tuple_array(window)
 
 
 @_create_signal(_x_fs_window_replacer)
@@ -625,7 +620,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
                 scaling='density', axis=-1, mode='psd'):
-    return x, Dispatchable(fs, float), _mark_tuple_str_array(window)
+    return x, Dispatchable(fs, float), _mark_scalar_tuple_array(window)
 
 
 @_create_signal(_x_fs_window_replacer)
@@ -634,7 +629,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
 def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
          detrend=False, return_onesided=True, boundary='zeros', padded=True,
          axis=-1):
-    return x, Dispatchable(fs, float), _mark_tuple_str_array(window)
+    return x, Dispatchable(fs, float), _mark_scalar_tuple_array(window)
 
 
 def _x_y_fs_window_replacer(args, kwargs, dispatchables):
@@ -651,7 +646,7 @@ def _x_y_fs_window_replacer(args, kwargs, dispatchables):
 def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         detrend='constant', return_onesided=True, scaling='density',
         axis=-1, average='mean'):
-    return x, y, Dispatchable(fs, float), _mark_tuple_str_array(window)
+    return x, y, Dispatchable(fs, float), _mark_scalar_tuple_array(window)
 
 
 @_create_signal(_x_y_fs_window_replacer)
@@ -659,7 +654,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 @_get_docs
 def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
               nfft=None, detrend='constant', axis=-1):
-    return x, y, Dispatchable(fs, float), _mark_tuple_str_array(window)
+    return x, y, Dispatchable(fs, float), _mark_scalar_tuple_array(window)
 
 
 def _window_nperseg_noverlap_replacer(args, kwargs, dispatchables):
@@ -674,7 +669,7 @@ def _window_nperseg_noverlap_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def check_COLA(window, nperseg, noverlap, tol=1e-10):
-    return (_mark_tuple_str_array(window), Dispatchable(nperseg, int),
+    return (_mark_scalar_tuple_array(window), Dispatchable(nperseg, int),
             Dispatchable(noverlap, int))
 
 
@@ -682,7 +677,7 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
 @all_of_type(np.ndarray)
 @_get_docs
 def check_NOLA(window, nperseg, noverlap, tol=1e-10):
-    return (_mark_tuple_str_array(window), Dispatchable(nperseg, int),
+    return (_mark_scalar_tuple_array(window), Dispatchable(nperseg, int),
             Dispatchable(noverlap, int))
 
 
@@ -699,4 +694,4 @@ def _Zxx_fs_window_replacer(args, kwargs, dispatchables):
 @_get_docs
 def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
           input_onesided=True, boundary=True, time_axis=-1, freq_axis=-2):
-    return Zxx, Dispatchable(fs, float), _mark_tuple_str_array(window)
+    return Zxx, Dispatchable(fs, float), _mark_scalar_tuple_array(window)
