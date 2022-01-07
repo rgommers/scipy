@@ -318,7 +318,6 @@ from ._spline import (  # noqa: F401
 )
 
 from ._backend import *
-from ._bsplines import *
 from ._filter_design import *
 from ._fir_filter_design import *
 from ._ltisys import *

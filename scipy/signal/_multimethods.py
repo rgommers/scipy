@@ -21,6 +21,9 @@ __all__ = [
     # spectrum analysis
     'periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
     'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA',
+    # bsplines
+    'spline_filter', 'bspline', 'gauss_spline', 'cubic', 'quadratic',
+    'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval'
 ]
 
 
@@ -695,3 +698,90 @@ def _Zxx_fs_window_replacer(args, kwargs, dispatchables):
 def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
           input_onesided=True, boundary=True, time_axis=-1, freq_axis=-2):
     return Zxx, Dispatchable(fs, float), _mark_scalar_tuple_array(window)
+
+
+################################## bsplines ####################################
+
+
+def _Iin_replacer(args, kwargs, dispatchables):
+    def self_method(Iin, *args, **kwargs):
+        return (dispatchables[0],) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_Iin_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def spline_filter(Iin, lmbda=5.0):
+    return (Iin, )
+
+
+@_create_signal(_x_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def bspline(x, n):
+    return (_mark_scalar_tuple_array(x), )
+
+
+@_create_signal(_x_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def gauss_spline(x, n):
+    return (_mark_scalar_tuple_array(x), )
+
+
+@_create_signal(_x_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def cubic(x):
+    return (_mark_scalar_tuple_array(x), )
+
+
+@_create_signal(_x_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def quadratic(x):
+    return (_mark_scalar_tuple_array(x), )
+
+
+def _signal_replacer(args, kwargs, dispatchables):
+    def self_method(signal, *args, **kwargs):
+        return (dispatchables[0],) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_signal_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def cspline1d(signal, lamb=0.0):
+    return (signal, )
+
+
+@_create_signal(_signal_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def qspline1d(signal, lamb=0.0):
+    return (signal, )
+
+
+def _cj_newx_replacer(args, kwargs, dispatchables):
+    def self_method(cj, newx, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_cj_newx_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def cspline1d_eval(cj, newx, dx=1.0, x0=0):
+    return cj, newx
+
+
+@_create_signal(_cj_newx_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def qspline1d_eval(cj, newx, dx=1.0, x0=0):
+    return cj, newx

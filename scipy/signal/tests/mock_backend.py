@@ -30,6 +30,9 @@ method_names = [
     # spectrum analysis
     'periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
     'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA',
+    # bsplines
+    'spline_filter', 'bspline', 'gauss_spline', 'cubic', 'quadratic',
+    'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval'
 ]
 
 for name in method_names:
