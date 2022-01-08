@@ -8,7 +8,7 @@ __all__ = [
 ]
 
 
-class scalar_tuple_array:
+class scalar_tuple_callable_array:
     """
     Special case argument that can be either a scalar, tuple or array
     for __ua_convert__.
@@ -44,7 +44,7 @@ class _ScipySignalBackend:
         elif dispatch_type is np.dtype:
             return np.dtype(value)
 
-        elif dispatch_type is scalar_tuple_array:
+        elif dispatch_type is scalar_tuple_callable_array:
             if (np.isscalar(value) or isinstance(value, (str, tuple)) or
                 callable(value)):
                 return value
