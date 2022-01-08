@@ -85,7 +85,7 @@ It will then install to ``installdir/lib/python3.9/site-packages/scipy``, which
 is not on your Python path, so to add it do (*note, having to use ``PYTHONPATH``
 is temporary, this will be changed once we merge support for building wheels*)::
 
-  export PYTHONPATH=$PWD/installdir/lib/python3.9/site-packages/
+  export PYTHONPATH=$PWD/installdir/lib/python3.9/site-packages/  # `3.9` could be `3.10`
 
 Now we should be able to import ``scipy`` and run the tests. Remembering that
 we need to move out of the root of the repo to ensure we pick up the package
