@@ -10,16 +10,16 @@ from numpy.testing import (
 import pytest
 from pytest import raises, warns
 
-from scipy.signal._peak_finding import (
+from scipy.signal._multimethods import (
     argrelmax,
     argrelmin,
     peak_prominences,
     peak_widths,
-    _unpack_condition_args,
     find_peaks,
     find_peaks_cwt,
-    _identify_ridge_lines
 )
+
+from scipy.signal._peak_finding import _unpack_condition_args, _identify_ridge_lines
 from scipy.signal._peak_finding_utils import _local_maxima_1d, PeakPropertyWarning
 
 

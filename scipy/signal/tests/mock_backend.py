@@ -32,7 +32,10 @@ method_names = [
     'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA',
     # bsplines
     'spline_filter', 'bspline', 'gauss_spline', 'cubic', 'quadratic',
-    'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval'
+    'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval',
+    # peak finding
+    'argrelmin', 'argrelmax', 'argrelextrema', 'peak_prominences',
+    'peak_widths', 'find_peaks', 'find_peaks_cwt'
 ]
 
 for name in method_names:

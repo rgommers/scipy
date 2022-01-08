@@ -45,7 +45,8 @@ class _ScipySignalBackend:
             return np.dtype(value)
 
         elif dispatch_type is scalar_tuple_array:
-            if np.isscalar(value) or isinstance(value, (str, tuple)):
+            if (np.isscalar(value) or isinstance(value, (str, tuple)) or
+                callable(value)):
                 return value
             elif not coerce and not isinstance(value, np.ndarray):
                 return NotImplemented

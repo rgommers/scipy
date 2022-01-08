@@ -23,7 +23,10 @@ __all__ = [
     'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA',
     # bsplines
     'spline_filter', 'bspline', 'gauss_spline', 'cubic', 'quadratic',
-    'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval'
+    'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval',
+    # peak finding
+    'argrelmin', 'argrelmax', 'argrelextrema', 'peak_prominences',
+    'peak_widths', 'find_peaks', 'find_peaks_cwt'
 ]
 
 
@@ -785,3 +788,102 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
 @_get_docs
 def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     return cj, newx
+
+
+def _data_replacer(args, kwargs, dispatchables):
+    def self_method(data, *args, **kwargs):
+        return (dispatchables[0],) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_data_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def argrelmin(data, axis=0, order=1, mode='clip'):
+    return (data, )
+
+
+@_create_signal(_data_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def argrelmax(data, axis=0, order=1, mode='clip'):
+    return (data, )
+
+
+def _data_comparator_replacer(args, kwargs, dispatchables):
+    def self_method(data, comparator, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_data_comparator_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
+    return data, _mark_scalar_tuple_array(comparator)
+
+
+def _x_peaks_replacer(args, kwargs, dispatchables):
+    def self_method(x, peaks, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_x_peaks_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def peak_prominences(x, peaks, wlen=None):
+    return x, peaks
+
+
+@_create_signal(_x_peaks_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
+    return x, peaks
+
+
+def _x_h_t_d_p_w_w_r_p_replacer(args, kwargs, dispatchables):
+    def self_method(x, height=None, threshold=None, distance=None,
+                   prominence=None, width=None, wlen=None, rel_height=0.5,
+                   plateau_size=None, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_x_h_t_d_p_w_w_r_p_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def find_peaks(x, height=None, threshold=None, distance=None,
+               prominence=None, width=None, wlen=None, rel_height=0.5,
+               plateau_size=None):
+    return (x, _mark_scalar_tuple_array(height),
+            _mark_scalar_tuple_array(threshold),
+            _mark_scalar_tuple_array(distance),
+            _mark_scalar_tuple_array(prominence),
+            _mark_scalar_tuple_array(width),
+            Dispatchable(wlen, int),
+            Dispatchable(rel_height, float),
+            _mark_scalar_tuple_array(plateau_size))
+
+
+def _vector_widths_wavelet_maxd_replacer(args, kwargs, dispatchables):
+    def self_method(vector, widths, wavelet=None, max_distances=None,
+                    *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_signal(_vector_widths_wavelet_maxd_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
+                   gap_thresh=None, min_length=None,
+                   min_snr=1, noise_perc=10, window_size=None):
+    return (vector, _mark_scalar_tuple_array(widths),
+            _mark_scalar_tuple_array(wavelet), max_distances)
