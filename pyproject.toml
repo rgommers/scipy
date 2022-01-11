@@ -8,8 +8,10 @@
 #     "pybind11>=2.4.3,<2.5.0",
 
 [build-system]
+build-backend = 'mesonpy'
 requires = [
     "wheel",
+    "meson-python",
     "setuptools<60.0",  # do not increase, 60.0 enables vendored distutils
     "Cython>=0.29.18",
     "pybind11>=2.4.3",
@@ -45,6 +47,7 @@ requires = [
 [project]
 name = "SciPy"
 license = {file = "LICENSE.txt"}
+version = "1.9.0.dev0"
 
 maintainers = [
     {name = "SciPy Developers", email = "scipy-dev@python.org"},
@@ -76,7 +79,6 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
-dynamic = ['version', 'description']
 
 [project.optional-dependencies]
 test = [
