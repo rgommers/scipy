@@ -571,7 +571,7 @@ def lombscargle(x, y, freqs, precenter=False, normalize=False):
     return x, y, freqs
 
 
-def _x_window_replacer(args, kwargs, dispatchables):
+def _x_fs_window_replacer(args, kwargs, dispatchables):
     def self_method(x, fs=1.0, window='', *args, **kwargs):
         return (dispatchables[0], fs,
                 dispatchables[1]) + args, kwargs
@@ -579,7 +579,7 @@ def _x_window_replacer(args, kwargs, dispatchables):
     return self_method(*args, **kwargs)
 
 
-@_create_signal(_x_window_replacer)
+@_create_signal(_x_fs_window_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
@@ -587,7 +587,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     return x, _mark_scalar_tuple_callable_array(window)
 
 
-@_create_signal(_x_window_replacer)
+@_create_signal(_x_fs_window_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
@@ -596,7 +596,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     return x, _mark_scalar_tuple_callable_array(window)
 
 
-@_create_signal(_x_window_replacer)
+@_create_signal(_x_fs_window_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
@@ -605,7 +605,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     return x, _mark_scalar_tuple_callable_array(window)
 
 
-@_create_signal(_x_window_replacer)
+@_create_signal(_x_fs_window_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
