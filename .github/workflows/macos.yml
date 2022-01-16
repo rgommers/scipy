@@ -77,10 +77,10 @@ jobs:
         # Increase this value to reset cache if environment.yml has not changed
         CACHE_NUMBER: 0
       with:
-        path: /Users/runner/miniconda3/envs/scipy-dev
+        path: /usr/local/miniconda/envs/scipy-dev
         key:
           ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
-        id: envcache
+      id: envcache
 
     - name: Update Conda Environment
       run: mamba env update -n my-env -f environment.yml
