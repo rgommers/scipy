@@ -93,8 +93,8 @@ cpp_args_pythran = [
 # when NumPy introduces a new deprecation. Use in a meson.build file::
 #
 #   py3.extension_module('_name',
-#     'source_fname',
-#     numpy_nodepr_api)
+#     'source_fname.c',
+#     c_args: numpy_nodepr_api)
 #
 numpy_nodepr_api = '-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'
 
@@ -118,8 +118,6 @@ generate_config = custom_target(
   install_dir: py3.get_install_dir() + '/scipy'
 )
 
-#FIXME: the git revision is Unknown; script works when invoked directly, but
-#       not when it's run by Ninja. See https://github.com/rgommers/scipy/pull/57
 generate_version = custom_target(
   'generate-version',
   install: true,
