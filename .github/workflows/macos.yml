@@ -83,8 +83,7 @@ jobs:
       id: envcache
 
     - name: Update Conda Environment
-      run: mamba env update -n my-env -f environment.yml
-      if: steps.envcache.outputs.cache-hit != 'true'
+      run: mamba env update -n scipy-dev -f environment.yml
 
     - name: Build and Install Scipy
       shell: bash -l {0}
