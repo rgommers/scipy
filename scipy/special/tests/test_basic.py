@@ -36,6 +36,7 @@ from scipy import special
 import scipy.special._ufuncs as cephes
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
+from scipy.special import mathieu_odd_coef, mathieu_even_coef
 
 from scipy.special._testutils import with_special_errors, \
      assert_func_equal, FuncData
