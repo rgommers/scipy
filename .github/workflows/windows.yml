@@ -37,7 +37,7 @@ jobs:
           gfortran --version
       - name: pip-packages
         run: |
-          pip install numpy cython pybind11 pythran meson ninja
+          pip install numpy==1.21.5 cython pybind11 pythran meson ninja
       - name: openblas-libs
         run: |
           # Download and install pre-built OpenBLAS library
