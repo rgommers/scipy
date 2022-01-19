@@ -13,7 +13,9 @@ project(
     'cpp_std=c++14',  # TODO: use c++11 if 14 is not available
     # TODO: the below -Wno flags are all needed to silence warnings in
     # f2py-generated code. This should be fixed in f2py itself.
-    'c_args=-Wno-unused-function -Wno-conversion -Wno-misleading-indentation -Wno-incompatible-pointer-types',
+    # The two -Wno-format ones are for mingw fprintf (%zd), see
+    # https://github.com/rgommers/scipy/issues/118
+    'c_args=-Wno-unused-function -Wno-conversion -Wno-misleading-indentation -Wno-incompatible-pointer-types -Wno-format-extra-args -Wno-format',
     'fortran_args=-Wno-conversion',
     'fortran_std=legacy',
   ],
