@@ -89,7 +89,7 @@ jobs:
       shell: bash -l {0}
       run: |
         conda activate scipy-dev
-        python -m pip install meson==0.60.3
+        python -m pip install meson==0.61.1
         CC="ccache $CC" python dev.py -j 2 --build-only
 
     - name: Test Scipy
