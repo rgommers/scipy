@@ -33,10 +33,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install Ccache
-      run: |
-        brew install ccache
-
     - name:  Prepare compiler cache
       id:    prep-ccache
       shell: bash -l {0}
@@ -90,7 +86,7 @@ jobs:
       run: |
         conda activate scipy-dev
         python -m pip install meson==0.61.1
-        CC="ccache $CC" python dev.py -j 2 --build-only
+        python dev.py -j 2 --build-only
 
     - name: Test Scipy
       shell: bash -l {0}
