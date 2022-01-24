@@ -307,28 +307,23 @@ use the classes to create a reusable function instead.
 
 """
 from . import _sigtools, windows
-from ._waveforms import *
 from ._max_len_seq import max_len_seq
-from ._upfirdn import upfirdn
+from ._multimethods import *
 
 from ._spline import (  # noqa: F401
     cspline2d,
     qspline2d,
-    sepfir2d,
     symiirorder1,
     symiirorder2,
 )
 
-from ._bsplines import *
+from ._backend import *
 from ._filter_design import *
 from ._fir_filter_design import *
 from ._ltisys import *
 from ._lti_conversion import *
-from ._signaltools import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter
-from ._spectral_py import *
 from ._wavelets import *
-from ._peak_finding import *
 from ._czt import *
 from .windows import get_window  # keep this one in signal namespace
 

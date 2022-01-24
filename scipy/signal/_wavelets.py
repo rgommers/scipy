@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.linalg import eig
 from scipy.special import comb
-from scipy.signal import convolve
+
 
 __all__ = ['daub', 'qmf', 'cascade', 'morlet', 'ricker', 'morlet2', 'cwt']
 
@@ -477,5 +477,6 @@ def cwt(data, wavelet, widths, dtype=None, **kwargs):
             if ceil != N:
                 N = int(N)
         wavelet_data = np.conj(wavelet(N, width, **kwargs)[::-1])
+        from ._multimethods import convolve
         output[ind] = convolve(data, wavelet_data, mode='same')
     return output

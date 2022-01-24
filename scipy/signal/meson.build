@@ -115,7 +115,9 @@ spline = py3.extension_module('_spline',
 
 py3.install_sources([
     '__init__.py',
+    '_api.py',
     '_arraytools.py',
+    '_backend.py',
     '_bsplines.py',
     '_czt.py',
     '_filter_design.py',
@@ -124,6 +126,7 @@ py3.install_sources([
     '_ltisys.py',
     '_max_len_seq.py',
     '_max_len_seq_inner.py',
+    '_multimethods.py',
     '_peak_finding.py',
     '_savitzky_golay.py',
     '_signaltools.py',

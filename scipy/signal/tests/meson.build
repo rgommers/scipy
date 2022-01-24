@@ -1,7 +1,9 @@
 py3.install_sources([
     '__init__.py',
+    'mock_backend.py',
     'mpsig.py',
     'test_array_tools.py',
+    'test_backend.py',
     'test_bsplines.py',
     'test_cont2discrete.py',
     'test_czt.py',
