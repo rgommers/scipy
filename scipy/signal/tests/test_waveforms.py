@@ -4,7 +4,7 @@ from numpy.testing import (assert_almost_equal, assert_equal,
 from pytest import raises as assert_raises
 
 import scipy.signal._waveforms as waveforms
-import scipy.signal._multimethods as _multimethods
+from scipy.signal import chirp, gausspulse, unit_impulse
 
 
 # These chirp_* functions are the instantaneous frequencies of the signals
@@ -48,7 +48,7 @@ def compute_frequency(t, theta):
 class TestChirp:
 
     def test_linear_at_zero(self):
-        w = _multimethods.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='linear')
+        w = chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='linear')
         assert_almost_equal(w, 1.0)
 
     def test_linear_freq_01(self):
@@ -74,11 +74,11 @@ class TestChirp:
         assert_(abserr < 1e-6)
 
     def test_quadratic_at_zero(self):
-        w = _multimethods.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='quadratic')
+        w = chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='quadratic')
         assert_almost_equal(w, 1.0)
 
     def test_quadratic_at_zero2(self):
-        w = _multimethods.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='quadratic',
+        w = chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='quadratic',
                             vertex_zero=False)
         assert_almost_equal(w, 1.0)
 
@@ -105,7 +105,7 @@ class TestChirp:
         assert_(abserr < 1e-6)
 
     def test_logarithmic_at_zero(self):
-        w = _multimethods.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='logarithmic')
+        w = chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='logarithmic')
         assert_almost_equal(w, 1.0)
 
     def test_logarithmic_freq_01(self):
@@ -142,7 +142,7 @@ class TestChirp:
         assert_(abserr < 1e-6)
 
     def test_hyperbolic_at_zero(self):
-        w = _multimethods.chirp(t=0, f0=10.0, f1=1.0, t1=1.0, method='hyperbolic')
+        w = chirp(t=0, f0=10.0, f1=1.0, t1=1.0, method='hyperbolic')
         assert_almost_equal(w, 1.0)
 
     def test_hyperbolic_freq_01(self):
@@ -165,8 +165,8 @@ class TestChirp:
         method = 'hyperbolic'
         t1 = 1.0
         t = np.linspace(0, t1, 5)
-        assert_raises(ValueError, _multimethods.chirp, t, 0, t1, 1, method)
-        assert_raises(ValueError, _multimethods.chirp, t, 1, t1, 0, method)
+        assert_raises(ValueError, chirp, t, 0, t1, 1, method)
+        assert_raises(ValueError, chirp, t, 1, t1, 0, method)
 
     def test_unknown_method(self):
         method = "foo"
@@ -174,16 +174,16 @@ class TestChirp:
         f1 = 20.0
         t1 = 1.0
         t = np.linspace(0, t1, 10)
-        assert_raises(ValueError, _multimethods.chirp, t, f0, t1, f1, method)
+        assert_raises(ValueError, chirp, t, f0, t1, f1, method)
 
     def test_integer_t1(self):
         f0 = 10.0
         f1 = 20.0
         t = np.linspace(-1, 1, 11)
         t1 = 3.0
-        float_result = _multimethods.chirp(t, f0, t1, f1)
+        float_result = chirp(t, f0, t1, f1)
         t1 = 3
-        int_result = _multimethods.chirp(t, f0, t1, f1)
+        int_result = chirp(t, f0, t1, f1)
         err_msg = "Integer input 't1=3' gives wrong result"
         assert_equal(int_result, float_result, err_msg=err_msg)
 
@@ -192,9 +192,9 @@ class TestChirp:
         t1 = 3.0
         t = np.linspace(-1, 1, 11)
         f0 = 10.0
-        float_result = _multimethods.chirp(t, f0, t1, f1)
+        float_result = chirp(t, f0, t1, f1)
         f0 = 10
-        int_result = _multimethods.chirp(t, f0, t1, f1)
+        int_result = chirp(t, f0, t1, f1)
         err_msg = "Integer input 'f0=10' gives wrong result"
         assert_equal(int_result, float_result, err_msg=err_msg)
 
@@ -203,9 +203,9 @@ class TestChirp:
         t1 = 3.0
         t = np.linspace(-1, 1, 11)
         f1 = 20.0
-        float_result = _multimethods.chirp(t, f0, t1, f1)
+        float_result = chirp(t, f0, t1, f1)
         f1 = 20
-        int_result = _multimethods.chirp(t, f0, t1, f1)
+        int_result = chirp(t, f0, t1, f1)
         err_msg = "Integer input 'f1=20' gives wrong result"
         assert_equal(int_result, float_result, err_msg=err_msg)
 
@@ -214,8 +214,8 @@ class TestChirp:
         t1 = 3
         f1 = 20
         t = np.linspace(-1, 1, 11)
-        float_result = _multimethods.chirp(t, float(f0), float(t1), float(f1))
-        int_result = _multimethods.chirp(t, f0, t1, f1)
+        float_result = chirp(t, float(f0), float(t1), float(f1))
+        int_result = chirp(t, f0, t1, f1)
         err_msg = "Integer input 'f0=10, t1=3, f1=20' gives wrong result"
         assert_equal(int_result, float_result, err_msg=err_msg)
 
@@ -291,26 +291,26 @@ class TestSweepPoly:
 class TestGaussPulse:
 
     def test_integer_fc(self):
-        float_result = _multimethods.gausspulse('cutoff', fc=1000.0)
-        int_result = _multimethods.gausspulse('cutoff', fc=1000)
+        float_result = gausspulse('cutoff', fc=1000.0)
+        int_result = gausspulse('cutoff', fc=1000)
         err_msg = "Integer input 'fc=1000' gives wrong result"
         assert_equal(int_result, float_result, err_msg=err_msg)
 
     def test_integer_bw(self):
-        float_result = _multimethods.gausspulse('cutoff', bw=1.0)
-        int_result = _multimethods.gausspulse('cutoff', bw=1)
+        float_result = gausspulse('cutoff', bw=1.0)
+        int_result = gausspulse('cutoff', bw=1)
         err_msg = "Integer input 'bw=1' gives wrong result"
         assert_equal(int_result, float_result, err_msg=err_msg)
 
     def test_integer_bwr(self):
-        float_result = _multimethods.gausspulse('cutoff', bwr=-6.0)
-        int_result = _multimethods.gausspulse('cutoff', bwr=-6)
+        float_result = gausspulse('cutoff', bwr=-6.0)
+        int_result = gausspulse('cutoff', bwr=-6)
         err_msg = "Integer input 'bwr=-6' gives wrong result"
         assert_equal(int_result, float_result, err_msg=err_msg)
 
     def test_integer_tpr(self):
-        float_result = _multimethods.gausspulse('cutoff', tpr=-60.0)
-        int_result = _multimethods.gausspulse('cutoff', tpr=-60)
+        float_result = gausspulse('cutoff', tpr=-60.0)
+        int_result = gausspulse('cutoff', tpr=-60)
         err_msg = "Integer input 'tpr=-60' gives wrong result"
         assert_equal(int_result, float_result, err_msg=err_msg)
 
@@ -318,35 +318,35 @@ class TestGaussPulse:
 class TestUnitImpulse:
 
     def test_no_index(self):
-        assert_array_equal(_multimethods.unit_impulse(7), [1, 0, 0, 0, 0, 0, 0])
-        assert_array_equal(_multimethods.unit_impulse((3, 3)),
+        assert_array_equal(unit_impulse(7), [1, 0, 0, 0, 0, 0, 0])
+        assert_array_equal(unit_impulse((3, 3)),
                            [[1, 0, 0], [0, 0, 0], [0, 0, 0]])
 
     def test_index(self):
-        assert_array_equal(_multimethods.unit_impulse(10, 3),
+        assert_array_equal(unit_impulse(10, 3),
                            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0])
-        assert_array_equal(_multimethods.unit_impulse((3, 3), (1, 1)),
+        assert_array_equal(unit_impulse((3, 3), (1, 1)),
                            [[0, 0, 0], [0, 1, 0], [0, 0, 0]])
 
         # Broadcasting
-        imp = _multimethods.unit_impulse((4, 4), 2)
+        imp = unit_impulse((4, 4), 2)
         assert_array_equal(imp, np.array([[0, 0, 0, 0],
                                           [0, 0, 0, 0],
                                           [0, 0, 1, 0],
                                           [0, 0, 0, 0]]))
 
     def test_mid(self):
-        assert_array_equal(_multimethods.unit_impulse((3, 3), 'mid'),
+        assert_array_equal(unit_impulse((3, 3), 'mid'),
                            [[0, 0, 0], [0, 1, 0], [0, 0, 0]])
-        assert_array_equal(_multimethods.unit_impulse(9, 'mid'),
+        assert_array_equal(unit_impulse(9, 'mid'),
                            [0, 0, 0, 0, 1, 0, 0, 0, 0])
 
     def test_dtype(self):
-        imp = _multimethods.unit_impulse(7)
+        imp = unit_impulse(7)
         assert_(np.issubdtype(imp.dtype, np.floating))
 
-        imp = _multimethods.unit_impulse(5, 3, dtype=int)
+        imp = unit_impulse(5, 3, dtype=int)
         assert_(np.issubdtype(imp.dtype, np.integer))
 
-        imp = _multimethods.unit_impulse((5, 2), (3, 1), dtype=complex)
+        imp = unit_impulse((5, 2), (3, 1), dtype=complex)
         assert_(np.issubdtype(imp.dtype, np.complexfloating))
