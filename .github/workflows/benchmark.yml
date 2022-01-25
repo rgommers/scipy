@@ -1,0 +1,121 @@
+name: Benchmark CI
+
+on:
+  pull_request:
+    branches:
+      - meson
+      - master
+    # types: [labeled]
+
+  # workflow_dispatch:
+
+env:
+  CCACHE_DIR: "${{ github.workspace }}/.ccache"
+  INSTALLDIR: "installdir"
+
+jobs:
+  benchmark:
+    name: Benchmark
+    # if: ${{ github.event.label.name == 'run_benchmark' && github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9]
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Ubuntu dependencies
+      run: |
+        # NOTE: not the same OpenBLAS version as in upstream CI (I'm being lazy here)
+        sudo apt-get update
+        sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+    - name: Caching Python dependencies
+      uses: actions/cache@v2
+      id: cache
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip
+
+    - name: Install Python packages
+      run: |
+        python -m pip install numpy setuptools wheel cython asv pytest pytest-xdist pybind11 pytest-xdist mpmath gmpy2 pythran ninja
+        python -m pip install git+https://github.com/mesonbuild/meson.git@master
+
+    - name:  Prepare compiler cache
+      id:    prep-ccache
+      shell: bash
+      run: |
+        mkdir -p "${CCACHE_DIR}"
+        echo "::set-output name=dir::$CCACHE_DIR"
+        NOW=$(date -u +"%F-%T")
+        echo "::set-output name=timestamp::${NOW}"
+
+    - name: Setup compiler cache
+      uses:  actions/cache@v2
+      id:    cache-ccache
+      # Reference: https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#matching-a-cache-key
+      # NOTE: The caching strategy is modeled in a way that it will always have a unique cache key for each workflow run
+      # (even if the same workflow is run multiple times). The restore keys are not unique and for a partial match, they will
+      # return the most recently created cache entry, according to the GitHub Action Docs.
+      with:
+        path: ${{ steps.prep-ccache.outputs.dir }}
+        # Restores ccache from either a previous build on this branch or on master
+        key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
+        # This evaluates to `Benchmark CI-3.9-ccache-linux-` which is not unique. As the CI matrix is expanded, this will
+        # need to be updated to be unique so that the cache is not restored from a different job altogether.
+        restore-keys: |
+          ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-
+
+    - name: Setup build and install scipy
+      run: |
+        python dev.py -j 2 --build-only --werror
+
+    - name: Ccache performance
+      shell: bash -l {0}
+      run: ccache -s
+
+    - name: Run Benchmarks
+      id: benchmark
+      shell: bash -l {0}
+      env:
+        ASV_FACTOR: 1.5
+      run: |
+        export PYTHONPATH="$PWD/installdir/lib/python3.9/site-packages/"
+        pushd benchmarks
+
+        set -x
+        asv machine --yes
+        echo "Baseline:  ${{ github.event.pull_request.base.sha }} (${{ github.event.pull_request.base.label }})"
+        echo "Contender: ${GITHUB_SHA} (${{ github.event.pull_request.head.label }})"
+
+        ASV_OPTIONS="--split --show-stderr --factor $ASV_FACTOR"
+        git fetch origin meson
+
+        asv continuous $ASV_OPTIONS ${{ github.event.pull_request.base.sha }} ${GITHUB_SHA} \
+            | sed "/Traceback \|failed$\|PERFORMANCE DECREASED/ s/^/::error::/" \
+            | tee benchmarks.log
+
+        asv publish
+
+        if grep "Traceback \|failed\|PERFORMANCE DECREASED" benchmarks.log > /dev/null ; then
+            exit 1
+        fi
+
+    - uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: asv-benchmark-logs-${{ runner.os }}
+        # Uploads the asv benchmark logs, results and generated HTML files to the GitHub Actions artifacts
+        path: |
+          benchmarks/benchmarks.log
+          benchmarks/results
+          benchmarks/html
+          benchmarks/asv.conf.json
