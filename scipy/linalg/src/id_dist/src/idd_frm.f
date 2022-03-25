@@ -182,7 +182,8 @@ c
 c       _N.B._: n must be even.
 c
         implicit none
-        integer l,n,ind(l),ind2(l),marker(n/2),l2,k
+        integer l,n,ind2(l),marker(n/2),l2,k
+        real*8 ind(l)
 c
 c
 c       Unmark all pairs.
@@ -233,8 +234,8 @@ c       output:
 c       y -- permutation of x
 c
         implicit none
-        integer n,ind(n),k
-        real*8 x(n),y(n)
+        integer n,k
+        real*8 x(n),y(n),ind(n)
 c
 c
         do k = 1,n
@@ -262,8 +263,8 @@ c       output:
 c       y -- collection of entries of x specified by ind
 c
         implicit none
-        integer n,ind(n),m,k
-        real*8 x(m),y(n)
+        integer n,m,k
+        real*8 x(m),y(n),ind(n)
 c
 c
         do k = 1,n
@@ -480,7 +481,8 @@ c       output:
 c       ib -- copy of ia
 c
         implicit none
-        integer n,ia(n),ib(n),k
+        integer n,ib(n),k
+        real*8 ia(n)
 c
 c
         do k = 1,n
