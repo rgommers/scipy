@@ -315,8 +315,8 @@ c       output:
 c       a -- rearranged matrix
 c
         implicit none
-        integer k,krank,m,n,j,ind(krank)
-        real*8 rswap,a(m,n)
+        integer k,krank,m,n,j
+        real*8 rswap,a(m,n),ind(krank)
 c
 c
         do k = krank,1,-1

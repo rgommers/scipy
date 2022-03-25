@@ -100,9 +100,9 @@ c
         implicit none
 c
         character*1 jobz
-        integer m,n,krank,list(n),ind(n),indt(m),iftranspose,
+        integer m,n,krank,list(n),indt(m),iftranspose,
      1          lwork,ldu,ldvt,ldr,info,j,k,ier
-        real*8 b(m,krank),proj(krank,n-krank),p(krank,n),
+        real*8 b(m,krank),proj(krank,n-krank),p(krank,n),ind(n),
      1         r(krank,n),r2(krank,m),t(n,krank),r3(krank,krank),
      2         u(m,krank),v(n,krank),s(krank),work(25*krank**2)
 c
