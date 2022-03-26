@@ -182,8 +182,8 @@ c
 c       _N.B._: n must be even.
 c
         implicit none
-        integer l,n,ind2(l),marker(n/2),l2,k
-        real*8 ind(l)
+        integer l,n,marker(n/2),l2,k
+        real*8 ind(l),ind2(l)
 c
 c
 c       Unmark all pairs.
@@ -481,8 +481,8 @@ c       output:
 c       ib -- copy of ia
 c
         implicit none
-        integer n,ib(n),k
-        real*8 ia(n)
+        integer n,k
+        real*8 ia(n), ib(n)
 c
 c
         do k = 1,n

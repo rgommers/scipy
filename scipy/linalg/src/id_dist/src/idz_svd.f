@@ -310,8 +310,7 @@ c       output:
 c       b -- complex*16 copy of a
 c
         integer n,k
-        real*8 a(n)
-        complex*16 b(n)
+        complex*16 b(n),a(n)
 c
 c
         do k = 1,n
@@ -344,8 +343,8 @@ c       output:
 c       a -- rearranged matrix
 c
         implicit none
-        integer k,krank,m,n,j,ind(krank)
-        complex*16 cswap,a(m,n)
+        integer k,krank,m,n,j
+        complex*16 cswap,a(m,n),ind(krank)
 c
 c
         do k = krank,1,-1

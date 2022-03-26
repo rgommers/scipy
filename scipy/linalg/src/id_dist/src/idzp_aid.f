@@ -122,8 +122,8 @@ c       _N.B._: proj must be at least m*n complex*16 elements long
 c
         implicit none
         integer m,n,krank,list(n),j,k
-        real*8 eps,rnorms(n)
-        complex*16 a(m,n),proj(m,n)
+        real*8 eps
+        complex*16 a(m,n),proj(m,n),rnorms(n)
 c
 c
 c       Copy a into proj.
@@ -170,8 +170,8 @@ c       rnorms -- must be at least n real*8 elements long
 c
         implicit none
         integer n,n2,kranki,krank,list(n),j,k
-        real*8 eps,rnorms(n)
-        complex*16 proj(n2*n)
+        real*8 eps
+        complex*16 proj(n2*n),rnorms(n)
 c
 c
 c       Move the uppermost kranki x n block of the n2 x n matrix proj
@@ -278,8 +278,8 @@ c       for further documentation.)
 c
         implicit none
         integer m,n,n2,krank,ifrescal,k,nulls,j
-        real*8 eps,scal(n2+1),ss,ssmax
-        complex*16 a(m,n),ra(n2,n),residual,w(17*m+70),rat(n,n2+1)
+        real*8 eps,ss,ssmax
+        complex*16 a(m,n),ra(n2,n),residual,w(17*m+70),rat(n,n2+1),scal(n2+1)
 c
 c
 c       Apply the random matrix to every column of a, obtaining ra.
