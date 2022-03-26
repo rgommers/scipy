@@ -125,8 +125,8 @@ c       for further documentation).
 c
         implicit none
         integer m,n,krank,ier,k
-        real*8 p1t,p2t,p3t,p4t,p1,p2,p3,p4,u(m,krank),v(n,krank),list(n),
-     1         s(krank),proj(krank*(n-krank)),col(m*krank),
+        real*8 p1t,p2t,p3t,p4t,p1,p2,p3,p4,u(m,krank),v(n,krank),
+     1         s(krank),proj(krank*(n-krank)),col(m*krank),list(n),
      2         work((krank+1)*(m+3*n)+26*krank**2)
         external matvect,matvec
 c

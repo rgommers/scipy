@@ -343,8 +343,8 @@ c       output:
 c       a -- rearranged matrix
 c
         implicit none
-        integer k,krank,m,n,j
-        complex*16 cswap,a(m,n),ind(krank)
+        integer k,krank,m,n,j,ind(krank)
+        complex*16 cswap,a(m,n)
 c
 c
         do k = krank,1,-1

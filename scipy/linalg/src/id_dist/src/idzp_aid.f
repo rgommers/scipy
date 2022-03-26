@@ -279,7 +279,8 @@ c
         implicit none
         integer m,n,n2,krank,ifrescal,k,nulls,j
         real*8 eps,ss,ssmax
-        complex*16 a(m,n),ra(n2,n),residual,w(17*m+70),rat(n,n2+1),scal(n2+1)
+        complex*16 a(m,n),ra(n2,n),residual,w(17*m+70),rat(n,n2+1),
+     1             scal(n2+1)
 c
 c
 c       Apply the random matrix to every column of a, obtaining ra.
