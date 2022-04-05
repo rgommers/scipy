@@ -151,6 +151,25 @@ For running the Linux Meson CI job locally, one can use the ``act`` tool, see
 :ref:`using-act`.
 
 
+Build with Meson Optimizations
+==============================
+
+Meson provides different optimizations levels while configuring the project. You can see
+the available options for optimizations at
+`meson documentation <https://mesonbuild.com/Builtin-options.html#core-options>`.
+
+Assuming that you are building from scratch(do ``git clean -xdf`` if needed), you can
+configure the build as following::
+
+    meson setup build --optimization g --prefix=$PWD/build-install
+
+Now, you can use the ``dev.py`` interface for further building, installing and testing SciPy::
+
+    python dev.py -s linalg
+
+This will work because after initial configuration, Meson will remember the config options.
+
+
 Frequently asked questions
 ==========================
 
@@ -242,4 +261,3 @@ added/documented in follow-up PRs over the next few weeks to months.
    ``python -m build`` is going to become the standard way of doing this.
 5. ``pip install .`` - this will work unchanged after switching the default in
    ``pyproject.toml`` to Meson.
-
