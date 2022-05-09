@@ -1465,6 +1465,7 @@ class TestPareto:
     @pytest.mark.parametrize("rvs_shape", [1, 2])
     @pytest.mark.parametrize("rvs_loc", [0, 2])
     @pytest.mark.parametrize("rvs_scale", [1, 5])
+    @np.errstate(invalid="ignore")
     def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale):
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
                                 loc=rvs_loc)
