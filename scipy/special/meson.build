@@ -370,7 +370,6 @@ py3.extension_module('_ufuncs',
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
   dependencies: [
     lapack,
-    npymath_lib,
     cython_tree
   ],
   link_with: [
@@ -378,6 +377,7 @@ py3.extension_module('_ufuncs',
     cdflib_lib,
     cephes_lib,
     mach_lib,
+    npymath_lib,
     specfun_lib
   ],
   install: true,
@@ -408,7 +408,8 @@ py3.extension_module('_ufuncs_cxx',
     ],
   cpp_args: [cython_c_args, use_math_defines],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies: [npymath_lib, ellint_dep],
+  dependencies: [ellint_dep],
+  link_with: npymath_lib,
   install: true,
   subdir: 'scipy/special'
 )
@@ -433,12 +434,13 @@ py3.extension_module('cython_special',
   ],
   c_args: [cython_c_args, use_math_defines, c_undefined_ok],
   include_directories: [inc_np, '../_lib', '../_build_utils/src', 'cephes'],
-  dependencies: [npymath_lib, lapack],
+  dependencies: [lapack],
   link_with: [
     amos_lib,
     cdflib_lib,
     cephes_lib,
     mach_lib,
+    npymath_lib,
     specfun_lib
   ],
   install: true,
@@ -455,7 +457,7 @@ py3.extension_module('_comb',
 py3.extension_module('_test_round',
   cython_gen.process('_test_round.pyx'),
   include_directories: [inc_np, 'cephes', '../_lib', '../_build_utils/src'],
-  dependencies: [npymath_lib],
+  link_with: [npymath_lib],
   install: true,
   subdir: 'scipy/special'
 )
