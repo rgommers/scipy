@@ -125,4 +125,5 @@ py3.install_sources(
 )
 
 subdir('_uarray')
+subdir('npymath')
 subdir('tests')
