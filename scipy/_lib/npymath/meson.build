@@ -9,4 +9,9 @@ npymath_sources = [
 
 # TODO: should this use `/GL-` on Windows? See lib_opts_if_msvc in
 #       numpy.distutils
-npymath_lib = static_library('npymath', npymath_sources)
+npymath_lib = static_library('npymath',
+  npymath_sources,
+  c_args: numpy_nodepr_api,
+  dependencies: py3_dep,
+  include_directories: inc_np,
+)
