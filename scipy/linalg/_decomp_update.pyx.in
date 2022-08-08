@@ -43,11 +43,11 @@ PREFIX = ['s', 'd', 'c', 'z']
 
 }}
 
+from libc.math cimport sqrt, fabs, hypot, M_SQRT1_2
 cimport cython
 cimport libc.stdlib
 cimport libc.limits
 cimport libc.float
-from libc.math cimport sqrt, fabs, hypot, M_SQRT1_2
 from libc.string cimport memset
 
 cimport numpy as cnp
