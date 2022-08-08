@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - ci-windows-c99compat
       - maintenance/**
   pull_request:
     branches:
@@ -19,7 +20,7 @@ jobs:
     name: Meson Windows tests
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: "github.repository == 'rgommers/scipy' || github.repository == ''"
     runs-on: windows-2019
     steps:
       - name: Checkout
