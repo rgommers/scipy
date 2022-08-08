@@ -274,12 +274,6 @@ ufuncs_cxx_sources = [
 ]
 
 
-if is_windows
-  use_math_defines = ['-D_USE_MATH_DEFINES']
-else
-  use_math_defines = []
-endif
-
 cephes_lib = static_library('cephes',
   cephes_sources,
   c_args: use_math_defines,

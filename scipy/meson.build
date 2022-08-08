@@ -231,6 +231,13 @@ c_undefined_ok = ['-Wno-maybe-uninitialized']
 cython_c_args += ['-Wno-cpp']
 cython_cpp_args = cython_c_args
 
+# Deal with M_PI & friends; add `use_math_defines` to c_args or cpp_args
+if is_windows
+  use_math_defines = ['-D_USE_MATH_DEFINES']
+else
+  use_math_defines = []
+endif
+
 # Ordering of subdirs: special and linalg come first, because other submodules
 # have dependencies on cython_special.pxd and cython_linalg.pxd. After those,
 # subdirs with the most heavy builds should come first (that parallelizes

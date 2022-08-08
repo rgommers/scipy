@@ -237,7 +237,7 @@ _decomp_update_pyx = custom_target('_decomp_update',
 
 py3.extension_module('_decomp_update',
   linalg_cython_gen.process(_decomp_update_pyx),
-  c_args: cython_c_args,
+  c_args: [cython_c_args, use_math_defines],
   include_directories: inc_np,
   install: true,
   subdir: 'scipy/linalg'
