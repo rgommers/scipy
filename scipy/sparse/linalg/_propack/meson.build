@@ -86,7 +86,8 @@ elements = [
 ]
 
 foreach ele: elements
-  propack_lib = static_library('lib_' + ele[0], ele[1],
+  propack_lib = static_library('lib_' + ele[0],
+    [ele[1], g77_abi_wrappers],
     c_args: ['_OPENMP'],
     fortran_args: [
       fortran_ignore_warnings, 
