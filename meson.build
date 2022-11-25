@@ -134,4 +134,12 @@ if use_pythran
   pythran = find_program('pythran')
 endif
 
+# Use `numpy` as a subproject to build libnpymath.a
+# FIXME: we need `npy_math.h` from the subproject, but other headers from the
+#        installed numpy (which also has npy_math.h). How do we ensure to pick
+#        up the right ones?
+numpy_subproj = subproject('numpy')
+npymath_lib = numpy_subproj.get_variable('npymath_dep')
+
+
 subdir('scipy')
