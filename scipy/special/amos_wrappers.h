@@ -10,7 +10,7 @@
 #include "Python.h"
 #include "sf_error.h"
 
-#include <numpy/npy_math.h>
+#include <numpy/npy_math_static.h>
 
 #define DO_SFERR(name, varp)                          \
     do {                                              \

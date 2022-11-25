@@ -10,7 +10,7 @@
 #ifndef _SPEC_WRAPPERS_H
 #define _SPEC_WRAPPERS_H
 #include "Python.h"
-#include <numpy/npy_math.h>
+#include <numpy/npy_math_static.h>
 #include <math.h>
 
 #include "sf_error.h"
