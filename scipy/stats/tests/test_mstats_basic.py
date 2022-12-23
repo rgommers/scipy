@@ -1077,8 +1077,9 @@ class TestNormalitytests():
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes, ma=True)
 
-    def regression_test_9033(self):
-        # x cleary non-normal but power of negtative denom needs
+    def test_kurtosistest_negdenom(self):
+        # regression test for gh-9033
+        # x is clearly non-normal, but power of negative denominator needs
         # to be handled correctly to reject normality
         counts = [128, 0, 58, 7, 0, 41, 16, 0, 0, 167]
         x = np.hstack([np.full(c, i) for i, c in enumerate(counts)])
