@@ -22,7 +22,7 @@ jobs:
     name: Meson Windows tests
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: "github.repository == 'rgommers/scipy' || github.repository == ''"
     runs-on: windows-2019
     steps:
       - name: Checkout
@@ -46,7 +46,8 @@ jobs:
           gfortran --version
       - name: pip-packages
         run: |
-          pip install numpy==1.22.2 cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch
+          pip install numpy==1.22.2 cython pybind11 meson ninja pytest pytest-xdist pytest-timeout pooch
+          pip install git+https://github.com/serge-sans-paille/pythran.git@feature/0.12.1
       - name: openblas-libs
         run: |
           # Download and install pre-built OpenBLAS library
