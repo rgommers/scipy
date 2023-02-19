@@ -86,7 +86,7 @@ py3.extension_module('_zeros',
   'zeros.c',
   link_with: rootfind_lib,
   c_args: numpy_nodepr_api,
-  include_directories: inc_np,
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
@@ -222,7 +222,7 @@ else
   _group_columns = py3.extension_module('_group_columns',
     cython_gen.process('_group_columns.pyx'),
     c_args: cython_c_args,
-    include_directories: [inc_np],
+    dependencies: np_dep,
     link_args: version_link_args,
     install: true,
     subdir: 'scipy/optimize'

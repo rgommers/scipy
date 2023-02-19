@@ -40,12 +40,24 @@ thread_dep = dependency('threads', required: false)
 incdir_numpy = run_command(py3,
   [
     '-c',
-    'import os; os.chdir(".."); import numpy; print(numpy.get_include())'
+    'import os; os.chdir(os.path.join("..", "tools")); import numpy; print(numpy.get_include())'
   ],
   check: true
 ).stdout().strip()
 
 inc_np = include_directories(incdir_numpy)
+
+# The chdir is needed because within numpy there's an `import signal`
+# statement, and we don't want that to pick up scipy's signal module rather
+# than the stdlib module.
+incdir_numpy_rel = run_command(py3,
+  [
+    '-c',
+    'import os; os.chdir(os.path.join("..", "tools")); import numpy; print(os.path.relpath(numpy.get_include()))'
+  ],
+  check: true
+).stdout().strip()
+np_dep = declare_dependency(include_directories: incdir_numpy_rel)
 
 incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
 inc_f2py = include_directories(incdir_f2py)
