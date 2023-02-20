@@ -172,7 +172,8 @@ if use_pythran
   _stats_pythran = py3.extension_module('_stats_pythran',
     _stats_pythran_cpp,
     cpp_args: cpp_args_pythran,
-    include_directories: [incdir_pythran, incdir_numpy],
+    include_directories: [incdir_pythran],
+    dependencies: np_dep,
     link_args: version_link_args,
     install: true,
     subdir: 'scipy/stats'

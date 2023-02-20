@@ -37,20 +37,15 @@ endif
 thread_dep = dependency('threads', required: false)
 
 # NumPy include directory - needed in all submodules
-incdir_numpy = run_command(py3,
-  [
-    '-c',
-    'import os; os.chdir(os.path.join("..", "tools")); import numpy; print(numpy.get_include())'
-  ],
-  check: true
-).stdout().strip()
-
-inc_np = include_directories(incdir_numpy)
-
 # The chdir is needed because within numpy there's an `import signal`
 # statement, and we don't want that to pick up scipy's signal module rather
-# than the stdlib module.
-incdir_numpy_rel = run_command(py3,
+# than the stdlib module. The try-except is needed because when things are
+# split across drives on Windows, there is no relative path and an exception
+# gets raised. There may be other such cases, so add a catch-all and switch to
+# an absolute path. Relative paths are needed when for example a virtualenv is
+# placed inside the source tree; Meson rejects absolute paths to places inside
+# the source tree.
+incdir_numpy = run_command(py3,
   [
     '-c',
     '''import os
@@ -65,18 +60,24 @@ print(incdir)
   ],
   check: true
 ).stdout().strip()
-np_dep = declare_dependency(include_directories: incdir_numpy_rel)
+inc_np = include_directories(incdir_numpy)
+np_dep = declare_dependency(include_directories: inc_np)
 
 incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
 inc_f2py = include_directories(incdir_f2py)
 fortranobject_c = incdir_f2py / 'fortranobject.c'
 
+# We do need an absolute path to feed to `cc.find_library` below
+_incdir_numpy_abs = run_command(py3,
+  ['-c', 'import os; os.chdir(".."); import numpy; print(numpy.get_include())'],
+  check: true
+).stdout().strip()
+
 cc = meson.get_compiler('c')
-npymath_path = incdir_numpy / '..' / 'lib'
+npymath_path = _incdir_numpy_abs / '..' / 'lib'
+npyrandom_path = _incdir_numpy_abs / '..' / '..' / 'random' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
-npyrandom_path = incdir_numpy / '..' / '..' / 'random' / 'lib'
-# Note: `required: false` can be removed once numpy 1.19 is the minimum version
-npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path, required: false)
+npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path)
 
 # pybind11 include directory - needed in several submodules
 incdir_pybind11 = run_command(py3,
