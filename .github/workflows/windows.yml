@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - maintenance/**
+      - dbg
   pull_request:
     branches:
       - main
@@ -22,7 +23,7 @@ jobs:
     name: Meson Windows tests
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: "github.repository == 'rgommers/scipy' || github.repository == ''"
     runs-on: windows-2019
     steps:
       - name: Checkout
@@ -60,6 +61,7 @@ jobs:
       - name: meson-configure
         run: |
           meson setup build --prefix=$PWD\build
+          python -c "import os; f = open(os.path.join('build', 'meson-logs', 'meson-log.txt')); print(f.read())"
       - name: meson-build
         run: |
           ninja -j 2 -C build
