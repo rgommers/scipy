@@ -156,6 +156,7 @@ jobs:
         python -m pip install . -vv --no-build-isolation
         
         # Basic tests
+        cd ..
         python -c "import scipy"
         python -c "import scipy.linalg"
         python -c "from scipy import cluster; cluster.test()"
