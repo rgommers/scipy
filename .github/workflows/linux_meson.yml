@@ -151,7 +151,7 @@ jobs:
         python -m venv .venv
         source .venv/bin/activate
         # Install build dependencies
-        python -m pip install numpy pybind11 pythran cython meson-python wheel pytest
+        python -m pip install numpy pybind11 pythran cython meson-python wheel pytest ninja
         # Non-isolated build, so we use dependencies installed inside the source tree
         python -m pip install . -vv --no-build-isolation
         
