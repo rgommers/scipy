@@ -9,6 +9,7 @@ on:
     branches:
       - main
       - maintenance/**
+      - dbg2
   pull_request:
     branches:
       - main
@@ -127,7 +128,7 @@ jobs:
 
   test_venv_install:
     name: Pip install into venv
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: "github.repository == 'rgommers/scipy' || github.repository == ''"
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
