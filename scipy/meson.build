@@ -106,7 +106,7 @@ if use_pythran
 os.chdir(os.path.join("..", "tools"))
 import pythran
 try:
-  incdir = relpath(pythran.get_include())
+  incdir = os.path.relpath(pythran.get_include())
 except Exception:
   incdir = pythran.get_include()
 print(incdir)
