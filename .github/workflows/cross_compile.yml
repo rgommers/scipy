@@ -1,0 +1,56 @@
+name: Cross-only compilation environment
+
+concurrency:
+  group: nonative-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - ci-cross
+
+permissions:
+  contents: read
+
+jobs:
+  cross_conda_aarch64:
+    name: Cross x86-64 to aarch64
+    if: "github.repository == 'rgommers/scipy' || github.repository == ''"
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Setup Conda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        channels: conda-forge
+        channel-priority: true
+        use-only-tar-bz2: false
+        miniforge-variant: Mambaforge
+        miniforge-version: latest
+        use-mamba: true
+        auto-activate-base: true
+        activate-environment: ""
+
+    # TODO: add caching for conda env (see macos_meson.yml)
+
+    - name: Set up x86-64 build env (native)
+      run: |
+        mamba create -n build-env gxx_linux-aarch64 gfortran_linux-aarch64 python=3.11 meson-python build numpy pythran cython pkg-config
+
+    - name: Set up aarch64 host env (cross)
+      run: |
+        CONDA_SUBDIR=linux-aarch64 mamba create -n host-env python numpy openblas libstdcxx-ng libgfortran-ng pybind11
+
+    - name: Cross-compile SciPy
+      run: |
+        conda activate build-env
+        echo $CONDA
+        # `-wnx` means: `--wheel --no-isolation --skip-dependency-check`
+        python -m build -wnx -Csetup-args=--cross-file=$PWD/ci/cross_aarch64.ini
