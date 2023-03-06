@@ -53,4 +53,9 @@ jobs:
         conda activate build-env
         echo $CONDA
         # `-wnx` means: `--wheel --no-isolation --skip-dependency-check`
-        python -m build -wnx -Csetup-args=--cross-file=$PWD/ci/cross_aarch64.ini
+        python -m build -wnx -Cbuilddir=build -Csetup-args=--cross-file=$PWD/ci/cross_aarch64.ini
+
+    - name: (debug) echo meson-log.txt
+      if: success() || failure()
+      run: |
+        cat build/meson-logs/meson-log.txt
