@@ -68,9 +68,10 @@ jobs:
         # Perhaps you should add the directory containing `openblas.pc'
         # to the PKG_CONFIG_PATH environment variable
         # No package 'openblas' found
-        pkg-config --variable pc_path pkg-config
+        # NOTE: the sys_root and pkg_config_libdir in the cross file (as per
+        #       the Meson docs) are ineffective, both in CI and locally.
+        #       In addition, using `sys_root` breaks including Python.h
         export PKG_CONFIG_PATH=/usr/share/miniconda3/envs/host-env/lib/pkgconfig
-        pkg-config --variable pc_path pkg-config
 
         # `-wnx` means: `--wheel --no-isolation --skip-dependency-check`
         python -m build -wnx -Cbuilddir=build -Csetup-args=--cross-file=$PWD/ci/cross_aarch64.ini
