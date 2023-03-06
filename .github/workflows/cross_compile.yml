@@ -76,6 +76,15 @@ jobs:
         # `-wnx` means: `--wheel --no-isolation --skip-dependency-check`
         python -m build -wnx -Cbuilddir=build -Csetup-args=--cross-file=$PWD/ci/cross_aarch64.ini
 
+        # meson-python doesn't yet know about cross builds, so we get a wheel
+        # with a `_x86_64` tag - fix that:
+        mv dist/scipy-1.11.0.dev0-cp311-cp311-linux_x86_64.whl dist/scipy-1.11.0.dev0-cp311-cp311-linux_aarch64.whl
+
+        # NOTE: Meson also gets the extensions of the individual extension
+        # modules wrong and puts x86_64-linux-gnu.so in there. This needs
+        # fixing, but has no consequences (the wheel should run fine on
+        # aarch64).
+
     - name: (debug) echo meson-log.txt
       if: success() || failure()
       run: |
