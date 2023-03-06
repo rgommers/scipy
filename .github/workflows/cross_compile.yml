@@ -89,3 +89,8 @@ jobs:
       if: success() || failure()
       run: |
         cat build/meson-logs/meson-log.txt
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: aarch64 wheel
+        path: dist/*.whl
