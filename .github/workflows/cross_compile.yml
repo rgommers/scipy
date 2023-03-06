@@ -51,7 +51,12 @@ jobs:
     - name: Cross-compile SciPy
       run: |
         conda activate build-env
-        echo $CONDA
+        # We're cross-compiling, so unset these environment variables that the
+        # activate scripts define:
+        unset CFLAGS
+        unset CXXFLAGS
+        unset FFLAGS
+        unset LDFLAGS
         # `-wnx` means: `--wheel --no-isolation --skip-dependency-check`
         python -m build -wnx -Cbuilddir=build -Csetup-args=--cross-file=$PWD/ci/cross_aarch64.ini
 
