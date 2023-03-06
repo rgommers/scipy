@@ -42,7 +42,7 @@ jobs:
 
     - name: Set up x86-64 build env (native)
       run: |
-        mamba create -n build-env gxx_linux-aarch64 gfortran_linux-aarch64 python=3.11 meson-python build numpy pythran cython pkg-config
+        mamba create -n build-env gxx_linux-aarch64 gfortran_linux-aarch64 python=3.11 meson-python build numpy pythran cython pkg-config cmake
 
     - name: Set up aarch64 host env (cross)
       run: |
