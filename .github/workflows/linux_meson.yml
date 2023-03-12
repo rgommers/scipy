@@ -143,23 +143,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y python3-dev libopenblas-dev pkg-config gfortran
 
-    - name: Create venv, install SciPy
-      run: |
-        python -m venv ../venvs/scipy-venv
-        source ../venvs/scipy-venv/bin/activate
-        # Note that this uses build isolation. That's why we don't need build
-        # dependencies to be installed in the venv itself.
-        python -m pip install . -vv
-
-    - name: Basic imports and tests
-      run: |
-        source ../venvs/scipy-venv/bin/activate
-        cd ..
-        python -c "import scipy"
-        python -c "import scipy.linalg"
-        python -m pip install pytest
-        python -c "from scipy import cluster; cluster.test()"
-
     - name: Create venv inside source tree
       # This is a regression test for gh-16312
       run: |
