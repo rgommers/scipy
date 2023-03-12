@@ -9,6 +9,7 @@ on:
     branches:
       - main
       - maintenance/**
+      - test-debian-fallback
   pull_request:
     branches:
       - main
@@ -127,7 +128,7 @@ jobs:
 
   test_venv_install:
     name: Pip install into venv
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: "github.repository == 'rgommers/scipy' || github.repository == ''"
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
@@ -165,7 +166,8 @@ jobs:
         python -m venv .venv
         source .venv/bin/activate
         # Install build dependencies
-        python -m pip install numpy pybind11 pythran cython meson-python wheel pytest ninja
+        python -m pip install numpy pybind11 pythran cython wheel pytest ninja
+        python -m pip install git+https://github.com/mesonbuild/meson-python.git
         # Non-isolated build, so we use dependencies installed inside the source tree
         python -m pip install . --no-build-isolation
         
