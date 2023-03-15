@@ -1,6 +1,9 @@
 # TODO: 64-bit BLAS and LAPACK
 
-__init__py = fs.copyfile('__init__.py')
+__init__py = [
+  fs.copyfile('__init__.py'),
+  fs.copyfile('__init__.pxd'),
+]
 _cy_array_utils_pxd = fs.copyfile('_cythonized_array_utils.pxd')
 
 cython_linalg = custom_target('cython_linalg',
@@ -274,6 +277,7 @@ _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
 
 python_sources = [
   '__init__.py',
+  '__init__.pxd',
   '_basic.py',
   '_cythonized_array_utils.pxd',
   '_cythonized_array_utils.pyi',

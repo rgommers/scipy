@@ -1,3 +1,5 @@
+fs = import('fs')
+
 # Platform detection
 is_mingw = is_windows and cc.get_id() == 'gcc'
 
@@ -233,9 +235,6 @@ python_sources = [
   '__init__.py',
   '_distributor_init.py',
   'conftest.py',
-  'linalg.pxd',
-  'optimize.pxd',
-  'special.pxd'
 ]
 
 py3.install_sources(
@@ -248,15 +247,11 @@ py3.install_sources(
   subdir: 'scipy/_lib/tests'
 )
 
-# Copy the main __init__.py and pxd files to the build dir.
+# Copy the main __init__.py to the build dir (the same is done in submodules).
 # Needed to trick Cython, it won't do a relative import outside a package
-fs = import('fs')
-#_cython_tree = declare_dependency(sources: [
 _cython_tree = [
   fs.copyfile('__init__.py'),
-  fs.copyfile('linalg.pxd'),
-  fs.copyfile('optimize.pxd'),
-  fs.copyfile('special.pxd'),
+  fs.copyfile('__init__.pxd'),
 ]
 
 cython_args = ['-3', '--fast-fail', '--output-file', '@OUTPUT@', '--include-dir', '@BUILD_ROOT@', '@INPUT@']

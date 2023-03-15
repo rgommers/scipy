@@ -1,5 +1,7 @@
 # TODO: 64-bit BLAS and LAPACK
 
+_cython_tree += fs.copyfile('__init__.pxd')
+
 _ufuncs_pxi_pxd_sources = [
   fs.copyfile('__init__.py'),
   fs.copyfile('_agm.pxd'),
@@ -473,6 +475,7 @@ endforeach
 
 python_sources = [
   '__init__.py',
+  '__init__.pxd',
   '_add_newdocs.py',
   '_basic.py',
   '_ellip_harm.py',

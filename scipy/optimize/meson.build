@@ -1,3 +1,5 @@
+_cython_tree += fs.copyfile('__init__.pxd')
+
 _direct = py3.extension_module('_direct',
   ['_direct/direct_wrap.c',
    '_direct/direct-internal.h',
@@ -259,6 +261,7 @@ py3.install_sources(
 
 py3.install_sources([
   '__init__.py',
+  '__init__.pxd',
   '_basinhopping.py',
   '_cobyla_py.py',
   '_constraints.py',
