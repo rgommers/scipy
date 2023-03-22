@@ -63,11 +63,6 @@ maintainers = [
 # release branches, see:
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
 requires-python = ">=3.9"
-dependencies = [
-    # TODO: update to "pin-compatible" once possible, see
-    # https://github.com/FFY00/meson-python/issues/29
-    "numpy>=1.21.6",
-]
 readme = "README.rst"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -88,7 +83,7 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
-dynamic = ['version']
+dynamic = ['version', 'dependencies']
 
 [project.optional-dependencies]
 test = [
@@ -130,6 +125,15 @@ documentation = "https://docs.scipy.org/doc/scipy/"
 source = "https://github.com/scipy/scipy"
 download = "https://github.com/scipy/scipy/releases"
 tracker = "https://github.com/scipy/scipy/issues"
+
+[tool.meson-python]
+# base dependencies, used for the sdist
+dependencies = ["numpy>=1.21.6"]
+
+# additional requirements based on the versions of the dependencies
+# used during the build of the wheels, used for the wheels
+build-time-pins = ['numpy >= {v.major}.{v.minor}']
+
 
 [tool.doit]
 dodoFile = "dev.py"
