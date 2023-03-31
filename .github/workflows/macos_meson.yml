@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - maintenance/**
+      - test-macos-issue
   pull_request:
     branches:
       - main
@@ -25,7 +26,7 @@ jobs:
   test_meson:
     name: Meson build
     # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: "github.repository == 'rgommers/scipy' || github.repository == ''"
     runs-on: macos-latest
     strategy:
       matrix:
