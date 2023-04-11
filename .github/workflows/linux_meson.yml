@@ -9,6 +9,7 @@ on:
     branches:
       - main
       - maintenance/**
+      - ci-pythonoptimize
   pull_request:
     branches:
       - main
@@ -29,11 +30,11 @@ jobs:
   test_meson:
     name: Meson build
     # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: "github.repository == 'rgommers/scipy' || github.repository == ''"
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ['3.10', '3.11']  # change to 3.12-dev when beta starts
+        python-version: ['3.11']  # change to 3.12-dev when beta starts
         maintenance-branch:
           - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
         exclude:
@@ -123,6 +124,7 @@ jobs:
       run: |
         export OMP_NUM_THREADS=2
         export SCIPY_USE_PROPACK=1
+        export PYTHONOPTIMIZE=2
         python dev.py --no-build test -j 2 -- --durations 10 --timeout=60
 
   test_venv_install:
