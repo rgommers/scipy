@@ -192,7 +192,7 @@ jobs:
       - name: Build SciPy
         run: |
           python3-dbg -m pip install build
-          python3-dbg -m build -Ccompile-args=-j2 -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-lapack
+          python3-dbg -m build -Ccompile-args=-j2 -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
           python3-dbg -m pip install dist/scipy*.whl
       - name: Testing SciPy
         if: ${{ github.event_name == 'pull_request' }}
