@@ -1,9 +1,5 @@
 name: Linux Meson tests
 
-# This is a single job: Python 3.10, building with Meson, using -Werror to
-# ensure we remain at zero build warnings. Other Meson CI jobs are running
-# on https://github.com/rgommers/scipy/tree/meson
-
 on:
   push:
     branches:
@@ -178,3 +174,32 @@ jobs:
         python -c "import scipy"
         python -c "import scipy.linalg"
         python -c "from scipy import cluster; cluster.test()"
+
+  python_debug:
+    name: Python-debug & ATLAS
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    runs-on: ubuntu-20.04  # 22.04 does not have  python3.9-dbg
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Configuring Test Environment
+        run: |
+          sudo apt-get update
+          sudo apt install python3.9-dbg python3.9-dev libatlas-base-dev liblapack-dev gfortran ccache libgmp-dev libmpfr-dev libmpc-dev
+          python3.9-dbg --version # just to check
+          python3.9-dbg -m pip -U pip build
+          python3.9-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
+      - name: Build SciPy
+        run: |
+          python3.9-dbg -m build -Ccompile-args=-j2 -Csetup-args=-Dblas=atlas -Csetup-args=-Dlapack=lapack
+          python3.9-dbg -m pip install dist/scipy*.whl
+      - name: Testing SciPy
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          cd doc
+          python3.9-dbg -m pip install pytest pytest-xdist pytest-timeout mpmath gmpy2 threadpoolctl pooch
+          python3.9-dbg -c "import scipy; scipy.test(parallel=2, extra_argv=['--durations=10'])"
+      - name: Dynamic symbol hiding check on Linux
+        if: ${{ github.event_name == 'pull_request' }}
+        run: ./tools/check_pyext_symbol_hiding.sh build
