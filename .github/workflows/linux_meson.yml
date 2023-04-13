@@ -195,11 +195,9 @@ jobs:
           python3-dbg -m build --wheel -Csetup-args=-Dbuildtype=debugoptimized -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
           python3-dbg -m pip install dist/scipy*.whl
       - name: Testing SciPy
-        if: ${{ github.event_name == 'pull_request' }}
         run: |
           cd doc
           python3-dbg -m pip install pytest pytest-xdist pytest-timeout mpmath gmpy2 threadpoolctl pooch
           python3-dbg -c "import scipy; scipy.test(parallel=2, extra_argv=['--durations=10'])"
       - name: Dynamic symbol hiding check on Linux
-        if: ${{ github.event_name == 'pull_request' }}
         run: ./tools/check_pyext_symbol_hiding.sh build
