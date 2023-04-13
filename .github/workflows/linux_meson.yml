@@ -198,6 +198,6 @@ jobs:
         run: |
           cd doc
           python3-dbg -m pip install pytest pytest-xdist pytest-timeout mpmath gmpy2 threadpoolctl pooch
-          python3-dbg -c "import scipy; scipy.test(parallel=2, extra_argv=['--durations=10'])"
+          python3-dbg -m pytest --pyargs scipy -n2 --durations=10 -m "not slow"
       - name: Dynamic symbol hiding check on Linux
         run: ./tools/check_pyext_symbol_hiding.sh build
