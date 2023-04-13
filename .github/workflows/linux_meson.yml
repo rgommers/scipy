@@ -178,7 +178,7 @@ jobs:
   python_debug:
     name: Python-debug & ATLAS
     if: "github.repository == 'rgommers/scipy' || github.repository == ''"
-    runs-on: ubuntu-20.04  # 22.04 does not have  python3.9-dbg
+    runs-on: ubuntu-22.04  # provides python3.10-dbg
     steps:
       - uses: actions/checkout@v3
         with:
@@ -186,21 +186,21 @@ jobs:
       - name: Configuring Test Environment
         run: |
           sudo apt-get update
-          sudo apt install python3.9-dbg python3.9-dev libatlas-base-dev liblapack-dev gfortran ccache libgmp-dev libmpfr-dev libmpc-dev
-          python3.9-dbg --version # just to check
-          python3.9-dbg -m pip --version
-          python3.9-dbg -m pip --upgrade pip build
-          python3.9-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
+          sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev gfortran ccache libgmp-dev libmpfr-dev libmpc-dev
+          python3-dbg --version # just to check
+          python3-dbg -m pip --version
+          python3-dbg -m pip --upgrade pip build
+          python3-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
       - name: Build SciPy
         run: |
-          python3.9-dbg -m build -Ccompile-args=-j2 -Csetup-args=-Dblas=atlas -Csetup-args=-Dlapack=lapack
-          python3.9-dbg -m pip install dist/scipy*.whl
+          python3-dbg -m build -Ccompile-args=-j2 -Csetup-args=-Dblas=atlas -Csetup-args=-Dlapack=lapack
+          python3-dbg -m pip install dist/scipy*.whl
       - name: Testing SciPy
         if: ${{ github.event_name == 'pull_request' }}
         run: |
           cd doc
-          python3.9-dbg -m pip install pytest pytest-xdist pytest-timeout mpmath gmpy2 threadpoolctl pooch
-          python3.9-dbg -c "import scipy; scipy.test(parallel=2, extra_argv=['--durations=10'])"
+          python3-dbg -m pip install pytest pytest-xdist pytest-timeout mpmath gmpy2 threadpoolctl pooch
+          python3-dbg -c "import scipy; scipy.test(parallel=2, extra_argv=['--durations=10'])"
       - name: Dynamic symbol hiding check on Linux
         if: ${{ github.event_name == 'pull_request' }}
         run: ./tools/check_pyext_symbol_hiding.sh build
