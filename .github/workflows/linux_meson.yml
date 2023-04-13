@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
+      - ci-faster-gha
   pull_request:
     branches:
       - main
@@ -176,7 +177,7 @@ jobs:
 
   python_debug:
     name: Python-debug & ATLAS
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: "github.repository == 'rgommers/scipy' || github.repository == ''"
     runs-on: ubuntu-20.04  # 22.04 does not have  python3.9-dbg
     steps:
       - uses: actions/checkout@v3
