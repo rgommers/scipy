@@ -63,6 +63,7 @@ jobs:
 
       - name: Install Intel components
         if: steps.cache-install.outputs.cache-hit != 'true'
+        shell: bash
         run: ci/intel-oneapi/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_FORTRAN_COMPONENTS
 
       - name: Exclude unused Intel files from cache
