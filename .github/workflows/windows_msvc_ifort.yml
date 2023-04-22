@@ -31,7 +31,7 @@ env:
   VS_VER: vs2022
 
 jobs:
-  test:
+  msvc_ifort_mkl:
     name: MSVC, ifort and MKL
     if: "github.repository == 'rgommers/scipy' || github.repository == ''"
     runs-on: windows-latest
