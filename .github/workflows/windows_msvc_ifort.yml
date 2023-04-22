@@ -1,0 +1,88 @@
+# The Intel-specific parts to install ifort and MKL were adapted from
+# https://github.com/oneapi-src/oneapi-ci, which is MIT-licensed.
+
+name: MSVC and Intel compilers
+
+on:
+  push:
+    branches:
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  WINDOWS_BASEKIT_URL: https:/registrationcenter-download.intel.com/akdlm/IRC_NAS/c961e083-5685-4f0b-ada5-c6cf16f561dd/w_BaseKit_p_2023.1.0.47256_offline.exe
+  WINDOWS_HPCKIT_URL: https:/registrationcenter-download.intel.com/akdlm/IRC_NAS/2a13d966-fcc5-4a66-9fcc-50603820e0c9/w_HPCKit_p_2023.1.0.46357_offline.exe
+  WINDOWS_FORTRAN_COMPONENTS: intel.oneapi.win.ifort-compiler
+  CACHE_NUMBER: 1
+  SAMPLES_TAG: 2023.1.0
+  COMPILER_VERSION: 2023.1.0
+  TBB_VERSION: 2021.9.0
+  VS_VER: vs2022
+
+jobs:
+  test:
+    name: MSVC, ifort and MKL
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          architecture: 'x64'
+          cache: 'pip'
+          cache-dependency-path: 'environment.yml'
+
+      - name: Setup MSVC
+        uses: bus1/cabuild/action/msdevshell@e22aba57d6e74891d059d66501b6b5aed8123c4d  # v1
+
+      - name: Setup Intel Fortran
+        uses: bus1/cabuild/action/msdevshell@e22aba57d6e74891d059d66501b6b5aed8123c4d  # v1
+
+      - name: Cache Intel install
+        id: cache-install
+        uses: actions/cache@v2
+        with:
+          path: |
+              C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat
+              C:\Program Files (x86)\Intel\oneAPI\compiler
+          key: install-${{ env.CACHE_NUMBER }}-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_FORTRAN_COMPONENTS }}-compiler-${{ hashFiles('**/scripts/cache_exclude_windows.sh') }}
+
+    - name: Install Intel components
+      if: steps.cache-install.outputs.cache-hit != 'true'
+      run: |
+        scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_FORTRAN_COMPONENTS
+
+    - name: Exclude unused Intel files from cache
+      if: steps.cache-install.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        scripts/cache_exclude_windows.sh
+
+      - name: pip-packages
+        run: |
+          pip install numpy==1.22.2 cython pybind11 meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool
+
+      - name: Build
+        run: |
+          python dev.py build -j2 -Duse-g77-abi=true -Duse-pythran=false -Dblas=mkl-dynamic-lp64-seq -Dlapack=mkl-dynamic-lp64-seq
+
+      - name: Test
+        run: |
+          python dev.py test -j2
+
