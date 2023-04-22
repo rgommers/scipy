@@ -63,8 +63,8 @@ jobs:
 
       - name: Install Intel components
         if: steps.cache-install.outputs.cache-hit != 'true'
-        shell: bash
-        run: ci/intel-oneapi/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_FORTRAN_COMPONENTS
+        run: |
+          ci/intel-oneapi/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_FORTRAN_COMPONENTS
 
       - name: Exclude unused Intel files from cache
         if: steps.cache-install.outputs.cache-hit != 'true'
@@ -72,15 +72,15 @@ jobs:
         run: |
           ci/intel-oneapi/cache_exclude_windows.sh
 
-        - name: pip-packages
-          run: |
-            pip install numpy==1.22.2 cython pybind11 meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool
+      - name: pip-packages
+        run: |
+          pip install numpy==1.22.2 cython pybind11 meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool
 
-        - name: Build
-          run: |
-            python dev.py build -j2 -Duse-g77-abi=true -Duse-pythran=false -Dblas=mkl-dynamic-lp64-seq -Dlapack=mkl-dynamic-lp64-seq
+      - name: Build
+        run: |
+          python dev.py build -j2 -Duse-g77-abi=true -Duse-pythran=false -Dblas=mkl-dynamic-lp64-seq -Dlapack=mkl-dynamic-lp64-seq
 
-        - name: Test
-          run: |
-            python dev.py test -j2
+      - name: Test
+        run: |
+          python dev.py test -j2
 
