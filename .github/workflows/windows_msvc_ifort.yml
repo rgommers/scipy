@@ -50,6 +50,9 @@ jobs:
           cache: 'pip'
           cache-dependency-path: 'environment.yml'
 
+      - name: Setup MSVC
+        uses: bus1/cabuild/action/msdevshell@e22aba57d6e74891d059d66501b6b5aed8123c4d  # v1
+
       - name: Cache Intel install
         id: cache-install
         uses: actions/cache@v3
@@ -76,9 +79,6 @@ jobs:
       - name: Activate Intel Fortran
         run: |
           ci/intel-oneapi/activate_windows.bat $VS_VER
-
-      - name: Setup MSVC
-        uses: bus1/cabuild/action/msdevshell@e22aba57d6e74891d059d66501b6b5aed8123c4d  # v1
 
       - name: Build
         run: |
