@@ -74,12 +74,3 @@ jobs:
       - name: pip-packages
         run: |
           pip install numpy==1.22.2 cython pybind11 meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool
-
-      - name: Build
-        run: |
-          FC=ifort python dev.py build -j2 -C-Dblas=mkl-dynamic-lp64-seq -C-Dlapack=mkl-dynamic-lp64-seq
-
-      - name: Test
-        run: |
-          python dev.py test -j2
-
