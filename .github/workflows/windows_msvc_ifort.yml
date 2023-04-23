@@ -81,8 +81,7 @@ jobs:
           #  $env:path
           #echo "ifort" >> $env:FC
           echo $PATH
-          ls /usr/bin
-          rm /usr/bin/link.exe  # gets picked up otherwise
+          which gfortran
           FC=ifort python dev.py build -j2 -C--vsenv -C-Dblas=mkl-dynamic-lp64-seq -C-Dlapack=mkl-dynamic-lp64-seq
 
       - name: Test
