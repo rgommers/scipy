@@ -81,7 +81,8 @@ jobs:
           #  $env:path
           #echo "ifort" >> $env:FC
           echo $PATH
-          rm -rf /usr/bin/
+          ls /usr/bin
+          rm /usr/bin/link.exe  # gets picked up otherwise
           FC=ifort python dev.py build -j2 -C--vsenv -C-Dblas=mkl-dynamic-lp64-seq -C-Dlapack=mkl-dynamic-lp64-seq
 
       - name: Test
