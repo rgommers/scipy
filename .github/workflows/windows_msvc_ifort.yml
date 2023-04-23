@@ -76,7 +76,7 @@ jobs:
 
       - name: Build
         run: |
-          python dev.py build -j2 -Duse-g77-abi=true -Duse-pythran=false -Dblas=mkl-dynamic-lp64-seq -Dlapack=mkl-dynamic-lp64-seq
+          python dev.py build -j2 -C-Dblas=mkl-dynamic-lp64-seq -C-Dlapack=mkl-dynamic-lp64-seq
 
       - name: Test
         run: |
