@@ -49,9 +49,6 @@ jobs:
           cache: 'pip'
           cache-dependency-path: 'environment.yml'
 
-      - name: Setup MSVC
-        uses: bus1/cabuild/action/msdevshell@e22aba57d6e74891d059d66501b6b5aed8123c4d  # v1
-
       - name: Cache Intel install
         id: cache-install
         uses: actions/cache@v3
@@ -70,6 +67,9 @@ jobs:
         if: steps.cache-install.outputs.cache-hit != 'true'
         run: |
           ci/intel-oneapi/cache_exclude_windows.sh
+
+      - name: Setup MSVC
+        uses: bus1/cabuild/action/msdevshell@e22aba57d6e74891d059d66501b6b5aed8123c4d  # v1
 
       - name: pip-packages
         run: |
