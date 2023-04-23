@@ -49,6 +49,9 @@ jobs:
           cache: 'pip'
           cache-dependency-path: 'environment.yml'
 
+      - name: Setup MSVC
+        uses: bus1/cabuild/action/msdevshell@e22aba57d6e74891d059d66501b6b5aed8123c4d  # v1
+
       - name: Cache Intel install
         id: cache-install
         uses: actions/cache@v3
@@ -68,20 +71,12 @@ jobs:
         run: |
           ci/intel-oneapi/cache_exclude_windows.sh
 
-      - name: Setup MSVC
-        uses: bus1/cabuild/action/msdevshell@e22aba57d6e74891d059d66501b6b5aed8123c4d  # v1
-
       - name: pip-packages
         run: |
           pip install numpy==1.22.2 cython pybind11 meson ninja pythran pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool
 
       - name: Build
-        #        shell: pwsh
         run: |
-          #  $env:path
-          #echo "ifort" >> $env:FC
-          echo $PATH
-          which gfortran
           FC=ifort python dev.py build -j2 -C--vsenv -C-Dblas=mkl-dynamic-lp64-seq -C-Dlapack=mkl-dynamic-lp64-seq
 
       - name: Test
