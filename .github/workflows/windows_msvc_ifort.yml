@@ -73,14 +73,16 @@ jobs:
 
       - name: pip-packages
         run: |
-          pip install numpy==1.22.2 cython pybind11 meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool
+          pip install numpy==1.22.2 cython pybind11 meson ninja pythran pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool
 
       - name: Build
-        shell: pwsh
+        #        shell: pwsh
         run: |
-          $env:path
-          echo "ifort" >> $env:FC
-          python dev.py build -j2 -C--vsenv -C-Dblas=mkl-dynamic-lp64-seq -C-Dlapack=mkl-dynamic-lp64-seq
+          #  $env:path
+          #echo "ifort" >> $env:FC
+          echo $PATH
+          rm -rf /usr/bin/
+          FC=ifort python dev.py build -j2 -C--vsenv -C-Dblas=mkl-dynamic-lp64-seq -C-Dlapack=mkl-dynamic-lp64-seq
 
       - name: Test
         run: |
