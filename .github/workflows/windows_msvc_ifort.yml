@@ -79,9 +79,11 @@ jobs:
       - name: Activate Intel Fortran
         run: |
           ci/intel-oneapi/activate_windows.bat $VS_VER
+          which ifort
 
       - name: Build
         run: |
+          which ifort
           rm /usr/bin/link.exe  # prevent it from being picked up
           FC=ifort python dev.py build -j2 -C--vsenv -C-Dblas=mkl-dynamic-lp64-seq -C-Dlapack=mkl-dynamic-lp64-seq
 
