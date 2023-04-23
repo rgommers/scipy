@@ -79,7 +79,7 @@ jobs:
       - name: Activate Intel Fortran
         run: |
           ci/intel-oneapi/activate_windows.bat $VS_VER
-          which ifort
+          ifort --version
 
       - name: Build
         run: |
