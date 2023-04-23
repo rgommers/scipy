@@ -77,12 +77,7 @@ jobs:
 
       - name: Build
         run: |
-          echo $PATH
-          which link.exe
-          ls /usr/bin
-          ls /mingw/bin
-          rm /usr/bin/link.exe
-          FC=ifort python dev.py build -j2 -C-Dblas=mkl-dynamic-lp64-seq -C-Dlapack=mkl-dynamic-lp64-seq
+          FC=ifort python dev.py build -j2 -C--vsenv -C-Dblas=mkl-dynamic-lp64-seq -C-Dlapack=mkl-dynamic-lp64-seq
 
       - name: Test
         run: |
