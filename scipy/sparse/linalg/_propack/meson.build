@@ -113,7 +113,10 @@ foreach ele: elements
   )
 
   propacklib = py3.extension_module(ele[0],
-    propack_module,
+    [
+      propack_module,
+      'second.c',  # HACK: work around missing `second_`/`etime_` symbol for ifort
+    ],
     link_with: propack_lib,
     c_args: ['-U_OPENMP', _cpp_Wno_cpp],
     fortran_args: _fflag_Wno_maybe_uninitialized,
