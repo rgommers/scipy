@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
+      - ci-remove-ldlibrarypath
   pull_request:
     branches:
       - main
@@ -255,7 +256,7 @@ jobs:
   prerelease_deps_coverage_64bit_blas:
     # TODO: re-enable ILP64 build.
     name: Prerelease deps and 64-bit BLAS
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: "github.repository == 'rgommers/scipy' || github.repository == ''"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -331,7 +332,7 @@ jobs:
   #################################################################################
   linux_32bit:
     name: Linux - 32 bit
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: "github.repository == 'rgommers/scipy' || github.repository == ''"
     runs-on: ubuntu-latest
     # I tried running directly in a container:, using the image: and options:
     # entries. Unfortunately at this time options: does not seem to listen to
