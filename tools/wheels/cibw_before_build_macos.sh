@@ -78,3 +78,7 @@ if [[ $PLATFORM == "macosx-arm64" ]]; then
   sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
   type -p gfortran
 fi
+
+python -m pip install git+https://github.com/serge-sans-paille/pythran.git@fix/warning-return-std-move
+
+
