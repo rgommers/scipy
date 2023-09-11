@@ -19,7 +19,9 @@ from scipy._lib._array_api import (
     array_namespace,
     size,
     assert_close,
-    assert_equal
+    assert_equal,
+    is_torch,
+    SCIPY_DEVICE
 )
 
 
@@ -260,28 +262,18 @@ class TestFFT1D:
         )
         assert_close(expect * (30 * 20 * 10), fft.ihfftn(x, norm="forward"))
 
-    # torch.fft not yet implemented by array-api-compat
-    @skip_if_array_api_backend('torch')
     @array_api_compatible
     @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn,
-                                    fft.rfftn, fft.irfftn])
-    def test_axes_standard(self, op, xp):
-        x = xp.asarray(random((30, 20, 10)))
-        axes = [(0, 1, 2), (0, 2, 1), (1, 0, 2),
-                (1, 2, 0), (2, 0, 1), (2, 1, 0)]
-        xp_test = array_namespace(x)
-        for a in axes:
-            op_tr = op(xp_test.permute_dims(x, axes=a))
-            tr_op = xp_test.permute_dims(op(x, axes=a), axes=a)
-            assert_close(op_tr, tr_op)
+                                    fft.rfftn, fft.irfftn,
+                                    fft.hfftn, fft.ihfftn])
+    def test_axes(self, op, xp):
+        if is_torch(xp):
+            pytest.skip("torch.fft not yet implemented by array-api-compat")
+        if SCIPY_DEVICE != 'cpu' and op in (fft.hfftn, fft.ihfftn):
+            pytest.skip(f"{op} isn't in the array API, and hence will only work on CPU")
 
-    @skip_if_array_api_gpu
-    @array_api_compatible
-    @pytest.mark.parametrize("op", [fft.hfftn, fft.ihfftn])
-    def test_axes_non_standard(self, op, xp):
         x = xp.asarray(random((30, 20, 10)))
-        axes = [(0, 1, 2), (0, 2, 1), (1, 0, 2),
-                (1, 2, 0), (2, 0, 1), (2, 1, 0)]
+        axes = [(0, 1, 2), (0, 2, 1), (1, 0, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0)]
         xp_test = array_namespace(x)
         for a in axes:
             op_tr = op(xp_test.permute_dims(x, axes=a))
