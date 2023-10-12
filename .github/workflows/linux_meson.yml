@@ -276,10 +276,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran
 
-        # Install OpenBLAS a la cibuildwheel.
-        chmod +x tools/wheels/cibw_before_build_linux.sh
-        sudo tools/wheels/cibw_before_build_linux.sh --nightly .       
-
     - name: Caching Python dependencies
       uses: actions/cache@v3
       id: cache
@@ -289,8 +285,8 @@ jobs:
 
     - name: Install Python packages
       run: |
-        python -m pip install cython!=3.0.3
-        python -m pip install ninja meson meson-python wheel click rich_click pydevtool
+        python -m pip install cython!=3.0.3 scipy-openblas32
+        python -m pip install ninja meson meson-python click rich_click pydevtool
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
         python -m pip install git+https://github.com/serge-sans-paille/pythran.git@e3babfd
         # Use pytest-xdist<4.0 due to https://github.com/pytest-dev/pytest-cov/issues/557
@@ -318,7 +314,7 @@ jobs:
 
     - name: Build and install SciPy
       run: |
-        python dev.py build --gcov
+        python dev.py build --gcov --use-scipy-openblas
 
     - name: Ccache performance
       shell: bash -l {0}
