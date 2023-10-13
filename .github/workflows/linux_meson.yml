@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
+      - check-o32
   pull_request:
     branches:
       - main
@@ -255,7 +256,7 @@ jobs:
   prerelease_deps_coverage_64bit_blas:
     # TODO: re-enable ILP64 build.
     name: Prerelease deps, coverage, and 64-bit BLAS
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: "github.repository == 'rgommers/scipy' || github.repository == ''"
     runs-on: ubuntu-latest
     strategy:
       matrix:
