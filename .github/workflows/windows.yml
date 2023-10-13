@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
+      - use-openblas-wheels
   pull_request:
     branches:
       - main
