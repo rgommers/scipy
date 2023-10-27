@@ -5,7 +5,7 @@
 
 #include "messagestream_config.h"
 
-#if HAVE_OPEN_MEMSTREAM
+#ifdef HAVE_OPEN_MEMSTREAM
 FILE *messagestream_open_memstream(char **ptr, size_t *sizeloc)
 {
     return open_memstream(ptr, sizeloc);

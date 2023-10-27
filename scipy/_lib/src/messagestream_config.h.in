@@ -1,1 +1,1 @@
-#define HAVE_OPEN_MEMSTREAM @has_openmemstream@
+#mesondefine HAVE_OPEN_MEMSTREAM

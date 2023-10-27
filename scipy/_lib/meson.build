@@ -68,20 +68,10 @@ py3.extension_module('_test_deprecation_def',
   subdir: 'scipy/_lib'
 )
 
-# May be easier as a compile flag, but use a config header file to stay
-# in sync with what is done in setup.py
-# TODO: the `prefix` here is recommended in
-#       https://mesonbuild.com/Compiler-properties.html#does-a-function-exist
-#       and seems needed, but why does it fail to detect it for the conda
-#       compiler? Does it not exist, or is it hidden elsewhere?
-
 conf_memstream = configuration_data()
 
-if meson.get_compiler('c').has_function('open_memstream',
-                                        prefix: '#include <stdio.h>')
-  conf_memstream.set('has_openmemstream', '1')
-else
-  conf_memstream.set('has_openmemstream', '0')
+if cc.has_function('open_memstream', prefix: '#include <stdio.h>')
+  conf_memstream.set10('has_openmemstream', true)
 endif
 
 configure_file(

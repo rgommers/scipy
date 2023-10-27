@@ -6,11 +6,11 @@ project(
   # tools/version_utils.py
   version: '1.12.0.dev0',
   license: 'BSD-3',
-  meson_version: '>= 1.1.0',
+  meson_version: '>= 1.1.0',  # TODO: bump to 1.3.0
   default_options: [
     'buildtype=debugoptimized',
     'b_ndebug=if-release',
-    'c_std=c99',
+    'c_std=gnu99', #gnu17,c99',  # requires Meson 1.3.0
     'cpp_std=c++14',
     'fortran_std=legacy',
     'blas=openblas',
