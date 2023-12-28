@@ -142,54 +142,154 @@ fortranobject_dep = declare_dependency(
   include_directories: [inc_np, inc_f2py],
 )
 
-# TODO: 64-bit BLAS and LAPACK
-#
-# Note that this works as long as BLAS and LAPACK are detected properly via
-# pkg-config. By default we look for OpenBLAS, other libraries can be configured via
-# `meson configure -Dblas=blas -Dlapack=lapack` (example to build with Netlib
-# BLAS and LAPACK).
-# For MKL and for auto-detecting one of multiple libs, we'll need a custom
-# dependency in Meson (like is done for scalapack) - see
-# https://github.com/mesonbuild/meson/issues/2835
+
 blas_name = get_option('blas')
 lapack_name = get_option('lapack')
+# This is currently injected directly into CFLAGS/CXXFLAGS for wheel builds
+# (see cibuildwheel settings in pyproject.toml), but used by CI jobs already
+blas_symbol_suffix = get_option('blas-symbol-suffix')
 
+use_ilp64 = get_option('use-ilp64')
+if use_ilp64
+  blas_interface = ['interface: ilp64']
+else
+  blas_interface = ['interface: lp64']
+endif
+
+blas_order = get_option('blas-order')
+if blas_order == ['auto']
+  blas_order = []
+  if host_machine.system() == 'darwin'
+    blas_order += 'accelerate'
+  endif
+  if host_machine.cpu_family() == 'x86_64'
+    blas_order += 'mkl'
+  endif
+  blas_order += ['openblas', 'flexiblas', 'blis', 'blas']
+endif
+lapack_order = get_option('lapack-order')
+if lapack_order == ['auto']
+  lapack_order = []
+  if host_machine.system() == 'darwin'
+    lapack_order += 'accelerate'
+  endif
+  if host_machine.cpu_family() == 'x86_64'
+    lapack_order += 'mkl'
+  endif
+  lapack_order += ['openblas', 'flexiblas', 'lapack']
+endif
+
+# MKL-specific options
+_threading_opt = get_option('mkl-threading')
+if _threading_opt == 'auto'
+  # Switch default to iomp once conda-forge missing openmp.pc issue is fixed
+  mkl_opts = ['threading: seq']
+else
+  mkl_opts = ['threading: ' + _threading_opt]
+endif
+blas_opts = {'mkl': mkl_opts}
+mkl_version_req = '>=2023.0'  # see gh-24824
+mkl_may_use_sdl = not use_ilp64 and _threading_opt in ['auto', 'iomp']
+
+# BLAS detection.
+#
 # First try scipy-openblas, and if found don't look for cblas or lapack, we
 # know what's inside the scipy-openblas wheels already.
 if blas_name == 'openblas' or blas_name == 'auto'
-  blas = dependency('scipy-openblas', required: false)
+  blas = dependency('scipy-openblas', method: 'pkg-config', required: false)
   if blas.found()
     blas_name = 'scipy-openblas'
   endif
 endif
-
-# pkg-config uses a lower-case name while CMake uses a capitalized name, so try
-# that too to make the fallback detection with CMake work
-if blas_name == 'openblas'
-  blas = dependency(['openblas', 'OpenBLAS'])
+if blas_name == 'auto'
+  foreach _name : blas_order
+    if _name == 'mkl'
+      blas = dependency('mkl',
+        modules: ['cblas'] + blas_interface + mkl_opts,
+        required: false,  # may be required, but we need to emit a custom error message
+        version: mkl_version_req,
+      )
+      # Insert a second try with MKL, because we may be rejecting older versions
+      # or missing it because no pkg-config installed. If so, we need to retry
+      # with MKL SDL, and drop the version constraint (this always worked).
+      if not blas.found() and mkl_may_use_sdl
+        blas = dependency('mkl', modules: ['cblas', 'sdl: true'], required: false)
+      endif
+    else
+      if _name == 'flexiblas' and use_ilp64
+        _name = 'flexiblas64'
+      endif
+      blas = dependency(_name, modules: ['cblas'] + blas_interface, required: false)
+    endif
+    if blas.found()
+      break
+    endif
+  endforeach
 else
-  blas = dependency(blas_name)
-endif
-if blas_name == 'blas'
-  # Netlib BLAS has a separate `libcblas.so` which we use directly in the g77
-  # ABI wrappers, so detect it and error out if we cannot find it.
-  # In the future, this should be done automatically for:
-  #   `dependency('blas', modules: cblas)`
-  # see https://github.com/mesonbuild/meson/pull/10921.
-  cblas = dependency('cblas')
-else
-  cblas = []
+  if blas_name == 'mkl'
+    blas = dependency('mkl',
+      modules: ['cblas'] + blas_interface + mkl_opts,
+      required: false,
+      version: mkl_version_req,
+    )
+    # Same deal as above - try again for MKL
+    if not blas.found() and mkl_may_use_sdl
+      blas = dependency('mkl', modules: ['cblas', 'sdl: true'], required: false)
+    endif
+  else
+    blas = dependency(blas_name, modules: ['cblas'] + blas_interface, required: false)
+  endif
 endif
 
+if not blas.found()
+  error('No BLAS library detected! SciPy needs one, please install it.')
+endif
+
+_args_blas = []  # note: used for C and C++ via `blas_dep` below
+if use_ilp64
+  _args_blas += ['-DHAVE_BLAS_ILP64']
+  if 'openblas' in blas.name()
+    _args_blas += ['-DOPENBLAS_ILP64_NAMING_SCHEME']
+  endif
+endif
+if blas_symbol_suffix == 'auto'
+  if blas_name == 'scipy-openblas' and use_ilp64
+    blas_symbol_suffix = '64_'
+  else
+    blas_symbol_suffix = blas.get_variable('symbol_suffix', default_value: '')
+  endif
+  message(f'BLAS symbol suffix: @blas_symbol_suffix@')
+endif
+if blas_symbol_suffix != ''
+  _args_blas += ['-DBLAS_SYMBOL_SUFFIX=' + blas_symbol_suffix]
+endif
+blas_dep = declare_dependency(
+  dependencies: [blas],
+  compile_args: _args_blas,
+)
+
+# LAPACK detection
 if 'mkl' in blas.name() or blas.name() == 'accelerate' or blas_name == 'scipy-openblas'
   # For these libraries we know that they contain LAPACK, and it's desirable to
   # use that - no need to run the full detection twice.
   lapack = blas
-elif lapack_name == 'openblas'
-  lapack = dependency(['openblas', 'OpenBLAS'])
 else
-  lapack = dependency(lapack_name)
+  if lapack_name == 'auto'
+    foreach _name : lapack_order
+      lapack = dependency(_name, modules: ['lapack'] + blas_interface, required: false)
+      if lapack.found()
+        break
+      endif
+    endforeach
+  else
+    lapack = dependency(lapack_name, modules: ['lapack'] + blas_interface, required: false)
+  endif
 endif
+
+if not lapack.found()
+  error('No LAPACK library detected! SciPy needs one, please install it.')
+endif
+lapack_dep = declare_dependency(dependencies: [lapack, blas_dep])
 
 dependency_map = {
   'BLAS': blas,
@@ -197,10 +297,11 @@ dependency_map = {
   'PYBIND11': pybind11_dep,
 }
 
-# FIXME: conda-forge sets MKL_INTERFACE_LAYER=LP64,GNU, see gh-11812.
-#        This needs work on gh-16200 to make MKL robust. We should be
-#        requesting `mkl-dynamic-lp64-seq` here. And then there's work needed
-#        in general to enable the ILP64 interface (also for OpenBLAS).
+# Reuse the names, so we ensure we don't lose the arguments wrapped in with
+# declare_dependency. Also, avoids changing `dependencies: blas` to blas_dep in other files.
+blas = blas_dep
+lapack = lapack_dep
+
 uses_mkl = blas.name().to_lower().startswith('mkl') or lapack.name().to_lower().startswith('mkl')
 uses_accelerate = blas.name().to_lower().startswith('accelerate') or lapack.name().to_lower().startswith('accelerate')
 use_g77_abi = uses_mkl or uses_accelerate or get_option('use-g77-abi')
@@ -212,7 +313,7 @@ if use_g77_abi
         '_build_utils/src/wrap_g77_abi_c.c'
       ],
     include_directories: inc_np,
-    dependencies: [py3_dep, cblas],
+    dependencies: [py3_dep, blas],
   )
 else
   g77_abi_wrappers = declare_dependency(sources: ['_build_utils/src/wrap_dummy_g77_abi.f'])
