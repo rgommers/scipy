@@ -81,7 +81,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements/all.txt
-        pip install git+https://github.com/rgommers/meson.git@dependency-openblas
+        pip install git+https://github.com/numpy/meson.git@main-numpymeson
         sudo apt-get install liblapack-dev pkg-config
 
     - name: Build
@@ -113,7 +113,7 @@ jobs:
     - name: Install PyPI dependencies
       run: |
         pip install --break-system-packages -r requirements/build.txt
-        pip install --break-system-packages git+https://github.com/rgommers/meson.git@dependency-openblas
+        pip install --break-system-packages git+https://github.com/numpy/meson.git@main-numpymeson
 
     - name: Build
       run: |
