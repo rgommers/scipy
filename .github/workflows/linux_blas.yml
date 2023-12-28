@@ -103,7 +103,7 @@ jobs:
       run: |
         # No blas.pc on OpenSUSE as of Nov 2023, so no need to install pkg-config.
         # If it is needed in the future, use install name `pkgconf-pkg-config`
-        zypper install -y git gcc-c++ python3-pip python3-devel blas cblas lapack
+        zypper install -y git gcc-c++ gcc-fortran python3-pip python3-devel blas cblas lapack
 
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       with:
@@ -112,13 +112,15 @@ jobs:
 
     - name: Install PyPI dependencies
       run: |
-        pip install --break-system-packages -r requirements/all.txt
+        pip install --break-system-packages -r requirements/build.txt
         pip install --break-system-packages git+https://github.com/rgommers/meson.git@dependency-openblas
 
     - name: Build
       run: |
-        python3 dev.py build -C-Dblas=blas -C-Dlapack=lapack
+        pip install . --break-system-packages --no-build-isolation -v -Csetup-args=-Dblas=blas -Csetup-args=-Dlapack=lapack
 
     - name: Test
       run: |
-        python3 dev.py test -j2
+        pip install --break-system-packages -r requirements/test.txt
+        cd tools
+        pytest --pyargs scipy -j2
