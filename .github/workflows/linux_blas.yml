@@ -65,8 +65,7 @@ jobs:
   # atlas:
 
   netlib-debian:
-    #if: "github.repository == 'rgommers/scipy'"
-    if: false   # no cblas.pc, need to switch to Meson auto
+    if: "github.repository == 'rgommers/scipy'"
     runs-on: ubuntu-latest
     name: "Debian libblas/liblapack"
     steps:
@@ -86,7 +85,7 @@ jobs:
 
     - name: Build
       run: |
-        python dev.py build -C-Dblas=blas -C-Dlapack=lapack
+        python dev.py build
 
     - name: Test
       run: |
@@ -94,7 +93,8 @@ jobs:
 
 
   netlib-split:
-    if: "github.repository == 'rgommers/scipy'"
+    #if: "github.repository == 'rgommers/scipy'"
+    if: false  # WORKS
     runs-on: ubuntu-latest
     container: opensuse/tumbleweed
     name: "OpenSUSE Netlib BLAS/LAPACK"
