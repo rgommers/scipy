@@ -56,16 +56,82 @@ permissions:
   contents: read # to fetch code (actions/checkout)
 
 jobs:
-  # openblas32_stable_nightly:
-  # openblas_no_pkgconfig_fedora:
-  # flexiblas_fedora:
+  # openblas32_stable_nightly: (see linux_meson.yml for scipy-openblas32 test job)
   # openblas_cmake:
   # mkl:
   # blis:
-  # atlas:
+  # atlas: (see linux_meson.yml for ATLAS test job)
+
+  openblas_no_pkgconfig_fedora:
+    #if: "github.repository == 'rgommers/scipy'"
+    if: false  # WORKS
+    runs-on: ubuntu-latest
+    container: fedora:39
+    name: "OpenBLAS (Fedora, no pkg-config)"  # openblas.pc not shipped by Fedora
+    steps:
+    - name: Install system dependencies
+      run: |
+        dnf install git gcc-gfortran g++ python3-devel openblas-devel -y
+
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        submodules: recursive
+        fetch-depth: 0
+
+    - name: Install dependencies from PyPI
+      run: |
+        pip install -r requirements/build.txt
+        pip install build
+        pip install git+https://github.com/numpy/meson.git@main-numpymeson
+
+    - name: Build
+      run: |
+        python3 -m build -wnx -Cbuild-dir=build
+        python3 -m pip install dist/scipy*.whl
+
+    - name: Test
+      run: |
+        pip install -r requirements/test.txt
+        cd tools
+        pytest --pyargs scipy -n2 -m "not slow"
+
+  flexiblas_fedora:
+    #if: "github.repository == 'rgommers/scipy'"
+    if: false  # WORKS
+    runs-on: ubuntu-latest
+    container: fedora:39
+    name: "FlexiBLAS Fedora"  # flexiblas.pc is shipped by Fedora
+    steps:
+    - name: Install system dependencies
+      run: |
+        dnf install git gcc-gfortran g++ python3-devel flexiblas-devel -y
+
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        submodules: recursive
+        fetch-depth: 0
+
+    - name: Install dependencies from PyPI
+      run: |
+        pip install -r requirements/build.txt
+        pip install build
+        pip install git+https://github.com/numpy/meson.git@main-numpymeson
+
+    - name: Build
+      run: |
+        python3 -m build -wnx -Cbuild-dir=build
+        python3 -m pip install dist/scipy*.whl
+
+    - name: Test
+      run: |
+        pip install -r requirements/test.txt
+        cd tools
+        pytest --pyargs scipy -n2 -m "not slow"
+
 
   netlib-debian:
-    if: "github.repository == 'rgommers/scipy'"
+    #if: "github.repository == 'rgommers/scipy'"
+    if: false  # WORKS
     runs-on: ubuntu-latest
     name: "Debian libblas/liblapack"
     steps:
@@ -123,4 +189,4 @@ jobs:
       run: |
         pip install --break-system-packages pytest hypothesis pytest-xdist threadpoolctl pooch
         cd tools
-        pytest --pyargs scipy -n2
+        pytest --pyargs scipy -n2 -m "not slow"
