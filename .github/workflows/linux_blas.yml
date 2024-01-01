@@ -58,7 +58,6 @@ permissions:
 jobs:
   # openblas32_stable_nightly: (see linux_meson.yml for scipy-openblas32 test job)
   # openblas_cmake:
-  # mkl:
   # atlas: (see linux_meson.yml for ATLAS test job)
 
   openblas_no_pkgconfig_fedora:
@@ -189,6 +188,62 @@ jobs:
         pip install --break-system-packages pytest hypothesis pytest-xdist threadpoolctl pooch
         cd tools
         pytest --pyargs scipy -n2 -m "not slow"
+
+
+  mkl:
+    if: "github.repository == 'rgommers/scipy'"
+    runs-on: ubuntu-latest
+    name: "MKL (LP64 split, SDL)"
+    steps:
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements/all.txt
+        pip install git+https://github.com/numpy/meson.git@main-numpymeson
+        pip install "mkl==2023.2.0" "mkl-devel==2023.2.0"
+
+    - name: Repair MKL pkg-config files and symlinks
+      run: |
+        # MKL 2023.2 works when installed from conda-forge (except for `-iomp`
+        # and `-tbb` pkg-config files), Spack, or with the standalone Intel
+        # installer. The standalone installer is the worst option, since it's
+        # large and clumsy to install and requires running a setvars.sh script
+        # before things work. The PyPI MKL packages are broken and need the
+        # fixes in this step. For details, see
+        # https://github.com/conda-forge/intel_repack-feedstock/issues/34
+        cd $Python3_ROOT_DIR/lib/pkgconfig
+        sed -i 's/\/intel64//g' mkl*.pc
+        # add the expected .so -> .so.2 symlinks to fix linking
+        cd ..
+        for i in $( ls libmkl*.so.2 ); do ln -s $i ${i%.*}; done
+
+    - name: Build with defaults (LP64)
+      run: |
+        pkg-config --libs mkl-dynamic-lp64-seq  # check link flags
+        python dev.py build
+
+    - name: Test
+      run: python dev.py test
+
+    - name: Build without pkg-config (default options, SDL)
+      run: |
+        git clean -xdf > /dev/null
+        pushd $Python3_ROOT_DIR/lib/pkgconfig
+        rm mkl*.pc
+        popd
+        export MKLROOT=$Python3_ROOT_DIR
+        python dev.py build
+
+    - name: Test
+      run: python dev.py test
+
 
   blis:
     #if: "github.repository == 'rgommers/scipy'"
