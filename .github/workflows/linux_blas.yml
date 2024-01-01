@@ -59,7 +59,6 @@ jobs:
   # openblas32_stable_nightly: (see linux_meson.yml for scipy-openblas32 test job)
   # openblas_cmake:
   # mkl:
-  # blis:
   # atlas: (see linux_meson.yml for ATLAS test job)
 
   openblas_no_pkgconfig_fedora:
@@ -190,3 +189,39 @@ jobs:
         pip install --break-system-packages pytest hypothesis pytest-xdist threadpoolctl pooch
         cd tools
         pytest --pyargs scipy -n2 -m "not slow"
+
+  blis:
+    #if: "github.repository == 'rgommers/scipy'"
+    if: false  # WORKS
+    runs-on: ubuntu-latest
+    name: "BLIS"
+    steps:
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements/all.txt
+        pip install git+https://github.com/numpy/meson.git@main-numpymeson
+        sudo apt-get install libblis-dev libopenblas-dev pkg-config
+
+    - name: Add BLIS pkg-config file
+      run: |
+        # Needed because blis.pc missing in Debian:
+        # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=989076
+        # The alternative here would be to use another distro or Miniforge
+        sudo cp ci/_blis_debian.pc /usr/lib/x86_64-linux-gnu/pkgconfig/blis.pc
+        # Check if the patch works:
+        pkg-config --libs blis
+        pkg-config --cflags blis
+
+    - name: Build
+      run: python dev.py build -C-Dblas=blis
+
+    - name: Test
+      run: python dev.py test
