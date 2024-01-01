@@ -57,8 +57,8 @@ permissions:
 
 jobs:
   # openblas32_stable_nightly: (see linux_meson.yml for scipy-openblas32 test job)
-  # openblas_cmake:
   # atlas: (see linux_meson.yml for ATLAS test job)
+  # accelerate: (see macos_meson.yml)
 
   openblas_no_pkgconfig_fedora:
     #if: "github.repository == 'rgommers/scipy'"
