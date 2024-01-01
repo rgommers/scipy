@@ -75,37 +75,36 @@ quadpack_test_src = [
 
 mach_lib = static_library('mach_lib',
   mach_src,
-  fortran_args: fortran_ignore_warnings
+  fortran_args: [fortran_ignore_warnings, _fflag_ilp64],
 )
 
 quadpack_lib = static_library('quadpack_lib',
   quadpack_src,
-  fortran_args: fortran_ignore_warnings
+  fortran_args: [fortran_ignore_warnings, _fflag_ilp64],
 )
 
 lsoda_lib = static_library('lsoda_lib',
   lsoda_src,
-  fortran_args: fortran_ignore_warnings
+  fortran_args: [fortran_ignore_warnings, _fflag_ilp64],
 )
 
 vode_lib = static_library('vode_lib',
   vode_src,
-  fortran_args: fortran_ignore_warnings
+  fortran_args: [fortran_ignore_warnings, _fflag_ilp64],
 )
 
 dop_lib = static_library('dop_lib',
   dop_src,
-  fortran_args: fortran_ignore_warnings
+  fortran_args: [fortran_ignore_warnings, _fflag_ilp64],
 )
 
 py3.extension_module('_quadpack',
   ['__quadpack.h', '_quadpackmodule.c'],
   c_args: numpy_nodepr_api,
-  fortran_args: fortran_ignore_warnings,
   include_directories: ['../_lib/src'],
   link_with: [quadpack_lib, mach_lib],
   link_args: version_link_args,
-  dependencies: [lapack, np_dep],
+  dependencies: [lapack_ilp64, np_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate'
@@ -114,10 +113,9 @@ py3.extension_module('_quadpack',
 py3.extension_module('_odepack',
   '_odepackmodule.c',
   c_args: numpy_nodepr_api,
-  fortran_args: fortran_ignore_warnings,
   link_with: [lsoda_lib, mach_lib],
   link_args: version_link_args,
-  dependencies: [lapack, np_dep],
+  dependencies: [lapack_ilp64, np_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate'
@@ -126,7 +124,7 @@ py3.extension_module('_odepack',
 vode_module = custom_target('vode_module',
   output: ['_vode-f2pywrappers.f', '_vodemodule.c'],
   input: 'vode.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts
 )
 
 py3.extension_module('_vode',
@@ -134,7 +132,7 @@ py3.extension_module('_vode',
   link_with: [vode_lib],
   c_args: [numpy_nodepr_api, Wno_unused_variable],
   link_args: version_link_args,
-  dependencies: [lapack, blas, fortranobject_dep],
+  dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate'
@@ -143,14 +141,14 @@ py3.extension_module('_vode',
 lsoda_module = custom_target('lsoda_module',
   output: ['_lsoda-f2pywrappers.f', '_lsodamodule.c'],
   input: 'lsoda.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts
 )
 
 py3.extension_module('_lsoda',
   lsoda_module,
   link_with: [lsoda_lib, mach_lib],
   c_args: [numpy_nodepr_api, Wno_unused_variable],
-  dependencies: [lapack, fortranobject_dep],
+  dependencies: [lapack_ilp64, fortranobject_dep],
   link_args: version_link_args,
   install: true,
   link_language: 'fortran',
@@ -160,7 +158,7 @@ py3.extension_module('_lsoda',
 _dop_module = custom_target('_dop_module',
   output: ['_dop-f2pywrappers.f', '_dopmodule.c'],
   input: 'dop.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts
 )
 
 py3.extension_module('_dop',
@@ -184,7 +182,7 @@ py3.extension_module('_test_multivariate',
 _test_odeint_banded_module = custom_target('_test_odeint_banded_module',
   output: ['_test_odeint_bandedmodule.c', '_test_odeint_banded-f2pywrappers.f'],
   input: 'tests/banded5x5.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts
 )
 
 py3.extension_module('_test_odeint_banded',
@@ -193,7 +191,7 @@ py3.extension_module('_test_odeint_banded',
   link_with: [lsoda_lib, mach_lib],
   fortran_args: _fflag_Wno_unused_dummy_argument,
   link_args: version_link_args,
-  dependencies: [lapack, fortranobject_dep],
+  dependencies: [lapack_ilp64, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate'

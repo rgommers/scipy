@@ -96,7 +96,7 @@ py3.extension_module('_zeros',
 lbfgsb_module = custom_target('lbfgsb_module',
   output: ['_lbfgsb-f2pywrappers.f', '_lbfgsbmodule.c'],
   input: 'lbfgsb_src/lbfgsb.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts
 )
 
 _lbfgsb = py3.extension_module('_lbfgsb',
@@ -107,9 +107,9 @@ _lbfgsb = py3.extension_module('_lbfgsb',
     lbfgsb_module,
   ],
   c_args: numpy_nodepr_api,
-  fortran_args: fortran_ignore_warnings,
+  fortran_args: [fortran_ignore_warnings, _fflag_ilp64],
   link_args: version_link_args,
-  dependencies: [lapack, blas, fortranobject_dep],
+  dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/optimize'

@@ -6,7 +6,7 @@
 static PyObject *fitpack_error;
 #include "__fitpack.h"
 
-#ifdef HAVE_ILP64
+#ifdef HAVE_BLAS_ILP64
 
 #define F_INT npy_int64
 #define F_INT_NPY NPY_INT64

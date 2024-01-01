@@ -90,7 +90,7 @@ fitpack_src = [
 # TODO: Add flags for 64 bit ints
 fitpack_lib = static_library('fitpack_lib',
   fitpack_src,
-  fortran_args: _fflag_Wno_maybe_uninitialized
+  fortran_args: [_fflag_Wno_maybe_uninitialized, _fflag_ilp64],
 )
 
 interpnd = py3.extension_module('interpnd',
@@ -130,9 +130,13 @@ _bspl = py3.extension_module('_bspl',
 )
 
 # TODO: Add flags for 64 bit ints
+_c_args_fitpack = [numpy_nodepr_api]
+if use_ilp64
+  _c_args_fitpack += ['-DHAVE_BLAS_ILP64']
+endif
 _fitpack = py3.extension_module('_fitpack',
   ['src/_fitpackmodule.c'],
-  c_args: numpy_nodepr_api,
+  c_args: _c_args_fitpack,
   link_with: [fitpack_lib],
   include_directories: 'src/',
   dependencies: np_dep,
@@ -145,15 +149,14 @@ _fitpack = py3.extension_module('_fitpack',
 dfitpack_module = custom_target('dfitpack_module',
   output: ['dfitpack-f2pywrappers.f', 'dfitpackmodule.c'],
   input: 'src/fitpack.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts
 )
 
-# TODO: Add flags for 64 bit ints
 dfitpack = py3.extension_module('dfitpack',
   dfitpack_module,
   c_args: [numpy_nodepr_api, Wno_unused_variable],
   link_args: version_link_args,
-  dependencies: [lapack, fortranobject_dep],
+  dependencies: [lapack_ilp64, fortranobject_dep],
   link_with: [fitpack_lib],
   install: true,
   link_language: 'fortran',

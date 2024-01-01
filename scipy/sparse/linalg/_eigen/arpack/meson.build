@@ -87,22 +87,23 @@ _suppress_all_warnings = ff.get_supported_arguments('-w')
 
 arpack_lib = static_library('arpack_lib',
   arpack_sources,
-  fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
+  fortran_args: [fortran_ignore_warnings, _suppress_all_warnings, _fflag_ilp64],
   include_directories: ['ARPACK/SRC']
 )
 
 arpack_module = custom_target('arpack_module',
   output: ['_arpackmodule.c', '_arpack-f2pywrappers.f'],
   input: 'arpack.pyf.src',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts
 )
 
 _arpack = py3.extension_module('_arpack',
   arpack_module,
   c_args: numpy_nodepr_api,
+  fortran_args: _fflag_ilp64,
   link_with: [arpack_lib],
   link_args: version_link_args,
-  dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],
+  dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep, g77_abi_wrappers],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/sparse/linalg/_eigen/arpack'
