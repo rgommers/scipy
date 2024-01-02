@@ -68,6 +68,7 @@ fblas_module = custom_target('fblas_module',
 py3.extension_module('_fblas',
   fblas_module,
   c_args: numpy_nodepr_api,
+  fortran_args: _fflag_lp64,
   link_args: version_link_args,
   dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],
   install: true,
@@ -87,6 +88,7 @@ flapack_module = custom_target('flapack_module',
 py3.extension_module('_flapack',
   flapack_module,
   c_args: [numpy_nodepr_api, Wno_empty_body],
+  fortran_args: _fflag_lp64,
   link_args: version_link_args,
   dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],
   install: true,
@@ -108,24 +110,6 @@ py3.extension_module('_flapack',
 #       and then uses both in the build (search for `Download-OpenBLAS('1'))
 #       in azure-pipelines.yml if you want to check that).
 if use_ilp64
-  conf_data = configuration_data()
-  if cc.sizeof('long') == 8
-    conf_data.set('int64_name', 'long')
-  elif cc.sizeof('long long') == 8
-    conf_data.set('int64_name', 'long long')
-  else
-    error('Neither `long` nor `long long` is 64-bit, giving up.')
-  endif
-
-  int64_f2cmap = configure_file(
-    input: '../_build_utils/int64.f2cmap.in',
-    output: 'int64.f2cmap',
-    configuration: conf_data,
-    install: false,
-  )
-
-  f2py_ilp64_opts = ['--f2cmap', int64_f2cmap]
-
   fblas64_module = custom_target('fblas64_module',
     output: ['_fblas_64module.c', '_fblas_64-f2pywrappers.f'],
     input: 'fblas_64.pyf.src',
@@ -137,7 +121,7 @@ if use_ilp64
     c_args: numpy_nodepr_api,
     fortran_args: _fflag_ilp64,
     link_args: version_link_args,
-    dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],
+    dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep, g77_abi_wrappers],
     install: true,
     link_language: 'fortran',
     subdir: 'scipy/linalg'
@@ -154,7 +138,7 @@ if use_ilp64
     c_args: [numpy_nodepr_api, Wno_empty_body],
     fortran_args: _fflag_ilp64,
     link_args: version_link_args,
-    dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],
+    dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep, g77_abi_wrappers],
     install: true,
     link_language: 'fortran',
     subdir: 'scipy/linalg'
@@ -217,7 +201,7 @@ py3.extension_module('_interpolative',
     interpolative_module,
   ],
   c_args: numpy_nodepr_api,
-  fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
+  fortran_args: [fortran_ignore_warnings, _suppress_all_warnings, _fflag_lp64],
   link_args: version_link_args,
   dependencies: [lapack, fortranobject_dep],
   install: true,

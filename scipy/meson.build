@@ -245,12 +245,15 @@ if blas_symbol_suffix == 'auto'
   blas_symbol_suffix = blas.get_variable('symbol_suffix', default_value: '')
   message(f'BLAS symbol suffix: @blas_symbol_suffix@')
 endif
+_blas_incdir = []
 if blas_symbol_suffix != ''
   _args_blas += ['-DBLAS_SYMBOL_SUFFIX=' + blas_symbol_suffix]
+  _blas_incdir = ['.']  # for the generated symbol rename shims in the build dir
 endif
 blas_dep = declare_dependency(
   dependencies: [blas],
   compile_args: _args_blas,
+  include_directories: _blas_incdir,
 )
 
 # LAPACK detection
@@ -346,13 +349,16 @@ if use_ilp64
     endif
     message(f'BLAS symbol suffix (ILP64): @blas_symbol_suffix@')
   endif
+  _blas_incdir = []
   if blas_symbol_suffix != ''
     _args_blas += ['-DBLAS_SYMBOL_SUFFIX=' + blas_symbol_suffix]
+    _blas_incdir = ['.']
   endif
   # Declare the ILP64 dependencies
   blas_ilp64 = declare_dependency(
     dependencies: [blas_ilp64],
     compile_args: _args_blas,
+    include_directories: _blas_incdir,
   )
   lapack_ilp64 = declare_dependency(dependencies: [lapack_ilp64, blas_ilp64])
 else
@@ -493,22 +499,26 @@ fortran_ignore_warnings = ff.get_supported_arguments(
 
 # Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
 # code uses preprocessor statements, add this compile flag to it.
-_fflag_fpp = []
-if ff.get_id() == 'intel-cl'
-  if is_windows
-    _fflag_fpp = ff.get_supported_arguments('/fpp')
-  else
-    _fflag_fpp = ff.get_supported_arguments('-fpp')
-  endif
+# Gfortran does run the preprocessor for .F files, and PROPACK is the only
+# component which needs the preprocessor (unless we need symbol renaming for
+# blas_symbol_suffix).
+_fflag_preprocess = []
+_gfortran_preprocess = ['-cpp', '-ffree-line-length-none', '-ffixed-line-length-none']
+if ff.has_multi_arguments(_gfortran_preprocess)
+  _fflag_preprocess = _gfortran_preprocess
+else
+  _fflag_preprocess = ff.first_supported_argument(['-fpp', '/fpp', 'cpp'])
 endif
 
+_fflag_lp64 = []
 _fflag_ilp64 = []
 f2py_ilp64_opts = []
 if use_ilp64
-  # Gfortran uses `-fdefault-integer-8` to switch to 64-bit integers by
+  # Gfortran and Clang use `-fdefault-integer-8` to switch to 64-bit integers by
   # default, all other known compilers use `-i8`
-  _fflag_ilp64 = ff.get_supported_arguments(['-i8', '-fdefault-integer-8'])
+  _fflag_ilp64 = ff.first_supported_argument(['-fdefault-integer-8', '-i8'])
 
+  # Write out a mapping file for f2py for defaulting to ILP64
   conf_data = configuration_data()
   if cc.sizeof('long') == 8
     conf_data.set('int64_name', 'long')
@@ -517,15 +527,22 @@ if use_ilp64
   else
     error('Neither `long` nor `long long` is 64-bit, giving up.')
   endif
-
   int64_f2cmap = configure_file(
     input: '_build_utils/int64.f2cmap.in',
     output: 'int64.f2cmap',
     configuration: conf_data,
     install: false,
   )
-
   f2py_ilp64_opts = ['--f2cmap', int64_f2cmap]
+endif
+
+if blas_symbol_suffix != ''
+  # We need to patch source files that use BLAS/LAPACK symbols.
+  # In addition, we now need to enable the Fortran preprocessor on all targets
+  # that depend on BLAS/LAPACK
+  # Note: this came from `scipy/build_utils/_fortran.py` in the distutils build.
+  _fflag_lp64 += _fflag_preprocess  # TODO: propagate _fflag_lp64
+  _fflag_ilp64 += _fflag_preprocess
 endif
 
 # Deal with M_PI & friends; add `use_math_defines` to c_args or cpp_args
