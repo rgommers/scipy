@@ -516,8 +516,8 @@ def _kpoints(data, k, rng, xp):
         A 'k' by 'N' containing the initial centroids
 
     """
-    idx = rng.choice(data.shape[0], size=int(k), replace=False)
-    return data[idx, ...]
+    idx = xp.asarray(rng.choice(data.shape[0], size=int(k), replace=False))
+    return xp.take(data, idx, axis=0)
 
 
 def _krandinit(data, k, rng, xp):
@@ -805,12 +805,12 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
             rng = check_random_state(seed)
             code_book = init_meth(data, code_book, rng, xp)
 
+    data = np.asarray(data)
+    code_book = np.asarray(code_book)
     for i in range(iter):
         # Compute the nearest neighbor for each obs using the current code book
         label = vq(data, code_book, check_finite=check_finite)[0]
         # Update the code book by computing centroids
-        data = np.asarray(data)
-        label = np.asarray(label)
         new_code_book, has_members = _vq.update_cluster_means(data, label, nc)
         if not has_members.all():
             miss_meth()
