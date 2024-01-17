@@ -516,7 +516,9 @@ def _kpoints(data, k, rng, xp):
         A 'k' by 'N' containing the initial centroids
 
     """
-    idx = xp.asarray(rng.choice(data.shape[0], size=int(k), replace=False))
+    idx = rng.choice(data.shape[0], size=int(k), replace=False)
+    # convert to array with default integer dtype for indexing
+    idx = xp.asarray(idx, dtype=xp.asarray([1]).dtype)
     return xp.take(data, idx, axis=0)
 
 
