@@ -19,6 +19,25 @@ from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               _contains_nan, _rng_html_rewrite, _lazywhere)
 
 
+def test_take_32_64():
+    x32 = np.ones(2, dtype=np.int32)
+    x64 = np.ones(2, dtype=np.int64)
+    np.take(x32, x64)
+
+def test_take_64_32():
+    x32 = np.ones(2, dtype=np.int32)
+    x64 = np.ones(2, dtype=np.int64)
+    np.take(x64, x32)
+
+def test_take_32_32():
+    x32 = np.ones(2, dtype=np.int32)
+    np.take(x32, x32)
+
+def test_take_64_64():
+    x64 = np.ones(2, dtype=np.int64)
+    np.take(x64, x64)
+
+
 def test__aligned_zeros():
     niter = 10
 

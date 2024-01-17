@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
+      - debug-linux32
   pull_request:
     branches:
       - main
@@ -358,10 +359,6 @@ jobs:
   #################################################################################
   linux_32bit:
     name: Linux - 32 bit
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-latest
     # I tried running directly in a container:, using the image: and options:
     # entries. Unfortunately at this time options: does not seem to listen to
