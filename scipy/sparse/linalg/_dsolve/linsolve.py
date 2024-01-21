@@ -404,7 +404,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     if is_pydata_spmatrix(A):
         def csc_construct_func(*a, cls=type(A)):
-            return cls(csc_matrix(*a))
+            return cls.from_scipy_sparse(csc_matrix(*a))
         A = A.to_scipy_sparse().tocsc()
     else:
         csc_construct_func = csc_matrix
@@ -499,7 +499,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     if is_pydata_spmatrix(A):
         def csc_construct_func(*a, cls=type(A)):
-            return cls(csc_matrix(*a))
+            return cls.from_scipy_sparse(csc_matrix(*a))
         A = A.to_scipy_sparse().tocsc()
     else:
         csc_construct_func = csc_matrix

@@ -172,8 +172,10 @@ def test_splu(matrices):
     assert isinstance(lu.L, sparse_cls)
     assert isinstance(lu.U, sparse_cls)
 
-    Pr = sparse_cls(sp.csc_matrix((np.ones(n), (lu.perm_r, np.arange(n)))))
-    Pc = sparse_cls(sp.csc_matrix((np.ones(n), (np.arange(n), lu.perm_c))))
+    _Pr_scipy = sp.csc_matrix((np.ones(n), (lu.perm_r, np.arange(n))))
+    _Pc_scipy = sp.csc_matrix((np.ones(n), (np.arange(n), lu.perm_c)))
+    Pr = sparse_cls.from_scipy_sparse(_Pr_scipy)
+    Pc = sparse_cls.from_scipy_sparse(_Pc_scipy)
     A2 = Pr.T @ lu.L @ lu.U @ Pc.T
 
     assert_allclose(A2.todense(), A_sparse.todense())
