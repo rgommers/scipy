@@ -133,7 +133,8 @@ fortranobject_lib = static_library('_fortranobject',
 )
 fortranobject_dep = declare_dependency(
   link_with: fortranobject_lib,
-  include_directories: [inc_np, inc_f2py],
+  include_directories: inc_f2py,
+  dependencies: np_dep,
 )
 
 # TODO: 64-bit BLAS and LAPACK
