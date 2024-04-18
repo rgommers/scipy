@@ -10,7 +10,7 @@ project(
   default_options: [
     'buildtype=debugoptimized',
     'b_ndebug=if-release',
-    'c_std=c17',
+    'c_std=c11',
     'cpp_std=c++17',
     'fortran_std=legacy',
     'blas=openblas',
