@@ -87,7 +87,7 @@ jobs:
         run: |
           # 1.23.5 is currently the oldest numpy usable on cp3.10 according
           # to pyproject.toml
-          python -m pip install numpy==1.26.4 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis "scipy-openblas32<=0.3.23.293.2"
+          python -m pip install numpy==1.23.5 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis "scipy-openblas32<=0.3.23.293.2"
 
       - name: Build
         run: |
