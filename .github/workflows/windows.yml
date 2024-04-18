@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
+      - c17-windows
   pull_request:
     branches:
       - main
@@ -64,9 +65,6 @@ jobs:
   full_dev_py_min_numpy:
     name: cp310 (meson) full, dev.py, minimum numpy
     needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: windows-2019
     steps:
       - name: Checkout
