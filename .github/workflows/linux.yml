@@ -425,7 +425,7 @@ jobs:
 
       - name: Install test dependencies
         run: |
-          python3.11 -m pip install pytest hypothesis
+          python3.11 -m pip install pytest hypothesis meson
 
       - name: Run tests
         run: |
