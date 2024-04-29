@@ -425,12 +425,13 @@ jobs:
 
       - name: Install test dependencies
         run: |
-          # Downgrade numpy to oldest supported version
-          python3.11 -m pip install threadpoolctl pooch pytest pytest-xdist==2.5.0 pytest-timeout hypothesis sparse
+          python3.11 -m pip install pytest hypothesis
 
       - name: Run tests
         run: |
-          # can't be in source directory
+          # Just a small subset of tests; this will be fine if the build
+          # succeeds (that's the real purpose of this job)
           pushd $RUNNER_TEMP
-          python3.11 -m pytest --pyargs scipy -n2 --durations=10
+          python3.11 -m pytest --pyargs scipy.cluster
+          python3.11 -m pytest --pyargs scipy.linalg
           popd
