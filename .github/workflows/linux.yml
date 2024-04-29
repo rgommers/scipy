@@ -413,7 +413,7 @@ jobs:
 
       - name: Setup Python build deps
         run: |
-          python3.11 -m pip install build meson-python pythran pybind11 cython numpy
+          python3.11 -m pip install build pythran pybind11 cython numpy
           # Things should work with a `meson` executable from a different Python env
           python3.10 -m pip install meson
           python3.11 -m pip install meson-python packaging pyproject-toml --no-deps
