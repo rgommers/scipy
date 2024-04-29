@@ -109,13 +109,6 @@ py3.extension_module('_flapack',
 
 # TODO: cblas/clapack are built *only* for ATLAS. Why? Is it still needed?
 
-# _interpolative
-interpolative_module = custom_target('interpolative_module',
-  output: '_interpolativemodule.c',
-  input: 'interpolative.pyf',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 # id_dist contains a copy of FFTPACK, which has type mismatch warnings
 # that are hard to fix. This code is terrible and noisy during the build,
 # silence it completely.
@@ -159,7 +152,7 @@ py3.extension_module('_interpolative',
     'src/id_dist/src/idzr_rid.f',
     'src/id_dist/src/idzr_rsvd.f',
     'src/id_dist/src/prini.f',
-    interpolative_module,
+    f2py_gen.process('interpolative.pyf'),
   ],
   fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
   link_args: version_link_args,

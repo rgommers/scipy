@@ -284,7 +284,7 @@ def main():
 
     # Now invoke f2py to generate the C API module file
     if args.infile.endswith(('.pyf.src', '.pyf')):
-        p = subprocess.Popen([sys.executable, '-m', 'numpy.f2py', fname_pyf,
+        p = subprocess.Popen(['f2py', fname_pyf,
                             '--build-dir', outdir_abs], #'--quiet'],
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                             cwd=os.getcwd())

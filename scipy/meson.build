@@ -144,6 +144,15 @@ fortranobject_dep = declare_dependency(
   compile_args: _f2py_c_args,
 )
 
+f2py = find_program('f2py')
+# Note: cannot handle .pyf.src or targets with #include's (due to no
+#       `depend_files` - see feature request at meson#8295)
+f2py_gen = generator(generate_f2pymod,
+  arguments : ['@INPUT@', '-o', '@BUILD_DIR@'],
+  output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
+)
+
+
 # TODO: 64-bit BLAS and LAPACK
 #
 # Note that this works as long as BLAS and LAPACK are detected properly via
