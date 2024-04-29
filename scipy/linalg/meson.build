@@ -3,6 +3,7 @@
 __init__py = fs.copyfile('__init__.py')
 _cy_array_utils_pxd = fs.copyfile('_cythonized_array_utils.pxd')
 
+_generate_pyx = find_program('_generate_pyx.py')
 cython_linalg = custom_target('cython_linalg',
   output: [
     'cython_blas.pyx',
@@ -13,7 +14,7 @@ cython_linalg = custom_target('cython_linalg',
     '_lapack_subroutines.h'
   ],
   input: '_generate_pyx.py',
-  command: [py3, '@INPUT@', '-o', '@OUTDIR@', accelerate_flag],
+  command: [_generate_pyx, '-o', '@OUTDIR@', accelerate_flag],
   depend_files: [
     'cython_blas_signatures.txt',
     'cython_lapack_signatures.txt',
@@ -30,10 +31,11 @@ cython_linalg = custom_target('cython_linalg',
 # warnings about multiple outputs. And using `depends: cython_linalg[2]` does
 # not work, because that generator depends does not accept CustomTargetIndex,
 # only CustomTarget. See https://github.com/mesonbuild/meson/issues/9837
+_echo = find_program('../_build_utils/echo.py')
 cython_blas_pxd = custom_target(
   output: '_dummy_cython_blas.pxd',
   input: cython_linalg[2],
-  command: [py3, '-c', '"@INPUT@"'],
+  command: [_echo, '@INPUT@'],
 )
 
 # pyx -> c, pyx -> cpp generators, depending on __init__.py here.

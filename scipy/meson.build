@@ -261,6 +261,7 @@ endif
 
 scipy_dir = py3.get_install_dir() / 'scipy'
 
+version_utils = find_program('../tools/version_utils.py')
 generate_version = custom_target(
   'generate-version',
   install: true,
@@ -268,7 +269,7 @@ generate_version = custom_target(
   build_by_default: true,
   output: 'version.py',
   input: '../tools/version_utils.py',
-  command: [py3, '@INPUT@', '--source-root', '@SOURCE_ROOT@'],
+  command: [version_utils, '--source-root', '@SOURCE_ROOT@'],
   install_dir: scipy_dir,
   install_tag: 'python-runtime',
 )
