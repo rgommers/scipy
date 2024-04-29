@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
+      - fix-wrong-interpreter
   pull_request:
     branches:
       - main
@@ -394,10 +395,10 @@ jobs:
     # For such a build config, `python`/`python3` executables may not have
     # build dependencies like Cython or NumPy installed.
     name: non-default Python interpreter, fast, py3.10/npMin, pip+pytest
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+#   needs: get_commit_message
+#   if: >
+#     needs.get_commit_message.outputs.message == 1
+#     && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4.1.1
