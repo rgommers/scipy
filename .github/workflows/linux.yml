@@ -429,6 +429,8 @@ jobs:
 
       - name: Run tests
         run: |
+          # We do need meson in the env for compile tests
+          python3.11 -m pip install meson
           # Just a small subset of tests; this will be fine if the build
           # succeeds (that's the real purpose of this job)
           pushd $RUNNER_TEMP
