@@ -42,11 +42,11 @@ jobs:
 
     - name: Set up x86-64 build env (native)
       run: |
-        mamba create -n build-env gxx_linux-aarch64 gfortran_linux-aarch64 python=3.12 meson-python build numpy pythran cython pkg-config
+        mamba create -n build-env gxx_linux-aarch64 gfortran_linux-aarch64 python=3.12 meson-python build numpy pythran cython pkg-config pybind11
 
     - name: Set up aarch64 host env (cross)
       run: |
-        CONDA_SUBDIR=linux-aarch64 mamba create -n host-env python=3.12 numpy openblas libstdcxx-ng libgfortran-ng pybind11
+        CONDA_SUBDIR=linux-aarch64 mamba create -n host-env python=3.12 numpy openblas libstdcxx-ng libgfortran-ng
 
     - name: Cross-compile SciPy
       run: |
