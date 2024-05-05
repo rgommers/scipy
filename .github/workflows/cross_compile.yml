@@ -38,8 +38,6 @@ jobs:
         auto-activate-base: true
         activate-environment: ""
 
-    # TODO: add caching for conda env (see macos_meson.yml)
-
     - name: Set up x86-64 build env (native)
       run: |
         mamba create -n build-env gxx_linux-aarch64 gfortran_linux-aarch64 python=3.12 meson-python build numpy pythran cython pkg-config pybind11
@@ -78,7 +76,9 @@ jobs:
 
         # meson-python doesn't yet know about cross builds, so we get a wheel
         # with a `_x86_64` tag - fix that:
-        mv dist/scipy-1.12.0.dev0-cp312-cp312-linux_x86_64.whl dist/scipy-1.12.0.dev0-cp312-cp312-linux_aarch64.whl
+        pushd dist
+        for f in *.whl; do mv "$f" "$(echo "$f" | sed s/x86_64/aarch64/)"; done
+        popd
 
         # NOTE: Meson also gets the extensions of the individual extension
         # modules wrong and puts x86_64-linux-gnu.so in there. This needs
