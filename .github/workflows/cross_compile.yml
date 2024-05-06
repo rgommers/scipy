@@ -80,10 +80,15 @@ jobs:
         for f in *.whl; do mv "$f" "$(echo "$f" | sed s/x86_64/aarch64/)"; done
         popd
 
-        # NOTE: Meson also gets the extensions of the individual extension
-        # modules wrong and puts x86_64-linux-gnu.so in there. This needs
-        # fixing, but has no consequences (the wheel should run fine on
-        # aarch64).
+        # FIXME: Meson gets the extensions of the individual extension modules
+        # wrong and puts x86_64-linux-gnu.so in there. This needs fixing, it
+        # confuses `auditwheel` (it looks only at this file extension, not at
+        # dist-info/WHEEL nor at the contents of the extension modules to
+        # determine architecture (would be easy to do though with `file` or
+        # `readelf`). Issue: meson#7049. PR: meson#12190.
+        #
+        # FIXME: architecture in `dist-info/WHEEL` says:
+        #            Tag: cp312-cp312-linux_x86_64
 
     - name: Show meson-log.txt
       if: always()
