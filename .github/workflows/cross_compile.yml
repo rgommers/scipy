@@ -78,7 +78,7 @@ jobs:
         export PKG_CONFIG_PATH=/usr/share/miniconda3/envs/host-env/lib/pkgconfig
 
         # `-wnx` means: `--wheel --no-isolation --skip-dependency-check`
-        python -m build -wnx -Cbuilddir=build -Csetup-args=--cross-file=$PWD/ci/cross_aarch64.ini
+        python -m build -wnx -Cbuild-dir=build -Csetup-args=--cross-file=$PWD/ci/cross_aarch64.ini
 
         # meson-python doesn't yet know about cross builds, so we get a wheel
         # with a `_x86_64` tag - fix that:
@@ -106,10 +106,10 @@ jobs:
       run: |
         cat build/meson-logs/meson-log.txt
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
-        name: aarch64 wheel
-        path: dist/*.whl
+        name: aarch64-wheel
+        path: dist
 
   cross_conda_aarch64_test:
     name: Test on aarch64 (QEMU)
@@ -124,9 +124,10 @@ jobs:
 
     - uses: actions/download-artifact@v4
       with:
-        path: .
+        name: aarch64-wheel
+        path: dist
 
     # TODO: run next steps in Docker container (a la cibuildwheel or numpy's `linux_qemu.yml`)
     - name: Set up aarch64 host env (cross)
       run: |
-        mamba create -n host-env python=3.12 numpy openblas libstdcxx-ng libgfortran-ng       path: .
+        mamba create -n aarch64-native-env python=3.12 numpy openblas pytest hypothesis
