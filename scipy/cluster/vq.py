@@ -68,7 +68,7 @@ import warnings
 import numpy as np
 from collections import deque
 from scipy._lib._array_api import (
-    _asarray, array_namespace, size, atleast_nd, copy, cov
+    _asarray, array_namespace, size, atleast_nd, copy, cov, at_set
 )
 from scipy._lib._util import check_random_state, rng_integers
 from scipy.spatial.distance import cdist
@@ -135,11 +135,13 @@ def whiten(obs, check_finite=True):
     obs = _asarray(obs, check_finite=check_finite, xp=xp)
     std_dev = xp.std(obs, axis=0)
     zero_std_mask = std_dev == 0
-    if xp.any(zero_std_mask):
-        std_dev[zero_std_mask] = 1.0
+    std_dev = at_set(std_dev, zero_std_mask, 1.0)
+    if check_finite and xp.any(zero_std_mask):
+        # don't warn if user opted out of checks with `check_finite=False`
         warnings.warn("Some columns have standard deviation zero. "
                       "The values of these columns will not change.",
                       RuntimeWarning, stacklevel=2)
+
     return obs / std_dev
 
 

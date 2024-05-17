@@ -524,3 +524,87 @@ def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     sign = xp.where(x < 0, -one, sign)
     sign = xp.where(x == 0, 0*one, sign)
     return sign
+
+
+def at_add(
+        x : Array,
+        idx: Array | int | slice,
+        val: Array | int | float | complex,
+        *,
+        xp: ModuleType | None = None,
+    ) -> Array:
+    """In-place addition. Use only if no views are involved.
+
+    Notes
+    -----
+    Similar to https://jax.readthedocs.io/en/latest/_autosummary/jax.numpy.ndarray.at.html
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy._lib._array_api import array_namespace
+
+    >>> x = np.arange(5)
+    >>> xp = array_namespace(x)
+
+    The equivalent of ``x[x < 3] += 7``:
+
+    >>> x = at_add(x, x < 3, 7)
+    >>> x
+    array([7, 7, 7, 3, 4])
+
+    """
+    xp = array_namespace(x) if xp is None else xp
+    if is_jax(xp):
+        x = x.at[idx].add(val)
+    else:
+        x[idx] += val
+    return x
+
+
+def at_set(
+        x : Array,
+        idx: Array | int | slice,
+        val: Array | int | float | complex,
+        *,
+        xp: ModuleType | None = None,
+    ) -> Array:
+    """In-place update. Use only if no views are involved."""
+    xp = array_namespace(x) if xp is None else xp
+    if is_jax(xp):
+        x = x.at[idx].set(val)
+    else:
+        x[idx] = val
+    return x
+
+
+def at_mul(
+        x : Array,
+        idx: Array | int | slice,
+        val: Array | int | float | complex,
+        *,
+        xp: ModuleType | None = None,
+    ) -> Array:
+    """In-place multiply. Use only if no views are involved."""
+    xp = array_namespace(x) if xp is None else xp
+    if is_jax(xp):
+        x = x.at[idx].multiply(val)
+    else:
+        x[idx] *= val
+    return x
+
+
+def at_div(
+        x : Array,
+        idx: Array | int | slice,
+        val: Array | int | float | complex,
+        *,
+        xp: ModuleType | None = None,
+    ) -> Array:
+    """In-place divide. Use only if no views are involved."""
+    xp = array_namespace(x) if xp is None else xp
+    if is_jax(xp):
+        x = x.at[idx].divide(val)
+    else:
+        x[idx] /= val
+    return x

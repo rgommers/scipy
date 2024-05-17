@@ -48,7 +48,7 @@ from scipy.cluster.hierarchy import (
 from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal, at_set
 
 from . import hierarchy_test_data
 
@@ -430,9 +430,6 @@ class TestIsValidLinkage:
             Z = linkage(y)
             assert_(is_valid_linkage(Z) is True)
 
-    @skip_xp_backends('jax.numpy',
-                      reasons=['jax arrays do not support item assignment'],
-                      cpu_only=True)
     def test_is_valid_linkage_4_and_up_neg_index_left(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative indices (left).
@@ -440,13 +437,10 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             y = xp.asarray(y)
             Z = linkage(y)
-            Z[i//2,0] = -2
+            Z = at_set(Z, (i//2, 0), -2)
             assert_(is_valid_linkage(Z) is False)
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
-    @skip_xp_backends('jax.numpy',
-                      reasons=['jax arrays do not support item assignment'],
-                      cpu_only=True)
     def test_is_valid_linkage_4_and_up_neg_index_right(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative indices (right).
@@ -454,13 +448,10 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             y = xp.asarray(y)
             Z = linkage(y)
-            Z[i//2,1] = -2
+            Z = at_set(Z, (i//2, 1), -2)
             assert_(is_valid_linkage(Z) is False)
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
-    @skip_xp_backends('jax.numpy',
-                      reasons=['jax arrays do not support item assignment'],
-                      cpu_only=True)
     def test_is_valid_linkage_4_and_up_neg_dist(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative distances.
@@ -468,13 +459,10 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             y = xp.asarray(y)
             Z = linkage(y)
-            Z[i//2,2] = -0.5
+            Z = at_set(Z, (i//2, 2), -0.5)
             assert_(is_valid_linkage(Z) is False)
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
-    @skip_xp_backends('jax.numpy',
-                      reasons=['jax arrays do not support item assignment'],
-                      cpu_only=True)
     def test_is_valid_linkage_4_and_up_neg_counts(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative counts.
@@ -482,7 +470,7 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             y = xp.asarray(y)
             Z = linkage(y)
-            Z[i//2,3] = -2
+            Z = at_set(Z, (i//2, 3), -2)
             assert_(is_valid_linkage(Z) is False)
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
@@ -527,9 +515,6 @@ class TestIsValidInconsistent:
             R = inconsistent(Z)
             assert_(is_valid_im(R) is True)
 
-    @skip_xp_backends('jax.numpy',
-                      reasons=['jax arrays do not support item assignment'],
-                      cpu_only=True)
     def test_is_valid_im_4_and_up_neg_index_left(self, xp):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
         # (step size 3) with negative link height means.
@@ -538,13 +523,10 @@ class TestIsValidInconsistent:
             y = xp.asarray(y)
             Z = linkage(y)
             R = inconsistent(Z)
-            R[i//2,0] = -2.0
+            R = at_set(R, (i//2, 0), -2.0)
             assert_(is_valid_im(R) is False)
             assert_raises(ValueError, is_valid_im, R, throw=True)
 
-    @skip_xp_backends('jax.numpy',
-                      reasons=['jax arrays do not support item assignment'],
-                      cpu_only=True)
     def test_is_valid_im_4_and_up_neg_index_right(self, xp):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
         # (step size 3) with negative link height standard deviations.
@@ -553,13 +535,10 @@ class TestIsValidInconsistent:
             y = xp.asarray(y)
             Z = linkage(y)
             R = inconsistent(Z)
-            R[i//2,1] = -2.0
+            R = at_set(R, (i//2, 1), -2.0)
             assert_(is_valid_im(R) is False)
             assert_raises(ValueError, is_valid_im, R, throw=True)
 
-    @skip_xp_backends('jax.numpy',
-                      reasons=['jax arrays do not support item assignment'],
-                      cpu_only=True)
     def test_is_valid_im_4_and_up_neg_dist(self, xp):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
         # (step size 3) with negative link counts.
@@ -568,7 +547,7 @@ class TestIsValidInconsistent:
             y = xp.asarray(y)
             Z = linkage(y)
             R = inconsistent(Z)
-            R[i//2,2] = -0.5
+            R = at_set(R, (i//2, 2), -0.5)
             assert_(is_valid_im(R) is False)
             assert_raises(ValueError, is_valid_im, R, throw=True)
 
@@ -761,14 +740,11 @@ class TestIsMonotonic:
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
         assert is_monotonic(Z)
 
-    @skip_xp_backends('jax.numpy',
-                      reasons=['jax arrays do not support item assignment'],
-                      cpu_only=True)
     def test_is_monotonic_tdist_linkage2(self, xp):
         # Tests is_monotonic(Z) on clustering generated by single linkage on
         # tdist data set. Perturbing. Expecting False.
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
-        Z[2,2] = 0.0
+        Z = at_set(Z, (2, 2), 0.0)
         assert not is_monotonic(Z)
 
     def test_is_monotonic_Q_linkage(self, xp):

@@ -94,8 +94,6 @@ class TestWhiten:
                           [0.45067590, 0.45464607]])
         xp_assert_close(whiten(obs), desired, rtol=1e-5)
 
-    @skip_xp_backends('jax.numpy',
-                      reasons=['jax arrays do not support item assignment'])
     def test_whiten_zero_std(self, xp):
         desired = xp.asarray([[0., 1.0, 2.86666544],
                               [0., 1.0, 1.32460034],

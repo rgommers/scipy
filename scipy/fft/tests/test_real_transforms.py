@@ -7,7 +7,7 @@ from scipy.fft import dct, idct, dctn, idctn, dst, idst, dstn, idstn
 import scipy.fft as fft
 from scipy import fftpack
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import copy, xp_assert_close
+from scipy._lib._array_api import copy, xp_assert_close, at_mul, at_div
 
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -192,28 +192,21 @@ def test_orthogonalize_noop(func, type, norm, xp):
     xp_assert_close(y1, y2)
 
 
-@skip_xp_backends('jax.numpy',
-                  reasons=['jax arrays do not support item assignment'],
-                  cpu_only=True)
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 def test_orthogonalize_dct1(norm, xp):
     x = xp.asarray(np.random.rand(100))
-
     x2 = copy(x, xp=xp)
-    x2[0] *= SQRT_2
-    x2[-1] *= SQRT_2
+    x2 = at_mul(x2, xp.asarray([0, -1]), SQRT_2, xp=xp)
 
     y1 = dct(x, type=1, norm=norm, orthogonalize=True)
     y2 = dct(x2, type=1, norm=norm, orthogonalize=False)
+    y2 = at_div(y2, xp.asarray([0, -1]), SQRT_2, xp=xp)
 
-    y2[0] /= SQRT_2
-    y2[-1] /= SQRT_2
     xp_assert_close(y1, y2)
 
 
-@skip_xp_backends('jax.numpy',
-                  reasons=['jax arrays do not support item assignment'],
-                  cpu_only=True)
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 @pytest.mark.parametrize("func", [dct, dst])
 def test_orthogonalize_dcst2(func, norm, xp):
@@ -221,19 +214,19 @@ def test_orthogonalize_dcst2(func, norm, xp):
     y1 = func(x, type=2, norm=norm, orthogonalize=True)
     y2 = func(x, type=2, norm=norm, orthogonalize=False)
 
-    y2[0 if func == dct else -1] /= SQRT_2
+    idx = 0 if func == dct else -1
+    y2 = at_div(y2, idx, SQRT_2, xp=xp)
     xp_assert_close(y1, y2)
 
 
-@skip_xp_backends('jax.numpy',
-                  reasons=['jax arrays do not support item assignment'],
-                  cpu_only=True)
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 @pytest.mark.parametrize("func", [dct, dst])
 def test_orthogonalize_dcst3(func, norm, xp):
     x = xp.asarray(np.random.rand(100))
     x2 = copy(x, xp=xp)
-    x2[0 if func == dct else -1] *= SQRT_2
+    idx = 0 if func == dct else -1
+    x2 = at_mul(x2, idx, SQRT_2, xp=xp)
 
     y1 = func(x, type=3, norm=norm, orthogonalize=True)
     y2 = func(x2, type=3, norm=norm, orthogonalize=False)
