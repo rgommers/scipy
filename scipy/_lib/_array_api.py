@@ -556,7 +556,10 @@ def at_add(
     """
     xp = array_namespace(x) if xp is None else xp
     if is_jax(xp):
-        x = x.at[idx].add(val)
+        if hasattr(idx, 'dtype') and xp.isdtype(idx.dtype, 'bool'):
+            x = xp.where(idx, x + val, x)
+        else:
+            x = x.at[idx].add(val)
     else:
         x[idx] += val
     return x
@@ -572,7 +575,10 @@ def at_set(
     """In-place update. Use only if no views are involved."""
     xp = array_namespace(x) if xp is None else xp
     if is_jax(xp):
-        x = x.at[idx].set(val)
+        if hasattr(idx, 'dtype') and xp.isdtype(idx.dtype, 'bool'):
+            x = xp.where(idx, val, x)
+        else:
+            x = x.at[idx].set(val)
     else:
         x[idx] = val
     return x
@@ -588,7 +594,10 @@ def at_mul(
     """In-place multiply. Use only if no views are involved."""
     xp = array_namespace(x) if xp is None else xp
     if is_jax(xp):
-        x = x.at[idx].multiply(val)
+        if hasattr(idx, 'dtype') and xp.isdtype(idx.dtype, 'bool'):
+            x = xp.where(idx, x * val, x)
+        else:
+            x = x.at[idx].multiply(val)
     else:
         x[idx] *= val
     return x
@@ -604,7 +613,10 @@ def at_div(
     """In-place divide. Use only if no views are involved."""
     xp = array_namespace(x) if xp is None else xp
     if is_jax(xp):
-        x = x.at[idx].divide(val)
+        if hasattr(idx, 'dtype') and xp.isdtype(idx.dtype, 'bool'):
+            x = xp.where(idx, x / val, x)
+        else:
+            x = x.at[idx].divide(val)
     else:
         x[idx] /= val
     return x
