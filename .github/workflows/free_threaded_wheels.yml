@@ -76,7 +76,7 @@ jobs:
         # Github Actions doesn't support pairing matrix values together, let's improvise
         # https://github.com/github/feedback/discussions/7835#discussioncomment-1769026
         buildplat:
-          - [macos-12, macosx, x86_64, openblas, "10.9"]
+          - [macos-12, macosx, x86_64, openblas, "10.14"]
           # OpenBLAS builds with deployment target set to 12 are failing due
           # to relocation issues of gfortran dylibs
           # TODO: build scipy and set up Windows and MacOS
@@ -111,7 +111,7 @@ jobs:
             echo "PATH=$PATH" >> "$GITHUB_ENV"
             LIB_PATH=$(dirname $(gfortran --print-file-name libgfortran.dylib))
           fi
-          if [[ ${{ matrix.buildplat[4] }} == '10.9' ]]; then
+          if [[ ${{ matrix.buildplat[4] }} == '10.14' ]]; then
             # Newest version of Xcode that supports macOS 10.9
             XCODE_VER='13.4.1'
           else
