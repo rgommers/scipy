@@ -88,10 +88,6 @@ jobs:
       # "import scipy; scipy.test();" fails because
       # scipy/sparse/linalg/_eigen/arpack crashes.
       # Reference - https://github.com/scipy/scipy/issues/20728
-      - name: Test scipy.datasets
-        run: python dev.py test -s datasets
-        shell: cmd
-
-      - name: Test scipy.misc
-        run: python dev.py test -s misc
+      - name: Test scipy.sparse.linalg
+        run: python dev.py test -s sparse.linalg
         shell: cmd
