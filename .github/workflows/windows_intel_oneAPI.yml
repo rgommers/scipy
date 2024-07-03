@@ -82,7 +82,11 @@ jobs:
           call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
           set FC=ifx
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          python dev.py build -C-Duse-pythran=false -C--vsenv
+          python dev.py build -C-Duse-pythran=false -C--vsenv -C-Dbuildtype=release
+        shell: cmd
+
+      - name: Test scipy.misc
+        run: python dev.py test -s misc
         shell: cmd
 
       # "import scipy; scipy.test();" fails because
