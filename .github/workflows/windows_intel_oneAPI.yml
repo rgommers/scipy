@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - maintenance/**
+      - ci-ifx
   pull_request:
     branches:
       - main
@@ -31,12 +32,6 @@ jobs:
 
   msvc_ifx_blas:
     name: py3.11, dev.py
-    needs: get_commit_message
-    # Ensure (a) this doesn't run on forks by default, and
-    #        (b) it does run with Act locally (`github` doesn't exist there)
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: windows-2022
     defaults:
       run:
