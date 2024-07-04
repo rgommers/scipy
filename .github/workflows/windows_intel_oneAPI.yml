@@ -82,7 +82,7 @@ jobs:
           call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
           set FC=ifx
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          python -m build -wnx -C-Duse-pythran=false -C--vsenv -C-Dbuildtype=release -C-Duse-g77-abi=true
+          python -m build -wnx -Csetup-args=-Duse-pythran=false -Csetup-args=--vsenv -Csetup-args=-Dbuildtype=release -Csetup-args=-Duse-g77-abi=true
         shell: cmd
 
       - name: Run delocate on wheel
