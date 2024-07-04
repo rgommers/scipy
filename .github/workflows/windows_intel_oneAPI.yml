@@ -92,7 +92,8 @@ jobs:
           # Ignore `libsf_error_state.dll` for special function error handling;
           # it will be loaded using ctypes in scipy/special/__init__.py.
           wheel_name=$(ls dist/*.whl)
-          openblas_dir=$(python -c"import scipy_openblas32 as sop; print(sop.get_lib_dir())")
+          openblas_dir=$(pkg-config --libs-only-L openblas | cut -c3-1000)
+          echo $openblas_dir
           delvewheel repair --add-path $openblas_dir --no-dll libsf_error_state.dll -w wheelhouse $wheel_name
 
           python -m pip install wheelhouse/*
