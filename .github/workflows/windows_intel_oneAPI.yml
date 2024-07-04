@@ -77,21 +77,30 @@ jobs:
       # MSVC is unable to compile Pythran code, therefore we need to use
       # -C-Duse-pythran=false while building SciPy.
       # Reference - https://github.com/serge-sans-paille/pythran/issues/2215
-      - name: Initialise Intel oneAPI, MSVC and Build SciPy
+      - name: Initialise Intel oneAPI, MSVC and build SciPy
         run: |
           call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
           set FC=ifx
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          python dev.py build -C-Duse-pythran=false -C--vsenv -C-Dbuildtype=release -C-Duse-g77-abi=true
+          python -m build -wnx -C-Duse-pythran=false -C--vsenv -C-Dbuildtype=release -C-Duse-g77-abi=true
         shell: cmd
 
-      - name: Test scipy.misc
-        run: python dev.py test -s misc
-        shell: cmd
+      - name: Run delocate on wheel
+        shell: bash
+        run: |
+          # Vendor openblas.dll and the DLL's it depends on into the wheel
+          # Ignore `libsf_error_state.dll` for special function error handling;
+          # it will be loaded using ctypes in scipy/special/__init__.py.
+          wheel_name=$(ls dist/*.whl)
+          openblas_dir=$(python -c"import scipy_openblas32 as sop; print(sop.get_lib_dir())")
+          delvewheel repair --add-path $openblas_dir --no-dll libsf_error_state.dll -w wheelhouse $wheel_name
 
-      # "import scipy; scipy.test();" fails because
-      # scipy/sparse/linalg/_eigen/arpack crashes.
-      # Reference - https://github.com/scipy/scipy/issues/20728
-      - name: Test scipy.sparse
-        run: python dev.py test -s sparse
+          python -m pip install wheelhouse/*
+
+      - name: Run test suite
         shell: cmd
+        run: |
+          cd $RUNNER_TEMP
+          $env:OPENBLAS_NUM_THREADS=1
+          pytest --pyargs scipy
+
