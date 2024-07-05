@@ -85,7 +85,8 @@ jobs:
           python -m build -wnx -Csetup-args=-Duse-pythran=false -Csetup-args=--vsenv -Csetup-args=-Dbuildtype=release -Csetup-args=-Duse-g77-abi=true
         shell: cmd
 
-      - name: Run delocate on wheel
+      # FIXME: need the PATH variable from the step before to locate ifx runtime dll's
+      - name: Run delvewheel on wheel
         shell: bash
         run: |
           # Vendor openblas.dll and the DLL's it depends on into the wheel
