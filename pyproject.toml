@@ -138,6 +138,7 @@ test-requires = [
 ]
 before-test = "bash {project}/tools/wheels/cibw_before_test.sh {project}"
 test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
+config-settings = "build-dir=build"
 
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux2014"
