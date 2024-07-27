@@ -25,6 +25,7 @@ on:
     push:
       branches:
         - maintenance/**
+        - ci-debug-nogil
     pull_request:
       branches:
         - main
@@ -67,11 +68,6 @@ jobs:
     name: Wheel, ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
       ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
       ${{ matrix.buildplat[4] }}
-    needs: get_commit_message
-    if: >-
-      contains(needs.get_commit_message.outputs.message, '1') ||
-      github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch'
     runs-on: ${{ matrix.buildplat[0] }}
     strategy:
       # Ensure that a wheel builder finishes even if another fails
