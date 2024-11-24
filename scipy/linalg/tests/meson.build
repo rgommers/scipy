@@ -2,6 +2,7 @@ python_sources = [
   '__init__.py',
   'test_basic.py',
   'test_blas.py',
+  'test_cho_solve_threading.py',
   'test_cython_blas.py',
   'test_cython_lapack.py',
   'test_cythonized_array_utils.py',
