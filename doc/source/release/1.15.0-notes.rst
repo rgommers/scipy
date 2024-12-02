@@ -31,6 +31,8 @@ existing code from sparse matrix to sparse array:
 work with either sparse matrix or sparse array and work internally with
 sparse array.
 
+- Preliminary support for free-threaded Python 3.13.
+
 A transition has started towards unifying the SciPy API with regards to
 random number generation, as outlined in
 `SPEC-7 <https://scientific-python.org/specs/spec-0007/>`_. The uniform API
@@ -257,6 +259,29 @@ and support several Array API compatible array libraries in addition to NumPy
     `scipy.stats.hypsecant`, `scipy.stats.invgamma`, `scipy.stats.laplace`,
     `scipy.stats.levy`, `scipy.stats.loggamma`, `scipy.stats.maxwell`,
     `scipy.stats.nakagami`, and `scipy.stats.t`.
+
+
+Preliminary Support for Free-Threaded CPython 3.13
+==================================================
+SciPy 1.15 has preliminary support for the free-threaded build of CPython 3.13.
+This allows SciPy functionality to execute in parallel with Python threads
+(see the `threading` stdlib module). This support was enabled by fixing a
+significant number of thread-safety issues in both pure Python and
+C/C++/Cython/Fortran extension modules. Wheels are provided on PyPI for this
+release; NumPy >=2.1.3 is required at runtime. Note that building for a
+free-threaded interpreter requires a recent pre-release or nightly for Cython
+3.1.0.
+
+Support for free-threaded Python does not mean that SciPy is fully thread-safe.
+Please see :ref:`scipy_thread_safety` for more details.
+
+If you are interested in free-threaded Python, for example because you have a
+multiprocessing-based workflow that you are interested in running with Python
+threads, we encourage testing and experimentation. If you run into problems
+that you suspect are because of SciPy, please open an issue, checking first if
+the bug also occurs in the "regular" non-free-threaded CPython 3.13 build. Many
+threading bugs can also occur in code that releases the GIL; disabling the GIL
+only makes it easier to hit threading bugs.
 
 
 *******************
