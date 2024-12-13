@@ -16,7 +16,6 @@ permissions:
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
   PIXI_CACHE_DIR: "${{ github.workspace }}/.cache/rattler"
-  INSTALLDIR: "build-install"
   XP_TESTS: >-
     -t scipy.cluster
     -t scipy.constants
@@ -62,7 +61,7 @@ jobs:
         uses: cirruslabs/cache@caa3ad0624c6c2acd8ba50ad452d1f44bba078bb # v4
         with:
           path: ${{ env.PIXI_CACHE_DIR }}
-        key: ${{ runner.os }}-gpu
+          key: ${{ runner.os }}-gpu
 
       - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
