@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
+      - gpu-ci
   pull_request:
     branches:
       - main
@@ -49,7 +50,7 @@ jobs:
 
   pytorch_gpu:
     name: PyTorch GPU
-    needs: get_commit_message
+    #needs: get_commit_message
     runs-on: ghcr.io/cirruslabs/ubuntu-runner-amd64-gpu:22.04
     steps:
       - name: Checkout scipy repo
