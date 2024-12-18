@@ -380,18 +380,39 @@ _cython_tree = [fs.copyfile('__init__.py')]
 cython_args = ['-3', '--fast-fail', '--output-file', '@OUTPUT@', '--include-dir', '@BUILD_ROOT@', '@INPUT@']
 if cy.version().version_compare('>=3.1.0')
   cython_args += ['-Xfreethreading_compatible=True']
+
+  # Shared Cython code, see https://github.com/cython/cython/pull/6531
+  cython_shared_module = find_program('cython_shared_module')
+
+  # Note: for moving to _lib we need to move this code to `_lib/meson.build`,
+  # which is a bit of a reshuffle, so do that later since it's just plumbing.
+  memoryview_c = custom_target('cython_shared_module_source',
+    install: false,
+    output: 'MemoryView.c',
+    command: [cython_shared_module, meson.current_build_dir()]  # FIXME: move to lib / '_lib/']
+  )
+  memoryview_shared = py3.extension_module('MemoryView',
+    memoryview_c,
+    subdir: 'scipy',  # FIXME /_lib',
+    cython_args: cython_args,
+    install: true,
+    install_tag: 'python-runtime',
+  )
+  cython_args += ['--use-shared-utility=scipy']  # FIXME ._lib']
 endif
 cython_cplus_args = ['--cplus'] + cython_args
 
 cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : _cython_tree)
+  depends : [_cython_tree, memoryview_shared]
+)
 
 cython_gen_cpp = generator(cython,
   arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
-  depends : [_cython_tree])
+  depends : [_cython_tree, memoryview_shared]
+)
 
 if use_pythran
   # TODO: add argument to mark extension modules as safe to run without the GIL,
