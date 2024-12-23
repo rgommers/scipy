@@ -100,34 +100,10 @@ npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 
 pybind11_dep = dependency('pybind11', version: '>=2.13.2')
 
-# Pythran include directory and build flags
+pythran_dep = []
 if use_pythran
-  # This external-property may not be needed if we can use the native include
-  # dir, see https://github.com/serge-sans-paille/pythran/issues/1394
-  incdir_pythran = meson.get_external_property('pythran-include-dir', 'not-given')
-  if incdir_pythran == 'not-given'
-    incdir_pythran = run_command(py3,
-      [
-        '-c',
-      '''import os
-os.chdir(os.path.join("..", "tools"))
-import pythran
-try:
-  incdir = os.path.relpath(pythran.get_include())
-except Exception:
-  incdir = pythran.get_include()
-print(incdir)
-'''
-      ],
-      check: true
-    ).stdout().strip()
-  endif
-  pythran_dep = declare_dependency(
-    include_directories: incdir_pythran,
-    dependencies: xsimd_dep,
-  )
-else
-  pythran_dep = []
+  pythran_dep = dependency('pythran', version: '>=0.17.0')
+  pythran_dep = declare_dependency(dependencies: [pythran_dep, xsimd_dep])
 endif
 
 # Note: warning flags are added to this further down
@@ -570,8 +546,7 @@ foreach name, compiler : compilers
 endforeach
 # Add `pythran` information if present
 if use_pythran
-  conf_data.set('PYTHRAN_VERSION', pythran.version())
-  conf_data.set('PYTHRAN_INCDIR', incdir_pythran)
+  conf_data.set('PYTHRAN_VERSION', pythran_dep.version())
 endif
 
 # Machines CPU and system information

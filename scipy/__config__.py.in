@@ -59,7 +59,6 @@ CONFIG = _cleanup(
             },
             "pythran": {
                 "version": r"@PYTHRAN_VERSION@",
-                "include directory": r"@PYTHRAN_INCDIR@"
             },
         },
         "Machine Information": {
