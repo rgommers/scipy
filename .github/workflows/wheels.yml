@@ -216,7 +216,7 @@ jobs:
           # Note that this step is *after* specific pythons have been used to
           # build and test the wheel
           auto-update-conda: true
-          python-version: "3.12"
+          python-version: "3.10"
           miniforge-version: latest
 
       - name: Upload wheels
