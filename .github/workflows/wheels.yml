@@ -218,6 +218,7 @@ jobs:
           auto-update-conda: true
           python-version: "3.10"
           miniforge-version: latest
+          conda-remove-defaults: "true"
 
       - name: Upload wheels
         if: success()
