@@ -53,6 +53,7 @@ endif
 if not cy.version().version_compare('>=3.0.8')
   error('SciPy requires Cython >= 3.0.8')
 endif
+error('looking at build log till here')
 
 _global_c_args = cc.get_supported_arguments(
   '-Wno-unused-but-set-variable',
