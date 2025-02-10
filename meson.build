@@ -41,8 +41,8 @@ if cc.get_id() == 'gcc'
     error('SciPy requires GCC >= 9.1')
   endif
 elif cc.get_id() == 'clang' or cc.get_id() == 'clang-cl'
-  if not cc.version().version_compare('>=12.0')
-    error('SciPy requires clang >= 12.0')
+  if not cc.version().version_compare('>=15.0')
+    error('SciPy requires clang >= 15.0')
   endif
 elif cc.get_id() == 'msvc'
   if not cc.version().version_compare('>=19.20')
@@ -53,7 +53,6 @@ endif
 if not cy.version().version_compare('>=3.0.8')
   error('SciPy requires Cython >= 3.0.8')
 endif
-error('looking at build log till here')
 
 _global_c_args = cc.get_supported_arguments(
   '-Wno-unused-but-set-variable',
