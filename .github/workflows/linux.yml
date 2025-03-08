@@ -465,8 +465,7 @@ jobs:
       with:
         submodules: recursive
         fetch-tags: true
-    # TODO: replace with setup-python when there is support
-    - uses: Quansight-Labs/setup-python@b9ab292c751a42bcd2bb465b7fa202ea2c3f5796 # v5.3.1
+    - uses: actions/setup-python@9e62be81b28222addecf85e47571213eb7680449 # v5.5.0-dev
       with:
         python-version: '3.13t'
 
