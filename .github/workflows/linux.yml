@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
-      - ci-pytest-run-parallel
+      - ci-check-ft
   pull_request:
     branches:
       - main
@@ -499,12 +499,8 @@ jobs:
       # python3/site-packages as opposed to python3.13/site-packages,
       # then the dev.py scripts do not work as expected.
       run: |
-        # python dev.py build --with-scipy-openblas
-        # python dev.py --no-build test -j2 --mode full
-        python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > scipy-openblas.pc
-        PKG_CONFIG_PATH="$PWD" pip install . -vv --no-build-isolation
-        pushd $RUNNER_TEMP
-        python -m pytest --pyargs scipy -n$N_TEST_WORKERS --durations=10 $EXTRA_PYTEST_ARGS
+        python dev.py build --with-scipy-openblas
+        python dev.py --no-build test -m full -j$N_TEST_WORKERS --durations=10 $EXTRA_PYTEST_ARGS
 
   #################################################################################
   clang-17-build-only:
