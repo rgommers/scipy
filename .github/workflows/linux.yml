@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
+      - ci-fix-debugpython
   pull_request:
     branches:
       - main
@@ -204,10 +205,6 @@ jobs:
   python_debug:
     # also uses the vcs->sdist->wheel route.
     name: Python-debug & ATLAS & sdist+wheel, fast, py3.12/npMin, pip+pytest
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-24.04  # provides python3.12-dbg
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -228,7 +225,7 @@ jobs:
         run: |
           cd doc
           python3-dbg -m pip install pytest pytest-xdist pytest-timeout mpmath gmpy2 threadpoolctl pooch hypothesis
-          python3-dbg -m pytest --pyargs scipy -n2 --durations=10 -m "not slow"
+          python3-dbg -m pytest --pyargs scipy.stats -m "not slow" -v
 
   #################################################################################
   gcc9:
