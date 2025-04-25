@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
+      - test-pythran-018-windows
   pull_request:
     branches:
       - main
@@ -23,12 +24,6 @@ jobs:
 
   fast_dev_py:
     name: fast, py3.12/npAny, dev.py
-    needs: get_commit_message
-    # Ensure (a) this doesn't run on forks by default, and
-    #        (b) it does run with Act locally (`github` doesn't exist there)
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: windows-2019
     steps:
       - name: Checkout
@@ -49,8 +44,9 @@ jobs:
 
       - name: pip-packages
         run: |
-          pip install numpy cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis
+          pip install numpy cython pybind11 meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis
           python -m pip install -r requirements/openblas.txt
+          python -m pip install git+https://github.com/serge-sans-paille/pythran.git@release/0.18
 
       - name: Build
         run: |
