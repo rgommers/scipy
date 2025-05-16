@@ -799,9 +799,9 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             bold=True, fg="bright_green"
         )
         cmd = [
-            'asv', 'run', '--dry-run',
-            '--show-stderr', '--python=same',
-            '--quick'] + bench_args
+            'asv', 'run',# '--dry-run',
+            '--show-stderr', f'-Eexisting:{sys.executable}', # '--python=same',
+            '--record-samples', '--set-commit-hash=HEAD'] + bench_args
         _run_asv(cmd)
     else:
         # Ensure that we don't have uncommited changes
