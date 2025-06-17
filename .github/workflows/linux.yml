@@ -480,7 +480,9 @@ jobs:
 
     - name: Install Python dependencies
       run: |
-        pip install -r requirements/build.txt
+        # Needs nightly numpy build until the 2.3.x release for Python 3.14 support
+        pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+        pip install meson-python Cython pybind11 pythran ninja
         pip install -r requirements/openblas.txt
         pip install spin pytest pytest-xdist threadpoolctl pooch hypothesis
 
