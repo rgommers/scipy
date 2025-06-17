@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
+      - ci-py314-check
   pull_request:
     branches:
       - main
@@ -454,15 +455,11 @@ jobs:
           popd
 
   free-threaded:
-    needs: get_commit_message
     strategy:
       matrix:
         parallel: ['0']  # '1' temporarily disabled, `stats` segfault (see gh-22758)
 
     runs-on: ubuntu-latest
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
