@@ -41,12 +41,14 @@ jobs:
       run: |
         mamba create -n build-env gxx_linux-aarch64 gfortran_linux-aarch64 python=3.13 meson-python python-build numpy pythran cython pkg-config pybind11
 
-    - name: Patch meson and meson-python
+    - name: Install meson from branch with PEP 739 support
       run: |
-        # We need some fixes that aren't yet merged, to ensure we get the right paths
         conda activate build-env
-        python -m pip install git+https://github.com/rgommers/meson.git@cross-python-ext-suffix
-        # TODO: meson-python fix
+        python -m pip install git+https://github.com/mgorny/meson.git@pep-739-prototype
+
+        # TODO: meson-python fix - it needs to read the target platform from
+        #       the cross file, and produce a wheel with the correct platform
+        #       in the filename.
 
     - name: Set up aarch64 host env (cross)
       run: |
@@ -79,7 +81,7 @@ jobs:
         export PKG_CONFIG_PATH=/home/runner/miniconda3/envs/host-env/lib/pkgconfig
 
         # `-wnx` means: `--wheel --no-isolation --skip-dependency-check`
-        python -m build -wnx -Cbuild-dir=build -Csetup-args=--cross-file=$PWD/ci/cross_aarch64.ini
+        python -m build -wnx -Cbuild-dir=build -Csetup-args=--cross-file=$PWD/ci/cross_aarch64.ini -Csetup-args=-Dpython.build_config=$PWD/ci/build-details-py313-aarch64.json
 
         # meson-python doesn't yet know about cross builds, so we get a wheel
         # with a `_x86_64` tag - fix that:
