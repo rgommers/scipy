@@ -143,10 +143,10 @@ jobs:
 
     - name: Install SciPy wheel
       run: |
-        mamba activate test-env
+        conda activate test-env
         python -m pip install dist/scipy*.whl
 
     - name: Run test suite
       run: |
-        mamba activate test-env
+        conda activate test-env
         pytest --pyargs scipy
