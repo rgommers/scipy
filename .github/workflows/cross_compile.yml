@@ -123,6 +123,18 @@ jobs:
         name: aarch64-wheel
         path: dist
 
+    - name: Setup Conda
+      uses: conda-incubator/setup-miniconda@505e6394dae86d6a5c7fbb6e3fb8938e3e863830 # v3.1.1
+      with:
+        python-version: ${{ matrix.python-version }}
+        channels: conda-forge
+        channel-priority: true
+        activate-environment: ""
+        use-only-tar-bz2: false
+        miniforge-variant: Miniforge3
+        miniforge-version: latest
+        use-mamba: true
+
     - name: Set up test env
       run: |
         mamba create -n test-env python numpy openblas pytest hypothesis pooch
