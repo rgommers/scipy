@@ -44,12 +44,13 @@ jobs:
     - name: Patch meson and meson-python
       run: |
         # We need some fixes that aren't yet merged, to ensure we get the right paths
+        conda activate build-env
         python -m pip install git+https://github.com/rgommers/meson.git@cross-python-ext-suffix
         # TODO: meson-python fix
 
     - name: Set up aarch64 host env (cross)
       run: |
-        CONDA_SUBDIR=linux-aarch64 mamba create -n host-env python=3.12 numpy openblas libstdcxx-ng libgfortran-ng
+        CONDA_SUBDIR=linux-aarch64 mamba create -n host-env python numpy openblas libstdcxx-ng libgfortran-ng
 
     - name: Cross-compile SciPy
       run: |
@@ -112,22 +113,26 @@ jobs:
         path: dist
 
   cross_conda_aarch64_test:
-    name: Test on aarch64 (QEMU)
+    name: Test on aarch64
     needs: cross_conda_aarch64_build
     if: "github.repository == 'rgommers/scipy' || github.repository == ''"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04-arm
     steps:
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-      with:
-        platforms: arm64
-
     - uses: actions/download-artifact@v4
       with:
         name: aarch64-wheel
         path: dist
 
-    # TODO: run next steps in Docker container (a la cibuildwheel or numpy's `linux_qemu.yml`)
-    - name: Set up aarch64 host env (cross)
+    - name: Set up test env
       run: |
-        mamba create -n aarch64-native-env python=3.12 numpy openblas pytest hypothesis
+        mamba create -n test-env python numpy openblas pytest hypothesis pooch
+
+    - name: Install SciPy wheel
+      run: |
+        mamba activate test-env
+        python -m pip install dist/scipy*.whl
+
+    - name: Run test suite
+      run: |
+        mamba activate test-env
+        pytest --pyargs scipy
