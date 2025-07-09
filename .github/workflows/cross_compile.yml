@@ -26,21 +26,20 @@ jobs:
         submodules: recursive
 
     - name: Setup Conda
-      uses: conda-incubator/setup-miniconda@v2
+      uses: conda-incubator/setup-miniconda@505e6394dae86d6a5c7fbb6e3fb8938e3e863830 # v3.1.1
       with:
         python-version: ${{ matrix.python-version }}
         channels: conda-forge
         channel-priority: true
+        activate-environment: ""
         use-only-tar-bz2: false
-        miniforge-variant: Mambaforge
+        miniforge-variant: Miniforge3
         miniforge-version: latest
         use-mamba: true
-        auto-activate-base: true
-        activate-environment: ""
 
     - name: Set up x86-64 build env (native)
       run: |
-        mamba create -n build-env gxx_linux-aarch64 gfortran_linux-aarch64 python=3.12 meson-python build numpy pythran cython pkg-config pybind11
+        mamba create -n build-env gxx_linux-aarch64 gfortran_linux-aarch64 python meson-python build numpy pythran cython pkg-config pybind11
 
     - name: Patch meson and meson-python
       run: |
