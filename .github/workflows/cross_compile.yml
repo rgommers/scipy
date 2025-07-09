@@ -61,20 +61,21 @@ jobs:
         unset FFLAGS
         unset LDFLAGS
         # NOTE: without this export, I see:
-        # Determining dependency 'openblas' with pkg-config executable '/usr/share/miniconda3/envs/build-env/bin/pkg-config'
-        # env[PKG_CONFIG_PATH]:
-        # env[PKG_CONFIG_SYSROOT_DIR]: /usr/share/miniconda3/envs/host-env/
-        # env[PKG_CONFIG_LIBDIR]: /usr/share/miniconda3/envs/host-env/lib/pkgconfig
-        # Called `/usr/share/miniconda3/envs/build-env/bin/pkg-config --modversion openblas` -> 1
-        # stderr:
-        # Package openblas was not found in the pkg-config search path.
-        # Perhaps you should add the directory containing `openblas.pc'
-        # to the PKG_CONFIG_PATH environment variable
-        # No package 'openblas' found
+        #   Determining dependency 'openblas' with pkg-config executable '/usr/share/miniconda3/envs/build-env/bin/pkg-config'
+        #   env[PKG_CONFIG_PATH]:
+        #   env[PKG_CONFIG_SYSROOT_DIR]: /usr/share/miniconda3/envs/host-env/
+        #   env[PKG_CONFIG_LIBDIR]: /usr/share/miniconda3/envs/host-env/lib/pkgconfig
+        #   Called `/usr/share/miniconda3/envs/build-env/bin/pkg-config --modversion openblas` -> 1
+        #   stderr:
+        #   Package openblas was not found in the pkg-config search path.
+        #   Perhaps you should add the directory containing `openblas.pc'
+        #   to the PKG_CONFIG_PATH environment variable
+        #   No package 'openblas' found
+        #
         # NOTE: the sys_root and pkg_config_libdir in the cross file (as per
         #       the Meson docs) are ineffective, both in CI and locally.
         #       In addition, using `sys_root` breaks including Python.h
-        export PKG_CONFIG_PATH=/usr/share/miniconda3/envs/host-env/lib/pkgconfig
+        export PKG_CONFIG_PATH=/home/runner/miniconda3/envs/host-env/lib/pkgconfig
 
         # `-wnx` means: `--wheel --no-isolation --skip-dependency-check`
         python -m build -wnx -Cbuild-dir=build -Csetup-args=--cross-file=$PWD/ci/cross_aarch64.ini
