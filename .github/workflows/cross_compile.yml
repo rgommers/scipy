@@ -42,6 +42,7 @@ jobs:
         mamba create -n build-env gxx_linux-aarch64 gfortran_linux-aarch64 python=3.13 meson-python python-build numpy pythran cython pkg-config pybind11
 
     - name: Install meson from branch with PEP 739 support
+      shell: bash -el {0}
       run: |
         conda activate build-env
         python -m pip install git+https://github.com/mgorny/meson.git@pep-739-prototype
@@ -55,6 +56,7 @@ jobs:
         CONDA_SUBDIR=linux-aarch64 mamba create -n host-env python=3.13 numpy openblas libstdcxx-ng libgfortran-ng
 
     - name: Cross-compile SciPy
+      shell: bash -el {0}
       run: |
         conda activate build-env
         # We're cross-compiling, so unset these environment variables that the
@@ -100,6 +102,7 @@ jobs:
         #            Tag: cp312-cp312-linux_x86_64
 
     - name: auditwheel show
+      shell: bash -el {0}
       run: |
         python -m pip install auditwheel
         auditwheel show dist/*.whl
@@ -142,11 +145,13 @@ jobs:
         mamba create -n test-env python numpy openblas pytest hypothesis pooch
 
     - name: Install SciPy wheel
+      shell: bash -el {0}
       run: |
         conda activate test-env
         python -m pip install dist/scipy*.whl
 
     - name: Run test suite
+      shell: bash -el {0}
       run: |
         conda activate test-env
         pytest --pyargs scipy
