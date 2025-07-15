@@ -45,11 +45,8 @@ jobs:
       shell: bash -el {0}
       run: |
         conda activate build-env
+        python -m pip install git+https://github.com/rgommers/meson-python.git@pep-739-cross
         python -m pip install git+https://github.com/mgorny/meson.git@pep-739-prototype
-
-        # TODO: meson-python fix - it needs to read the target platform from
-        #       the cross file, and produce a wheel with the correct platform
-        #       in the filename.
 
     - name: Set up aarch64 host env (cross)
       run: |
@@ -84,22 +81,6 @@ jobs:
 
         # `-wnx` means: `--wheel --no-isolation --skip-dependency-check`
         python -m build -wnx -Cbuild-dir=build -Csetup-args=--cross-file=$PWD/ci/cross_aarch64.ini -Csetup-args=-Dpython.build_config=$PWD/ci/build-details-py313-aarch64.json
-
-        # meson-python doesn't yet know about cross builds, so we get a wheel
-        # with a `_x86_64` tag - fix that:
-        pushd dist
-        for f in *.whl; do mv "$f" "$(echo "$f" | sed s/x86_64/aarch64/)"; done
-        popd
-
-        # FIXME: Meson gets the extensions of the individual extension modules
-        # wrong and puts x86_64-linux-gnu.so in there. This needs fixing, it
-        # confuses `auditwheel` (it looks only at this file extension, not at
-        # dist-info/WHEEL nor at the contents of the extension modules to
-        # determine architecture (would be easy to do though with `file` or
-        # `readelf`). Issue: meson#7049. PR: meson#12190.
-        #
-        # FIXME: architecture in `dist-info/WHEEL` says:
-        #            Tag: cp312-cp312-linux_x86_64
 
     - name: auditwheel show
       shell: bash -el {0}
