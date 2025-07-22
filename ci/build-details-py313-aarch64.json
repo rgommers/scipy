@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "base_prefix": "/home/runner/miniconda3envs/host-env",
+  "base_prefix": "/home/runner/miniconda3/envs/host-env",
   "base_interpreter": "/home/runner/miniconda3/envs/host-env/python",
   "platform": "linux-aarch64",
   "language": {
