@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
+      - test-aarch64-full
   pull_request:
     branches:
       - main
@@ -574,11 +575,7 @@ jobs:
 
   #################################################################################
   test_aarch64:
-    name: aarch64, fast, fail slow, py3.12/npAny, pip+pytest
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+    name: aarch64, FULL, fail slow, py3.12/npAny, pip+pytest
     runs-on: ubuntu-24.04-arm
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -611,4 +608,4 @@ jobs:
       run: |
         export OMP_NUM_THREADS=2
         cd ..
-        pytest --pyargs scipy -m 'not slow' --durations=0 --durations-min=0.5 --fail-slow=1.0
+        pytest --pyargs scipy --durations=0 --durations-min=0.5 --fail-slow=1.0
