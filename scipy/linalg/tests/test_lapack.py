@@ -3490,8 +3490,8 @@ def test_sy_hetrs(mtype, dtype, lower):
 def test_sy_he_tri(dtype, lower, mtype):
     if mtype == 'he' and dtype in REAL_DTYPES:
         pytest.skip("hetri not for real dtypes.")
-    if sysconfig.get_platform() == 'win-arm64' and dtype in COMPLEX_DTYPES:
-        pytest.skip("Test segfaulting on win-arm64 in CI, see gh-23133")
+#    if sysconfig.get_platform() == 'win-arm64' and dtype in COMPLEX_DTYPES:
+#        pytest.skip("Test segfaulting on win-arm64 in CI, see gh-23133")
 
     rng = np.random.default_rng(1723059677121834)
     n = 20

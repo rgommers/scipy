@@ -608,7 +608,7 @@ class TestCdist:
                     y2 = cdist(new_type(X1), new_type(X2), metric=metric)
                     assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
-    @pytest.mark.skipif(sysconfig.get_platform() == 'win-arm64', reason="numpy#29442")
+#    @pytest.mark.skipif(sysconfig.get_platform() == 'win-arm64', reason="numpy#29442")
     def test_cdist_out(self, metric):
         # Test that out parameter works properly
         eps = 1e-15
