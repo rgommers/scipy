@@ -271,13 +271,17 @@ jobs:
         CONFIGURE_OPTS="--with-address-sanitizer" pyenv install 3.14t
         pyenv global 3.14t
 
-    - name: Install dependencies from PyPI
+    - name: Install NumPy dependencies from PyPI
       run: |
-        pip install meson-python ninja cython pythran spin pytest pytest-timeout
+        pip install meson-python ninja cython
 
     - name: Build NumPy with ASan
       run:
         pip install numpy --no-binary numpy --no-build-isolation -Csetup-args="-Db_sanitize=address"
+
+    - name: Install SciPy dependencies from PyPI
+      run: |
+        pip install pythran spin pytest pytest-timeout
 
     - name: Build SciPy with ASan
       run:
