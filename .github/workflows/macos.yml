@@ -277,11 +277,19 @@ jobs:
 
     - name: Build NumPy with ASan
       run:
-        pip install numpy --no-binary numpy --no-build-isolation -Csetup-args="-Db_sanitize=address"
+        pip install numpy --no-binary numpy --no-build-isolation -Csetup-args="-Db_sanitize=address" -v
 
     - name: Install SciPy dependencies from PyPI
       run: |
         pip install pythran spin pytest pytest-timeout
+
+    - name: Make gfortran-13 on runner image usable
+      run: |
+        # Ensure we use gfortran-13 and that its runtime is on the library search path
+        FC=$(which gfortran-13)
+        GFORTRAN_LIB=$(dirname `$FC --print-file-name libgfortran.dylib`)
+        echo DYLD_LIBRARY_PATH=$GFORTRAN_LIB >> "$GITHUB_ENV"
+        echo FC=$FC >> "$GITHUB_ENV"
 
     - name: Build SciPy with ASan
       run:
