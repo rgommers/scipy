@@ -292,8 +292,11 @@ jobs:
         echo FC=$FC >> "$GITHUB_ENV"
 
     - name: Build SciPy with ASan
-      run:
-        spin build -S-Db_sanitize=address -S-Dblas=accelerate
+      run: |
+        # Can't use Meson's `-Db_sanitize=address` because gfortran-13 will choke on it
+        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer"
+        export CXXFLAGS="-fsanitize=address -fno-omit-frame-pointer"
+        spin build -S-Dblas=accelerate
 
     - name: Test
       run: |
