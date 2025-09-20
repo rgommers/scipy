@@ -96,7 +96,7 @@ jobs:
 
     - name: Setup build and install scipy
       run: |
-        spin build --werror
+        spin build --werror --release
 
     - name: Ccache performance
       shell: bash -l {0}
