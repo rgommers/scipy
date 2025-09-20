@@ -47,8 +47,6 @@ jobs:
       uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'pip'
-        cache-dependency-path: 'environment.yml'
         allow-prereleases: true
 
     - name: Install Ubuntu dependencies
@@ -98,7 +96,7 @@ jobs:
 
     - name: Setup build and install scipy
       run: |
-        spin build --werror --release
+        spin build --werror
 
     - name: Ccache performance
       shell: bash -l {0}
@@ -114,10 +112,10 @@ jobs:
     - name: Check usage of install tags
       run: |
         rm -r ${{ env.INSTALLDIR }}
-        spin build --tags=runtime,python-runtime,devel --release
+        spin build --tags=runtime,python-runtime,devel
         python tools/check_installation.py ${{ env.INSTALLDIR }} --no-tests
         rm -r ${{ env.INSTALLDIR }}
-        spin build --tags=runtime,python-runtime,devel,tests --release
+        spin build --tags=runtime,python-runtime,devel,tests
         python tools/check_installation.py ${{ env.INSTALLDIR }}
 
     - name: Check build-internal dependencies
@@ -204,7 +202,7 @@ jobs:
       - name: Configuring Test Environment
         run: |
           sudo apt-get update
-          sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev gfortran ccache libgmp-dev libmpfr-dev libmpc-dev
+          sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libmpc-dev
           python3-dbg --version # just to check
           python3-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
       - name: Build SciPy
@@ -292,13 +290,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran lcov
 
-    - name: Caching Python dependencies
-      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
-      id: cache
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-prerelease
-
     - name: Install Python packages
       run: |
         python -m pip install cython pythran ninja meson-python pybind11 spin "click<8.3.0"
@@ -378,7 +369,7 @@ jobs:
         EOL
         python -m pip install numpy==1.26.4 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
         python -c 'import numpy as np; np.show_config()' && \
-        spin build --with-scipy-openblas --release && \
+        spin build --with-scipy-openblas && \
         spin test"
 
   #################################################################################
@@ -462,7 +453,7 @@ jobs:
 
     - name: Build SciPy
       run: |
-        spin build --with-scipy-openblas --release
+        spin build --with-scipy-openblas
 
     - name: Run tests (full)
       if: ${{ matrix.parallel == '0'}}
