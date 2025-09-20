@@ -96,7 +96,7 @@ jobs:
 
     - name: Setup build and install scipy
       run: |
-        spin build --werror --release
+        spin build --release
 
     - name: Ccache performance
       shell: bash -l {0}
@@ -158,7 +158,7 @@ jobs:
         source ../venvs/scipy-venv/bin/activate
         # Note that this uses build isolation. That's why we don't need build
         # dependencies to be installed in the venv itself.
-        python -m pip install . -vv
+        python -m pip install . -vv -Csetup-args=--werror
 
     - name: Basic imports and tests
       run: |
