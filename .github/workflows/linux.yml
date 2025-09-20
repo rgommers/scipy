@@ -103,7 +103,7 @@ jobs:
 
     - name: Setup build and install scipy
       run: |
-        spin build --werror
+        spin build --werror --release
 
     - name: Ccache performance
       shell: bash -l {0}
@@ -119,10 +119,10 @@ jobs:
     - name: Check usage of install tags
       run: |
         rm -r ${{ env.INSTALLDIR }}
-        spin build --tags=runtime,python-runtime,devel
+        spin build --tags=runtime,python-runtime,devel --release
         python tools/check_installation.py ${{ env.INSTALLDIR }} --no-tests
         rm -r ${{ env.INSTALLDIR }}
-        spin build --tags=runtime,python-runtime,devel,tests
+        spin build --tags=runtime,python-runtime,devel,tests --release
         python tools/check_installation.py ${{ env.INSTALLDIR }}
 
     - name: Check build-internal dependencies
@@ -349,7 +349,7 @@ jobs:
 
     - name: Build and install SciPy
       run: |
-        spin build --gcov --with-scipy-openblas
+        spin build --gcov --with-scipy-openblas --release
 
     - name: Ccache performance
       shell: bash -l {0}
@@ -403,7 +403,7 @@ jobs:
         EOL
         python -m pip install numpy==1.26.4 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
         python -c 'import numpy as np; np.show_config()' && \
-        spin build --with-scipy-openblas && \
+        spin build --with-scipy-openblas --release && \
         spin test"
 
   #################################################################################
@@ -495,7 +495,7 @@ jobs:
 
     - name: Build SciPy
       run: |
-        spin build --with-scipy-openblas
+        spin build --with-scipy-openblas --release
 
     - name: Run tests (full)
       if: ${{ matrix.parallel == '0'}}
