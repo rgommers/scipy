@@ -53,7 +53,7 @@ jobs:
       run: |
         # NOTE: not the same OpenBLAS version as in upstream CI (I'm being lazy here)
         sudo apt-get update
-        sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev libmpc-dev
+        sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
 
     - name: Install Python packages
       if: matrix.python-version == '3.11'
@@ -68,11 +68,6 @@ jobs:
         python -m pip install git+https://github.com/serge-sans-paille/pythran.git
         # Disable Meson master testing until upstream option handling is fixed, see scipy#22534
         # python -m pip install git+https://github.com/mesonbuild/meson.git
-
-    - name: Install ccache
-      run: |
-        # Ensure we don't use ccache for NumPy, that increases cache size by ~4x
-        sudo apt-get install -y ccache
 
     - name:  Prepare compiler cache
       id:    prep-ccache
