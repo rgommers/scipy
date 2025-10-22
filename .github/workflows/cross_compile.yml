@@ -50,7 +50,7 @@ jobs:
 
     - name: Set up aarch64 host env (cross)
       run: |
-        CONDA_SUBDIR=linux-aarch64 mamba create -n host-env python-freethreading=3.14t numpy openblas libstdcxx-ng libgfortran-ng
+        CONDA_SUBDIR=linux-aarch64 mamba create -n host-env python-freethreading=3.14 numpy openblas libstdcxx-ng libgfortran-ng
 
     - name: Cross-compile SciPy
       shell: bash -el {0}
