@@ -7,7 +7,7 @@ concurrency:
 on:
   push:
     branches:
-      - ci-cross
+      - ci-cross-314t
 
 permissions:
   contents: read
