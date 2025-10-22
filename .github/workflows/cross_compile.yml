@@ -46,7 +46,7 @@ jobs:
       run: |
         conda activate build-env
         python -m pip install git+https://github.com/rgommers/meson-python.git@pep-739-cross
-        python -m pip install git+https://github.com/mgorny/meson.git@pep-739-prototype
+        python -m pip install git+https://github.com/mesonbuild/meson.git
 
     - name: Set up aarch64 host env (cross)
       run: |
