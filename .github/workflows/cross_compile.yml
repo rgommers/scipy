@@ -54,6 +54,11 @@ jobs:
         #CONDA_SUBDIR=linux-aarch64 mamba create -n host-env python-freethreading=3.14 numpy openblas libstdcxx-ng libgfortran-ng
         CONDA_SUBDIR=linux-aarch64 mamba create -n host-env python=3.14 numpy openblas libstdcxx-ng libgfortran-ng
 
+    - name: Check for build-details.json
+      run: |
+        ls /home/runner/miniconda3/envs/host-env/lib
+        ls /home/runner/miniconda3/envs/host-env/lib/python3.14
+
     - name: Cross-compile SciPy
       shell: bash -el {0}
       run: |
@@ -79,10 +84,11 @@ jobs:
         # NOTE: the sys_root and pkg_config_libdir in the cross file (as per
         #       the Meson docs) are ineffective, both in CI and locally.
         #       In addition, using `sys_root` breaks including Python.h
-        export PKG_CONFIG_PATH=/home/runner/miniconda3/envs/host-env/lib/pkgconfig
+        export HOST_ENV=/home/runner/miniconda3/envs/host-env
+        export PKG_CONFIG_PATH=$HOST_ENV/lib/pkgconfig
 
         # `-wnx` means: `--wheel --no-isolation --skip-dependency-check`
-        python -m build -wnx -Cbuild-dir=build -Csetup-args=--cross-file=$PWD/ci/cross_aarch64.ini -Csetup-args=-Dpython.build_config=$PWD/ci/build-details-py314-aarch64.json
+        python -m build -wnx -Cbuild-dir=build -Csetup-args=--cross-file=$PWD/ci/cross_aarch64.ini -Csetup-args=-Dpython.build_config=$HOST_ENV/lib/python3.14/build-details.json
 
     - name: auditwheel show
       shell: bash -el {0}
