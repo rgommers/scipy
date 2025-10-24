@@ -82,7 +82,7 @@ jobs:
         export PKG_CONFIG_PATH=/home/runner/miniconda3/envs/host-env/lib/pkgconfig
 
         # `-wnx` means: `--wheel --no-isolation --skip-dependency-check`
-        python -m build -wnx -Cbuild-dir=build -Csetup-args=--cross-file=$PWD/ci/cross_aarch64.ini -Csetup-args=-Dpython.build_config=$PWD/ci/build-details-py313-aarch64.json
+        python -m build -wnx -Cbuild-dir=build -Csetup-args=--cross-file=$PWD/ci/cross_aarch64.ini -Csetup-args=-Dpython.build_config=$PWD/ci/build-details-py314-aarch64.json
 
     - name: auditwheel show
       shell: bash -el {0}
