@@ -460,8 +460,7 @@ jobs:
 
       - name: Setup dependencies
         run: |
-          sudo apt-get -y update
-          sudo apt install meson
+          python -m pip install meson --break-system-packages
 
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
