@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
+      - check-global-meson
   pull_request:
     branches:
       - main
@@ -450,9 +451,6 @@ jobs:
     # (i.e., we're using it as a binary). This isn't a normal setup, but it's
     # sometimes being used that way - see gh-20535 and gh-24406
     name: build with global meson
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
