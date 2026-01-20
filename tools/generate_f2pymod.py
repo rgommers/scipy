@@ -293,8 +293,7 @@ def main():
 
     # Now invoke f2py to generate the C API module file
     if args.infile.endswith(('.pyf.src', '.pyf')):
-        cmd = [sys.executable, '-m', 'numpy.f2py', fname_pyf,
-               '--build-dir', outdir_abs] + nogil_arg
+        cmd = ['f2py', fname_pyf, '--build-dir', outdir_abs] + nogil_arg
         if args.f2cmap:
             cmd += ['--f2cmap', args.f2cmap]
 
