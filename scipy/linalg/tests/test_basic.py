@@ -1177,6 +1177,10 @@ class TestSolve:
         overwrite_b = overwrite_b_kw.get('overwrite_b', False)
         b_inplace = overwrite_b and (b.dtype != int) and b.flags['F_CONTIGUOUS']
 
+        # overwrite_b is disabled for the banded path (gh-24774)
+        if assume_a == "banded":
+            b_inplace = False
+
         assert np.shares_memory(x, b) == b_inplace
 
         # for `assume_a="banded"`, the `overwrite_a` argument is ignored for now

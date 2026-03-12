@@ -250,6 +250,11 @@ def solve(a, b, lower=False, overwrite_a=False,
     overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
     overwrite_b = overwrite_b and (b1.ndim <= 2) and (b1.flags["F_CONTIGUOUS"])
 
+    # Disable overwrite_b for the banded path: letting LAPACK write directly
+    # to the input array causes heap corruption on Windows ARM64 (gh-24774).
+    if structure == 41:  # banded
+        overwrite_b = False
+
     # heavy lifting
     x, err_lst = _batched_linalg._solve(
         a1, b1, structure, lower, transposed, overwrite_a, overwrite_b
