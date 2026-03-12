@@ -352,17 +352,26 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     /*
      * Chop up buffer in parts:
      *
-     *   ldab_max * n       3 * n       b_data_size
+     *   b_data_size       3 * n       ldab_max * n
      * |---------------|-------------|---------------|
      * ^               ^             ^
-     * ab              work          b_data
+     * b_data          work          ab
      *
-     * - `ab` is a buffer holding the "padded" banded form of matrix `a`
-     * - `work` is needed for `gbcon` (fixed size)
      * - `b_data` is a buffer for the rhs of the system, not needed if `overwrite_b` is set (size = 0 then)
+     * - `work` is needed for `gbcon` (fixed size)
+     * - `ab` is a buffer holding the "padded" banded form of matrix `a`
+     *
+     * NB. `ab` is at the end so that any potential overflow from LAPACK's
+     * gbtrf goes past the malloc'd block rather than silently corrupting
+     * adjacent buffers.
      */
     npy_intp b_data_size = overwrite_b ? 0 : n * nrhs;
-    buffer = (T *)malloc((ldab_max * n + 3 * n + b_data_size) * sizeof(T));
+    // Use calloc to zero-initialize: the first `kl` rows per column in `ab`
+    // are for fill-in during gbtrf and are not written by `to_banded`.
+    // While LAPACK says these are "not referenced on entry", some BLAS
+    // implementations (e.g., OpenBLAS on ARM64) may behave unexpectedly
+    // with uninitialized memory.
+    buffer = (T *)calloc(b_data_size + 3 * n + ldab_max * n, sizeof(T));
 
     if (buffer == NULL) {
         free(ipiv);
@@ -373,15 +382,14 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     }
 
     // Chop up buffer
-    T *ab = &buffer[0];
-    T *work = &buffer[ldab_max * n];
-
     T *b_data = NULL;
     if (!overwrite_b) {
-        b_data = &buffer[ldab_max * n + 3 * n];
+        b_data = &buffer[0];
     } else {
         b_data = bm_data;
     }
+    T *work = &buffer[b_data_size];
+    T *ab = &buffer[b_data_size + 3 * n];
 
     // Main loop traversal, taken from `_solve`
     for (npy_intp idx = 0; idx < outer_size; idx++) {
