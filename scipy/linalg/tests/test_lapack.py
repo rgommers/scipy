@@ -15,7 +15,7 @@ import numpy as np
 from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
                    triu_indices)
 
-from scipy.linalg import (_flapack as flapack, lapack, inv, svd, cholesky,
+from scipy.linalg import (_pylapack as flapack, lapack, inv, svd, cholesky,
                           solve, ldl, norm, block_diag, qr, eigh, qz)
 from scipy.linalg._basic import _to_banded
 from scipy.linalg.lapack import _compute_lwork

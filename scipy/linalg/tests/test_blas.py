@@ -17,8 +17,8 @@ from scipy.linalg import get_blas_funcs, toeplitz, solve
 from scipy.linalg.blas import HAS_ILP64, HAS_LP64
 
 try:
-    from scipy.linalg import _fblas as fblas
-    FBLAS_ERROR = fblas.__fblas_error
+    from scipy.linalg import _pyblas as fblas
+    FBLAS_ERROR = fblas.error
 except ImportError:
     fblas = None
 
