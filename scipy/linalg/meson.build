@@ -278,6 +278,35 @@ py3.extension_module('_pyblas',
   subdir: 'scipy/linalg'
 )
 
+# _pylapack - generated Python-facing LAPACK wrappers (replacement for _flapack)
+pylapack_pyx = custom_target('pylapack_pyx',
+  output: '_pylapack.pyx',
+  input: '_generate_pywrappers.py',
+  command: [_generate_pywrappers, '-o', '@OUTDIR@', '--lapack-only'],
+  depend_files: [
+    '_pyf_parser.py',
+    'flapack.pyf.src',
+    'flapack_user.pyf.src',
+    'flapack_gen.pyf.src',
+    'flapack_gen_banded.pyf.src',
+    'flapack_gen_tri.pyf.src',
+    'flapack_sym_herm.pyf.src',
+    'flapack_pos_def.pyf.src',
+    'flapack_pos_def_tri.pyf.src',
+    'flapack_other.pyf.src',
+    'cython_lapack_signatures.txt',
+  ],
+)
+
+py3.extension_module('_pylapack',
+  linalg_blas_lapack_cython_gen.process(pylapack_pyx),
+  c_args: [cython_c_args, Wno_empty_body],
+  link_args: version_link_args,
+  dependencies: [cython_blas_lapack_dep, np_dep],
+  install: true,
+  subdir: 'scipy/linalg'
+)
+
 _decomp_update_pyx = custom_target('_decomp_update',
   output: '_decomp_update.pyx',
   input: '_decomp_update.pyx.in',

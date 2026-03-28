@@ -265,6 +265,16 @@ def _parse_routine_block(block_text):
         if not line or line.startswith('!'):
             i += 1
             continue
+        # Strip inline Fortran comments (! after content, not inside strings)
+        if '!' in line and not line.startswith('!'):
+            # Simple heuristic: strip from first ! that's not inside quotes
+            in_quote = False
+            for ci, ch in enumerate(line):
+                if ch in ('"', "'"):
+                    in_quote = not in_quote
+                elif ch == '!' and not in_quote:
+                    line = line[:ci].rstrip()
+                    break
         # Handle continuation: if line ends with &, join with next
         while line.endswith('&'):
             i += 1

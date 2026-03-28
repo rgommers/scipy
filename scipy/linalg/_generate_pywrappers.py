@@ -288,6 +288,25 @@ def _translate_f2py_expr(expr, routine_args):
     result = re.sub(r'(\w+)_capi==Py_None', r'\1 is None', result)
     result = re.sub(r'(\w+)_capi!=Py_None', r'\1 is not None', result)
 
+    # C pointer dereference for char comparisons: *var=='X' -> var == ord('X')
+    # These appear in dimension expressions where char variables are compared
+    # The char variables are actually integer indices in the Python wrappers
+    def _deref_char_cmp(m):
+        var = m.group(1)
+        char = m.group(2)
+        # Map common LAPACK character options to their integer indices
+        # These match the string lookup tables used in the callstatements
+        _char_maps = {
+            # range: A=0, V=1, I=2
+            'A': 0, 'V': 1, 'I': 2,
+            # job: N=0, V=1, etc.
+            'N': 0, 'T': 1, 'C': 2,
+        }
+        idx = _char_maps.get(char, f"ord('{char}')")
+        return f'{var} == {idx}'
+
+    result = re.sub(r'\*(\w+)==[\'"](.)[\'"]', _deref_char_cmp, result)
+
     # C ternary expressions: (cond ? a : b) -> (a if cond else b)
     # Handle min/max patterns: (a <= b ? a : b) -> min(a, b)
     result = _translate_min_max_ternary(result)
@@ -389,31 +408,96 @@ def _translate_min_max_ternary(expr):
 def _translate_ternary(expr):
     """Translate C ternary (cond ? a : b) to Python (a if cond else b).
 
-    Handles nested ternaries.
+    Handles nested parens like ((compute_v==1)?n:1) and nested ternaries.
     """
-    # Simple non-nested case first
-    # Pattern: (cond?val1:val2) where cond, val1, val2 don't contain ?:
-    while '?' in expr:
-        # Find innermost ternary (no nested ? inside)
-        m = re.search(r'\(([^?()]*)\?([^?():]*):([^?()]*)\)', expr)
-        if m:
-            cond = m.group(1).strip()
-            val1 = m.group(2).strip()
-            val2 = m.group(3).strip()
-            replacement = f'({val1} if {cond} else {val2})'
-            expr = expr[:m.start()] + replacement + expr[m.end():]
+    if '?' not in expr:
+        return expr
+
+    # Strip outer balanced parens first
+    stripped = _strip_outer_parens(expr)
+    if stripped != expr:
+        result = _translate_ternary(stripped)
+        if result != stripped:
+            return f'({result})'
+
+    # Find ? at depth 0
+    depth = 0
+    q_idx = -1
+    for i, ch in enumerate(expr):
+        if ch == '(':
+            depth += 1
+        elif ch == ')':
+            depth -= 1
+        elif ch == '?' and depth == 0:
+            q_idx = i
+            break
+
+    if q_idx == -1:
+        # No ternary at depth 0 - recurse into parenthesized subexpressions
+        if '?' in expr:
+            return _translate_ternary_recursive(expr)
+        return expr
+
+    # Find : at depth 0, after ?
+    depth = 0
+    colon_idx = -1
+    for i in range(q_idx + 1, len(expr)):
+        if expr[i] == '(':
+            depth += 1
+        elif expr[i] == ')':
+            depth -= 1
+        elif expr[i] == ':' and depth == 0:
+            colon_idx = i
+            break
+
+    if colon_idx == -1:
+        return expr
+
+    cond = expr[:q_idx].strip()
+    val_true = expr[q_idx+1:colon_idx].strip()
+    val_false = expr[colon_idx+1:].strip()
+
+    # Recursively translate nested ternaries
+    val_true = _translate_ternary(val_true)
+    val_false = _translate_ternary(val_false)
+
+    return f'({val_true} if {cond} else {val_false})'
+
+
+def _translate_ternary_recursive(expr):
+    """Translate ternaries inside parenthesized subexpressions."""
+    result = []
+    i = 0
+    while i < len(expr):
+        if expr[i] == '(':
+            # Find matching close paren
+            content, end = _extract_balanced_parens(expr, i)
+            # Recursively translate the content
+            translated = _translate_ternary(content)
+            result.append(f'({translated})')
+            i = end
         else:
-            # Try without outer parens
-            m = re.search(r'([^?(]*)\?([^?:]*):([^?]*)', expr)
-            if m:
-                cond = m.group(1).strip()
-                val1 = m.group(2).strip()
-                val2 = m.group(3).strip()
-                replacement = f'({val1} if {cond} else {val2})'
-                expr = expr[:m.start()] + replacement + expr[m.end():]
-            else:
-                break
-    return expr
+            result.append(expr[i])
+            i += 1
+    return ''.join(result)
+
+
+def _strip_outer_parens(s):
+    """Strip one layer of balanced outer parentheses if present."""
+    s = s.strip()
+    if not s.startswith('(') or not s.endswith(')'):
+        return s
+    depth = 0
+    for i, ch in enumerate(s):
+        if ch == '(':
+            depth += 1
+        elif ch == ')':
+            depth -= 1
+            if depth == 0 and i < len(s) - 1:
+                return s  # closing paren isn't the last char
+    if depth == 0:
+        return s[1:-1]
+    return s
 
 
 def _get_numpy_dtype(ftype):
@@ -483,8 +567,16 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
                 sig_parts.append(f'{aname}=None')
             else:
                 sig_parts.append(aname)
-        elif ainfo.get('ftype') == 'integer':
-            if is_optional and default is not None:
+        elif ainfo.get('ftype') == 'character':
+            # Character args: accept as bytes, pass as char*
+            if default is not None:
+                # Default like '"E"' -> b"E"
+                char_default = default.replace('"', '').replace("'", '')
+                sig_parts.append(f'{aname}=b"{char_default}"')
+            else:
+                sig_parts.append(aname)
+        elif ainfo.get('ftype') in ('integer', 'logical'):
+            if (is_optional or default is not None) and default is not None:
                 # Check if default is a simple literal
                 if _is_simple_literal(default):
                     sig_parts.append(f'int {aname}={default}')
@@ -499,7 +591,7 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
             # Scalar of the routine's type - must be typed for Cython
             ftype = ainfo.get('ftype', primary_ftype)
             ctype = FTYPE_TO_CTYPE.get(ftype, 'double')
-            if is_optional and default is not None:
+            if (is_optional or default is not None) and default is not None:
                 if _is_simple_literal(default):
                     formatted = _format_literal(default, ftype)
                     sig_parts.append(f'{ctype} {aname}={formatted}')
@@ -669,10 +761,27 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
         if dim and ftype and ftype != 'integer':
             dt = _get_numpy_dtype(ftype)
             shape = _translate_dimension_to_shape(dim)
-            lines.append(f'    cdef np.ndarray {aname}_arr = np.empty({shape}, dtype={dt}, order="F")')
+            lines.append(f'    {aname} = np.empty({shape}, dtype={dt}, order="F")')
         elif dim and ftype == 'integer':
             shape = _translate_dimension_to_shape(dim)
-            lines.append(f'    cdef np.ndarray {aname}_arr = np.empty({shape}, dtype=np.intc, order="F")')
+            lines.append(f'    {aname} = np.empty({shape}, dtype=np.intc, order="F")')
+
+    # --- Pre-call variable initializations (from compound callstatements) ---
+    cs = routine.get('callstatement')
+    if cs and cs.startswith('{'):
+        parsed_cs = _parse_callstatement(routine)
+        if parsed_cs and parsed_cs['pre_call']:
+            for stmt in parsed_cs['pre_call']:
+                stmt = stmt.strip()
+                # Handle: F_INT i=expr or F_INT i
+                m = re.match(r'F_INT\s+(\w+)\s*=\s*(.*)', stmt)
+                if m:
+                    var = m.group(1)
+                    expr = _translate_f2py_expr(m.group(2), routine['args'])
+                    lines.append(f'    cdef blas_int {var} = {expr}')
+                elif re.match(r'F_INT\s+(\w+)', stmt):
+                    var = re.match(r'F_INT\s+(\w+)', stmt).group(1)
+                    lines.append(f'    cdef blas_int {var}')
 
     # --- Call the low-level cdef function ---
     lines.append('')
@@ -737,7 +846,8 @@ def _build_call_args(routine, lib_module_name, cdef_param_types=None):
     # pointer casts, since the pyf callprotoargument may have wrong types.
     _sig_to_cytype = {
         's': 'cy_s', 'd': 'cy_d', 'c': 'cy_c', 'z': 'cy_z',
-        'char': None, 'int': None, 'blas_int': None, 'bint': None,
+        'char': None,
+        'int': 'blas_int', 'blas_int': 'blas_int', 'bint': 'blas_int',
     }
 
     args = []
@@ -883,6 +993,7 @@ def _translate_callstatement_args(routine, cdef_param_types=None):
     # Map from cdef signature types for correct pointer casts
     _sig_to_cytype = {
         's': 'cy_s', 'd': 'cy_d', 'c': 'cy_c', 'z': 'cy_z',
+        'int': 'blas_int', 'blas_int': 'blas_int', 'bint': 'blas_int',
     }
 
     translated = []
@@ -961,6 +1072,9 @@ def _translate_single_call_arg(arg, routine, expected_cytype=None):
         if _is_array_arg(ainfo):
             cytype = expected_cytype or _ctype_ptr(ainfo).rstrip(' *').strip()
             return f'<{cytype} *>np.PyArray_DATA({varname})'
+        elif ainfo.get('ftype') == 'character':
+            # Character args are Python bytes - cast to char*
+            return f'<char *>{varname}'
         else:
             # Use expected type from cdef signature if available
             if expected_cytype:
@@ -980,13 +1094,17 @@ def _translate_single_call_arg(arg, routine, expected_cytype=None):
         else:
             return f'{varname} + {offset}'
 
-    # Plain variable name (array passed directly)
+    # Plain variable name (array passed directly, or char* variable)
     ainfo = routine['args'].get(arg, {})
     if _is_array_arg(ainfo):
         cytype = expected_cytype or _ctype_ptr(ainfo).rstrip(' *').strip()
         return f'<{cytype} *>np.PyArray_DATA({arg})'
     elif arg in routine['args']:
-        if expected_cytype:
+        ftype = ainfo.get('ftype')
+        if ftype == 'character':
+            # Character args are Python bytes - cast to char*
+            return f'<char *>{arg}'
+        elif expected_cytype:
             return f'<{expected_cytype} *>&{arg}'
         else:
             return f'&{arg}'
@@ -1261,16 +1379,28 @@ def generate_lapack_pyx(routines, ilp64=False):
     lines.append('import numpy as np')
     lines.append('cimport numpy as np')
     lines.append('from scipy.linalg cimport cython_lapack')
-    lines.append('from scipy.linalg.cython_lapack cimport blas_int')
+    lines.append('from scipy.linalg.cython_lapack cimport (blas_int,')
+    lines.append('    s as cy_s, d as cy_d, c as cy_c, z as cy_z)')
     lines.append('')
     lines.append('np.import_array()')
     lines.append('')
     lines.append('')
 
+    # Routines with callback function args that need special handling
+    _callback_routines = {
+        'cgees', 'dgees', 'sgees', 'zgees',
+        'cgges', 'dgges', 'sgges', 'zgges',
+    }
+
     skipped = []
     lwork_count = 0
     for routine in routines:
         name = routine['name']
+
+        # Skip routines with callback function arguments
+        if name in _callback_routines:
+            skipped.append(name)
+            continue
 
         # _lwork helpers: these are artificial f2py routines that query
         # workspace size by calling the main routine with lwork=-1
