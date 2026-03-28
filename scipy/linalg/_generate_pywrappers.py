@@ -830,6 +830,10 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
     if cs and cs.startswith('{'):
         parsed_cs = _parse_callstatement(routine)
         if parsed_cs and parsed_cs['pre_call']:
+            # Rejoin the pre_call parts to reconstruct for loops
+            # (they get split by ';' which appears inside for(...;...;...))
+            raw_pre = ';'.join(parsed_cs['pre_call'])
+            # Process each statement
             for stmt in parsed_cs['pre_call']:
                 stmt = stmt.strip()
                 # Handle: F_INT i=expr or F_INT i
@@ -848,6 +852,21 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
                 elif re.match(r'(\w+)--$', stmt):
                     var = re.match(r'(\w+)--$', stmt).group(1)
                     lines.append(f'    {var} -= 1')
+
+            # Handle for loops that increment/decrement arrays
+            # Pattern: for(i=0;i<N;++arr[i++]) in the rejoined string
+            for m in re.finditer(
+                r'for\(\w+=0;\w+<\w+;\+\+(\w+)\[\w+\+\+\]\)', raw_pre
+            ):
+                arr = m.group(1)
+                lines.append(f'    {arr} = np.array({arr}, copy=True)')
+                lines.append(f'    {arr} += 1  # Convert 0-based to 1-based')
+            for m in re.finditer(
+                r'for\(\w+=0;\w+<\w+;--(\w+)\[\w+\+\+\]\)', raw_pre
+            ):
+                arr = m.group(1)
+                lines.append(f'    {arr} = np.array({arr}, copy=True)')
+                lines.append(f'    {arr} -= 1  # Convert 1-based to 0-based')
 
     # --- Call the low-level cdef function ---
     lines.append('')
