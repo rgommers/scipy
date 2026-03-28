@@ -568,9 +568,8 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
             else:
                 sig_parts.append(aname)
         elif ainfo.get('ftype') == 'character':
-            # Character args: accept as bytes, pass as char*
+            # Character args: accept as str or bytes, convert to bytes
             if default is not None:
-                # Default like '"E"' -> b"E"
                 char_default = default.replace('"', '').replace("'", '')
                 sig_parts.append(f'{aname}=b"{char_default}"')
             else:
@@ -686,6 +685,13 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
             lines.append(f'    if _was_1d_{aname}:')
             lines.append(f'        {aname} = np.asarray({aname}).reshape(-1, 1)')
             _reshaped_args.append(aname)
+
+    # Convert character args from str to bytes if needed
+    for aname in py_args:
+        ainfo = routine['args'].get(aname, {})
+        if ainfo.get('ftype') == 'character':
+            lines.append(f'    if isinstance({aname}, str):')
+            lines.append(f'        {aname} = {aname}.encode()')
 
     # Process array arguments: convert to Fortran-contiguous, correct dtype
     for aname in py_args:
