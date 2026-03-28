@@ -46,19 +46,47 @@ _pyf_parser = _import_module_from_file(
 _extract_balanced_parens = _pyf_parser._extract_balanced_parens
 
 
-def _load_cdef_names(signature_file):
-    """Load available cdef function names from a cython_*_signatures.txt file."""
-    names = set()
+def _load_cdef_signatures(signature_file):
+    """Load cdef function signatures from a cython_*_signatures.txt file.
+
+    Returns a dict mapping function name to list of parameter type strings.
+    E.g., {'crotg': ['c', 'c', 's', 'c'], 'dgemm': ['char', 'char', ...]}
+    """
+    sigs = {}
     with open(os.path.join(BASE_DIR, signature_file)) as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith('#'):
                 continue
             # Format: 'void caxpy(int *n, c *ca, ...)' or 'float sdot(...)'
-            parts = line.split('(')[0].strip().split()
-            if len(parts) >= 2:
-                names.add(parts[-1])
-    return names
+            paren_idx = line.find('(')
+            if paren_idx == -1:
+                continue
+            header = line[:paren_idx].strip().split()
+            if len(header) < 2:
+                continue
+            name = header[-1]
+            # Parse parameter list
+            params_str = line[paren_idx+1:line.rfind(')')]
+            param_types = []
+            for param in params_str.split(','):
+                param = param.strip()
+                if not param:
+                    continue
+                # "type *name" or "type name" - extract type
+                parts = param.replace('*', ' * ').split()
+                # Type is everything before the last token (the name)
+                ptype = ' '.join(parts[:-1]).replace(' * ', ' *').replace('* ', '*').strip()
+                # Normalize: remove trailing *
+                ptype = ptype.rstrip('*').strip()
+                param_types.append(ptype)
+            sigs[name] = param_types
+    return sigs
+
+
+def _load_cdef_names(signature_file):
+    """Load available cdef function names from a cython_*_signatures.txt file."""
+    return set(_load_cdef_signatures(signature_file).keys())
 
 
 # Map f2py Fortran types to numpy dtype strings and C types
@@ -77,6 +105,16 @@ FTYPE_TO_CTYPE = {
     'double complex': 'double complex',
 }
 
+# cython_blas/cython_lapack use short typedefs: s, d, c, z
+# We import these with cy_ prefix to avoid name collisions (e.g., with
+# a variable named 'c' in crotg). These are used for pointer casts.
+FTYPE_TO_CYTYPE = {
+    'real': 'cy_s',
+    'double precision': 'cy_d',
+    'complex': 'cy_c',
+    'double complex': 'cy_z',
+}
+
 # Map ftype to single-char prefix
 FTYPE_TO_PREFIX = {
     'real': 's',
@@ -86,7 +124,7 @@ FTYPE_TO_PREFIX = {
 }
 
 def _is_simple_literal(s):
-    """Check if a string is a simple compile-time literal (int, float, tuple)."""
+    """Check if a string is a simple compile-time literal (int, float, complex)."""
     s = s.strip()
     # Integer
     if re.match(r'^-?\d+$', s):
@@ -94,10 +132,27 @@ def _is_simple_literal(s):
     # Float
     if re.match(r'^-?\d+\.?\d*$', s):
         return True
-    # Complex tuple like (0.0,0.0)
-    if re.match(r'^\([\d.,\s]+\)$', s):
+    # Complex tuple like (0.0,0.0) -> convert to Python complex
+    if re.match(r'^\([\d.,\s-]+\)$', s):
         return True
     return False
+
+
+def _format_literal(s, ftype):
+    """Format a literal value for Cython, handling complex numbers."""
+    s = s.strip()
+    # Complex tuple like (0.0,0.0) or (1.0\,0.0) -> Python complex literal
+    m = re.match(r'^\((-?[\d.]+)\s*,\s*(-?[\d.]+)\)$', s)
+    if m:
+        real = float(m.group(1))
+        imag = float(m.group(2))
+        if imag == 0:
+            return str(real)
+        elif real == 0:
+            return f'{imag}j'
+        else:
+            return f'({real}+{imag}j)'
+    return s
 
 
 COMMENT_HEADER = """\
@@ -228,6 +283,10 @@ def _translate_f2py_expr(expr, routine_args):
     result = re.sub(r'MIN\(', 'min(', result)
 
     # abs() is already Python-compatible
+
+    # f2py internal variables: var_capi==Py_None -> var is None
+    result = re.sub(r'(\w+)_capi==Py_None', r'\1 is None', result)
+    result = re.sub(r'(\w+)_capi!=Py_None', r'\1 is not None', result)
 
     # C ternary expressions: (cond ? a : b) -> (a if cond else b)
     # Handle min/max patterns: (a <= b ? a : b) -> min(a, b)
@@ -367,7 +426,7 @@ def _get_overwrite_param_name(aname):
     return f'overwrite_{aname}'
 
 
-def _generate_wrapper_function(routine, lib_module_name):
+def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
     """Generate a Cython def wrapper function for one routine.
 
     Parameters
@@ -376,6 +435,9 @@ def _generate_wrapper_function(routine, lib_module_name):
         Parsed routine specification from _pyf_parser.
     lib_module_name : str
         'cython_blas' or 'cython_lapack'
+    cdef_param_types : list of str, optional
+        Parameter types from cython_*_signatures.txt (e.g., ['c', 'c', 's', 'c']).
+        Used for correct pointer casts when calling the cdef function.
 
     Returns
     -------
@@ -434,16 +496,19 @@ def _generate_wrapper_function(routine, lib_module_name):
             else:
                 sig_parts.append(f'int {aname}')
         else:
-            # Scalar of the routine's type
+            # Scalar of the routine's type - must be typed for Cython
+            ftype = ainfo.get('ftype', primary_ftype)
+            ctype = FTYPE_TO_CTYPE.get(ftype, 'double')
             if is_optional and default is not None:
                 if _is_simple_literal(default):
-                    sig_parts.append(f'{aname}={default}')
+                    formatted = _format_literal(default, ftype)
+                    sig_parts.append(f'{ctype} {aname}={formatted}')
                 else:
-                    sig_parts.append(f'{aname}=None')
+                    sig_parts.append(f'{ctype} {aname}=0')
                     py_expr = _translate_f2py_expr(default, routine['args'])
                     body_defaults.append((aname, py_expr))
             else:
-                sig_parts.append(aname)
+                sig_parts.append(f'{ctype} {aname}')
 
     # Add overwrite_ parameters for intent(in,out,copy) arrays
     for aname in py_args:
@@ -611,8 +676,13 @@ def _generate_wrapper_function(routine, lib_module_name):
 
     # --- Call the low-level cdef function ---
     lines.append('')
-    call_args = _build_call_args(routine, lib_module_name)
-    if is_function and routine.get('result_name'):
+    call_args = _build_call_args(routine, lib_module_name, cdef_param_types)
+
+    # Check for wrapped complex return functions (cdotu, cdotc, zdotu, zdotc)
+    wrp_return_var = routine.pop('_wrp_return_var', None)
+    if wrp_return_var:
+        lines.append(f'    {wrp_return_var} = {lib_module_name}.{name}({call_args})')
+    elif is_function and routine.get('result_name'):
         result_var = routine['result_name']
         lines.append(f'    {result_var} = {lib_module_name}.{name}({call_args})')
     else:
@@ -656,31 +726,53 @@ def _translate_dimension_to_shape(dim):
         return f'({", ".join(parts)})'
 
 
-def _build_call_args(routine, lib_module_name):
-    """Build the argument string for calling the cython_blas/lapack cdef function.
-
-    The cdef functions take pointers: scalars by &, arrays by &arr[0] or &arr[0,0].
-    """
+def _build_call_args(routine, lib_module_name, cdef_param_types=None):
+    """Build the argument string for calling the cython_blas/lapack cdef function."""
     cs = routine.get('callstatement')
     if cs:
-        return _translate_callstatement_args(routine)
+        return _translate_callstatement_args(routine, cdef_param_types)
 
-    # No callstatement - build from callprotoargument and arg_names.
-    # The cython_blas/lapack cdef functions follow the Fortran calling
-    # convention: all args passed by pointer.
+    # No callstatement - build from arg_names.
+    # Use cdef_param_types (from cython_*_signatures.txt) for correct
+    # pointer casts, since the pyf callprotoargument may have wrong types.
+    _sig_to_cytype = {
+        's': 'cy_s', 'd': 'cy_d', 'c': 'cy_c', 'z': 'cy_z',
+        'char': None, 'int': None, 'blas_int': None, 'bint': None,
+    }
+
     args = []
-    for aname in routine['arg_names']:
+    for i, aname in enumerate(routine['arg_names']):
         ainfo = routine['args'].get(aname, {})
+        # Get the expected type from the cdef signature
+        sig_type = cdef_param_types[i] if (cdef_param_types and
+                                           i < len(cdef_param_types)) else None
+        cytype = _sig_to_cytype.get(sig_type) if sig_type else None
+
         if _is_array_arg(ainfo):
-            args.append(f'<{_ctype_ptr(ainfo)}>np.PyArray_DATA({aname})')
+            if cytype:
+                args.append(f'<{cytype} *>np.PyArray_DATA({aname})')
+            else:
+                args.append(f'<{_ctype_ptr(ainfo)}>np.PyArray_DATA({aname})')
         else:
-            args.append(f'&{aname}')
+            if cytype:
+                args.append(f'<{cytype} *>&{aname}')
+            else:
+                args.append(f'&{aname}')
     return ', '.join(args)
 
 
 def _ctype_ptr(ainfo):
-    """Get C pointer type for an arg."""
+    """Get Cython pointer type for an arg.
+
+    Uses aliased cython_blas typedefs (cy_s, cy_d, cy_c, cy_z) for
+    compatibility with cython_blas/cython_lapack cdef function signatures.
+    """
     ftype = ainfo.get('ftype', 'double precision')
+    if ftype == 'integer':
+        return 'blas_int *'
+    cytype = FTYPE_TO_CYTYPE.get(ftype)
+    if cytype:
+        return f'{cytype} *'
     ctype = FTYPE_TO_CTYPE.get(ftype, 'double')
     return f'{ctype} *'
 
@@ -773,24 +865,37 @@ def _parse_func_call(stmt, result):
         result['call_args'] = []
 
 
-def _translate_callstatement_args(routine):
+def _translate_callstatement_args(routine, cdef_param_types=None):
     """Translate callstatement arguments to Cython function call arguments."""
     parsed = _parse_callstatement(routine)
     if parsed is None:
-        # No callstatement - build args from arg_names order
-        args = []
-        for aname in routine['arg_names']:
-            ainfo = routine['args'].get(aname, {})
-            if _is_array_arg(ainfo):
-                args.append(f'<{_ctype_ptr(ainfo)}>np.PyArray_DATA({aname})')
-            else:
-                args.append(f'&{aname}')
-        return ', '.join(args)
+        return None
+
+    raw_args = parsed['call_args']
+
+    # Check for wrapped complex return functions (fortranname ending in 'wrp').
+    fortranname = routine.get('fortranname', '')
+    if fortranname and 'wrp' in fortranname:
+        if raw_args and raw_args[0].strip().startswith('&'):
+            routine['_wrp_return_var'] = raw_args[0].strip()[1:]
+            raw_args = raw_args[1:]
+
+    # Map from cdef signature types for correct pointer casts
+    _sig_to_cytype = {
+        's': 'cy_s', 'd': 'cy_d', 'c': 'cy_c', 'z': 'cy_z',
+    }
 
     translated = []
-    for raw_arg in parsed['call_args']:
+    for i, raw_arg in enumerate(raw_args):
         raw_arg = raw_arg.strip()
-        translated.append(_translate_single_call_arg(raw_arg, routine))
+        # Get expected type from cdef signature
+        sig_type = (cdef_param_types[i]
+                    if cdef_param_types and i < len(cdef_param_types)
+                    else None)
+        cytype = _sig_to_cytype.get(sig_type) if sig_type else None
+        translated.append(
+            _translate_single_call_arg(raw_arg, routine, cytype)
+        )
 
     return ', '.join(translated)
 
@@ -823,19 +928,18 @@ def _split_respecting_parens_and_quotes(s):
     return parts
 
 
-def _translate_single_call_arg(arg, routine):
+def _translate_single_call_arg(arg, routine, expected_cytype=None):
     """Translate a single callstatement argument to Cython.
 
-    Returns a tuple (setup_lines, call_expr) where:
-    - setup_lines: list of lines to add before the call (e.g., char variable setup)
-    - call_expr: the expression to use in the function call
-
-    Common patterns:
-    - &var -> &var (scalar by reference)
-    - var -> <type *>np.PyArray_DATA(var) (array pointer)
-    - x+offx -> <type *>np.PyArray_DATA(x) + offx (array with offset)
-    - &"CHARS"[idx] -> char pointer via string lookup
-    - (cond?"X":"Y") -> char variable via conditional
+    Parameters
+    ----------
+    arg : str
+        Raw argument from the callstatement.
+    routine : dict
+        The routine specification.
+    expected_cytype : str, optional
+        Expected Cython typedef (cy_s, cy_d, cy_c, cy_z) from the cdef
+        signature. Used for correct pointer casts.
     """
     arg = arg.strip()
 
@@ -844,7 +948,7 @@ def _translate_single_call_arg(arg, routine):
     if str_idx_match:
         chars = str_idx_match.group(1)
         var = str_idx_match.group(2)
-        return f'&"{chars}"[{var}]'
+        return f'(<char *>b"{chars}" + {var})'
 
     # Ternary char mapping: (cond?"X":"Y") or nested
     if '?' in arg and '"' in arg:
@@ -855,9 +959,14 @@ def _translate_single_call_arg(arg, routine):
         varname = arg[1:]
         ainfo = routine['args'].get(varname, {})
         if _is_array_arg(ainfo):
-            return f'<{_ctype_ptr(ainfo)}>np.PyArray_DATA({varname})'
+            cytype = expected_cytype or _ctype_ptr(ainfo).rstrip(' *').strip()
+            return f'<{cytype} *>np.PyArray_DATA({varname})'
         else:
-            return f'&{varname}'
+            # Use expected type from cdef signature if available
+            if expected_cytype:
+                return f'<{expected_cytype} *>&{varname}'
+            else:
+                return f'&{varname}'
 
     # array+offset: var+off
     plus_match = re.match(r'(\w+)\+(\w+)', arg)
@@ -866,18 +975,22 @@ def _translate_single_call_arg(arg, routine):
         offset = plus_match.group(2)
         ainfo = routine['args'].get(varname, {})
         if _is_array_arg(ainfo):
-            return f'<{_ctype_ptr(ainfo)}>np.PyArray_DATA({varname}) + {offset}'
+            cytype = expected_cytype or _ctype_ptr(ainfo).rstrip(' *').strip()
+            return f'<{cytype} *>np.PyArray_DATA({varname}) + {offset}'
         else:
             return f'{varname} + {offset}'
 
-    # Plain variable name
+    # Plain variable name (array passed directly)
     ainfo = routine['args'].get(arg, {})
     if _is_array_arg(ainfo):
-        return f'<{_ctype_ptr(ainfo)}>np.PyArray_DATA({arg})'
+        cytype = expected_cytype or _ctype_ptr(ainfo).rstrip(' *').strip()
+        return f'<{cytype} *>np.PyArray_DATA({arg})'
     elif arg in routine['args']:
-        return f'&{arg}'
+        if expected_cytype:
+            return f'<{expected_cytype} *>&{arg}'
+        else:
+            return f'&{arg}'
     else:
-        # Could be a literal or expression
         return arg
 
 
@@ -909,7 +1022,7 @@ def _translate_char_ternary(expr, routine):
         char_false = m.group(6)
         if val == 2:
             lookup = char_false + char_neq + char_eq
-            return f'&"{lookup}"[{var}]'
+            return f'(<char *>b"{lookup}" + {var})'
 
     # Pattern 2: Three-way via >0 and ==1: (var>0?(var==1?"T":"C"):"N")
     m = re.match(
@@ -924,7 +1037,7 @@ def _translate_char_ternary(expr, routine):
         char_false = m.group(6)
         if val == 1:
             lookup = char_false + char_eq + char_neq
-            return f'&"{lookup}"[{var}]'
+            return f'(<char *>b"{lookup}" + {var})'
 
     # Pattern 3: Nested boolean: (a?(b?"X":"Y"):"Z")
     m = re.match(
@@ -937,8 +1050,8 @@ def _translate_char_ternary(expr, routine):
         char_bt = m.group(3)  # b true
         char_bf = m.group(4)  # b false
         char_af = m.group(5)  # a false
-        return (f'(&"{char_bf}{char_bt}"[{var_b}] if {var_a} '
-                f'else &"{char_af}"[0])')
+        return (f'((<char *>b"{char_bf}{char_bt}" + {var_b}) if {var_a} '
+                f'else (<char *>b"{char_af}"))')
 
     # Pattern 4: Double nested: (a?(b?"X":"Y"):(c?"W":"Z"))
     m = re.match(
@@ -953,8 +1066,8 @@ def _translate_char_ternary(expr, routine):
         var_c = m.group(5)
         char_ct = m.group(6)
         char_cf = m.group(7)
-        return (f'(&"{char_bf}{char_bt}"[{var_b}] if {var_a} '
-                f'else &"{char_cf}{char_ct}"[{var_c}])')
+        return (f'((<char *>b"{char_bf}{char_bt}" + {var_b}) if {var_a} '
+                f'else (<char *>b"{char_cf}{char_ct}" + {var_c}))')
 
     # Pattern 5: Simple boolean: (var?"X":"Y")
     m = re.match(r'\((\w+)\?"(.)":"(.)"\)', expr)
@@ -962,7 +1075,7 @@ def _translate_char_ternary(expr, routine):
         var = m.group(1)
         char_true = m.group(2)
         char_false = m.group(3)
-        return f'&"{char_false}{char_true}"[{var}]'
+        return f'(<char *>b"{char_false}{char_true}" + {var})'
 
     # Fallback: leave as C comment for manual fix
     return f'/* FIXME char ternary: {expr} */'
@@ -1088,7 +1201,8 @@ def _generate_lwork_wrapper(routine, lib_module_name):
 
 def generate_blas_pyx(routines, ilp64=False):
     """Generate the _pyblas.pyx content."""
-    available = _load_cdef_names('cython_blas_signatures.txt')
+    cdef_sigs = _load_cdef_signatures('cython_blas_signatures.txt')
+    available = set(cdef_sigs.keys())
 
     lines = [COMMENT_HEADER]
     lines.append('# cython: boundscheck = False')
@@ -1098,7 +1212,8 @@ def generate_blas_pyx(routines, ilp64=False):
     lines.append('import numpy as np')
     lines.append('cimport numpy as np')
     lines.append('from scipy.linalg cimport cython_blas')
-    lines.append('from scipy.linalg.cython_blas cimport blas_int')
+    lines.append('from scipy.linalg.cython_blas cimport (blas_int,')
+    lines.append('    s as cy_s, d as cy_d, c as cy_c, z as cy_z)')
     lines.append('')
     lines.append('np.import_array()')
     lines.append('')
@@ -1110,7 +1225,8 @@ def generate_blas_pyx(routines, ilp64=False):
         if name not in available:
             skipped.append(name)
             continue
-        code = _generate_wrapper_function(routine, 'cython_blas')
+        code = _generate_wrapper_function(routine, 'cython_blas',
+                                          cdef_sigs.get(name))
         lines.append(code)
         lines.append('')
 
@@ -1124,7 +1240,8 @@ def generate_blas_pyx(routines, ilp64=False):
 
 def generate_lapack_pyx(routines, ilp64=False):
     """Generate the _pylapack.pyx content."""
-    available = _load_cdef_names('cython_lapack_signatures.txt')
+    cdef_sigs = _load_cdef_signatures('cython_lapack_signatures.txt')
+    available = set(cdef_sigs.keys())
 
     lines = [COMMENT_HEADER]
     lines.append('# cython: boundscheck = False')
@@ -1158,7 +1275,8 @@ def generate_lapack_pyx(routines, ilp64=False):
             skipped.append(name)
             continue
 
-        code = _generate_wrapper_function(routine, 'cython_lapack')
+        code = _generate_wrapper_function(routine, 'cython_lapack',
+                                          cdef_sigs.get(name))
         lines.append(code)
         lines.append('')
 

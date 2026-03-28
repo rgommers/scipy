@@ -246,6 +246,31 @@ cython_lapack = py3.extension_module('cython_lapack',
   subdir: 'scipy/linalg'
 )
 
+# _pyblas - generated Python-facing BLAS wrappers (replacement for _fblas)
+_generate_pywrappers = find_program('_generate_pywrappers.py')
+pyblas_pyx = custom_target('pyblas_pyx',
+  output: '_pyblas.pyx',
+  input: '_generate_pywrappers.py',
+  command: [_generate_pywrappers, '-o', '@OUTDIR@', '--blas-only'],
+  depend_files: [
+    '_pyf_parser.py',
+    'fblas.pyf.src',
+    'fblas_l1.pyf.src',
+    'fblas_l2.pyf.src',
+    'fblas_l3.pyf.src',
+    'cython_blas_signatures.txt',
+  ],
+)
+
+py3.extension_module('_pyblas',
+  linalg_cython_gen.process(pyblas_pyx),
+  c_args: cython_c_args,
+  link_args: version_link_args,
+  dependencies: [cython_blas_lapack_dep, np_dep],
+  install: true,
+  subdir: 'scipy/linalg'
+)
+
 _decomp_update_pyx = custom_target('_decomp_update',
   output: '_decomp_update.pyx',
   input: '_decomp_update.pyx.in',
