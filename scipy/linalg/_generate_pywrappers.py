@@ -1442,7 +1442,9 @@ def _generate_lwork_wrapper(routine, lib_module_name, cdef_sigs):
         primary_ftype = 'double precision'
 
     numpy_dtype = _get_numpy_dtype(primary_ftype)
-    ctype = FTYPE_TO_CTYPE.get(primary_ftype, 'double')
+    # Use the actual work arg's ftype for the work variable type
+    work_ftype = routine['args'].get('work', {}).get('ftype', primary_ftype)
+    ctype = FTYPE_TO_CTYPE.get(work_ftype, 'double')
 
     # Build signature - only the visible input args.
     # Skip work/lwork/info/iwork/liwork/rwork since they're handled internally.
@@ -1472,6 +1474,9 @@ def _generate_lwork_wrapper(routine, lib_module_name, cdef_sigs):
                 sig_parts.append(f'{aname}=b"{char_default}"')
             else:
                 sig_parts.append(aname)
+        elif _is_array_arg(ainfo):
+            # Array args in _lwork: leave untyped (Python object)
+            sig_parts.append(aname)
         else:
             ct = FTYPE_TO_CTYPE.get(ftype, 'double')
             if default is not None and _is_simple_literal(default):
@@ -1500,7 +1505,10 @@ def _generate_lwork_wrapper(routine, lib_module_name, cdef_sigs):
     rwork_is_output = ('rwork' in routine['args'] and
                        'out' in routine['args'].get('rwork', {}).get('intents', []))
     if rwork_is_output:
-        real_ctype = 'float' if primary_ftype == 'complex' else 'double'
+        # Determine real precision from routine name prefix
+        # c-prefix (complex64) → float, z-prefix (complex128) → double
+        # s-prefix (float32) → float, d-prefix (float64) → double
+        real_ctype = 'float' if name[0] in ('c', 's') else 'double'
         lines.append(f'        {real_ctype} rwork')
         # Check for lrwork
         if 'lrwork' in routine['args']:
@@ -1559,6 +1567,15 @@ def _generate_lwork_wrapper(routine, lib_module_name, cdef_sigs):
     if base_name not in cdef_sigs:
         lines.append(f'    raise NotImplementedError("{name}: {base_name} not in cython_lapack")')
         return '\n'.join(lines) + '\n'
+
+    # Convert character args from str to bytes
+    for aname in py_args:
+        if aname in _lwork_internal:
+            continue
+        ainfo = routine['args'].get(aname, {})
+        if ainfo.get('ftype') == 'character':
+            lines.append(f'    if isinstance({aname}, str):')
+            lines.append(f'        {aname} = {aname}.encode()')
 
     # Apply computed defaults (e.g., hi=n-1)
     for aname in py_args:
