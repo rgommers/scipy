@@ -1354,6 +1354,8 @@ def _generate_post_call(routine):
     if m:
         limit = m.group(1)
         arr = m.group(2)
+        lines.append(f'    if not {arr}.flags.writeable:')
+        lines.append(f'        {arr} = {arr}.copy()')
         lines.append(f'    {arr} -= 1  # Convert from 1-based to 0-based indexing')
 
     # Pattern 1b: for(i=0,n=MIN(m,n);i<n;--arr[i++]) - with limit computation
@@ -1361,7 +1363,9 @@ def _generate_post_call(routine):
     if m:
         arr = m.group(3)
         if not any(arr in l for l in lines):
-            lines.append(f'    {arr} -= 1  # Convert from 1-based to 0-based indexing')
+            lines.append(f'    if not {arr}.flags.writeable:')
+        lines.append(f'        {arr} = {arr}.copy()')
+        lines.append(f'    {arr} -= 1  # Convert from 1-based to 0-based indexing')
 
     # Pattern 2: for(i=0;i<N;--arr1[i],--arr2[i++]) - decrement two arrays
     m = re.search(r'for\(i=0;i<\w+;--(\w+)\[i\],--(\w+)\[i\+\+\]\)', raw)

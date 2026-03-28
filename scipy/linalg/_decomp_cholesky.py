@@ -207,11 +207,7 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     c = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=False,
                     check_finite=check_finite)
 
-    # broadcast `lower` argument for backwards compat
-    batch_shape = a.shape[:-2]
-    ret_lower = np.tile(lower, reps=batch_shape)
-
-    return c, ret_lower
+    return c, lower
 
 
 def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
