@@ -513,6 +513,12 @@ def _generate_wrapper_function(routine, lib_module_name):
     else:
         lines.append(f'    {lib_module_name}.{name}({call_args})')
 
+    # --- Post-call processing ---
+    post_call = _generate_post_call(routine)
+    if post_call:
+        lines.append('')
+        lines.extend(post_call)
+
     # --- Build return value ---
     lines.append('')
     return_parts = _build_return(routine)
@@ -885,6 +891,75 @@ def _build_return(routine):
             seen.add(out_name)
 
     return return_parts
+
+
+def _generate_post_call(routine):
+    """Generate Python code for post-call processing from the callstatement.
+
+    Many LAPACK wrappers have post-processing steps like:
+    - Decrementing pivot indices from 1-based (Fortran) to 0-based (Python)
+    - Decrementing scalar output values (hi--, lo--)
+    - Copying workspace values to output arrays
+
+    Returns a list of Python code lines (with leading '    ' indent).
+    """
+    cs = routine.get('callstatement')
+    if not cs or not cs.startswith('{'):
+        return []
+
+    parsed = _parse_callstatement(routine)
+    if not parsed or not parsed['post_call']:
+        return []
+
+    # Rejoin the post_call parts (they were split by ';' but for loops
+    # use ';' internally too)
+    raw = ';'.join(parsed['post_call']).strip().rstrip('}')
+
+    lines = []
+
+    # Pattern 1: for(i=0;i<N;--arr[i++]) - decrement array elements
+    # This converts 1-based Fortran indices to 0-based Python
+    m = re.search(r'for\(i=0;i<(\w+);--(\w+)\[i\+\+\]\)', raw)
+    if m:
+        limit = m.group(1)
+        arr = m.group(2)
+        lines.append(f'    {arr} -= 1  # Convert from 1-based to 0-based indexing')
+
+    # Pattern 1b: for(i=0,n=MIN(m,n);i<n;--arr[i++]) - with limit computation
+    m = re.search(r'for\(i=0,\w+=MIN\((\w+),(\w+)\);i<\w+;--(\w+)\[i\+\+\]\)', raw)
+    if m:
+        arr = m.group(3)
+        if not any(arr in l for l in lines):
+            lines.append(f'    {arr} -= 1  # Convert from 1-based to 0-based indexing')
+
+    # Pattern 2: for(i=0;i<N;--arr1[i],--arr2[i++]) - decrement two arrays
+    m = re.search(r'for\(i=0;i<\w+;--(\w+)\[i\],--(\w+)\[i\+\+\]\)', raw)
+    if m:
+        arr1 = m.group(1)
+        arr2 = m.group(2)
+        if not any(arr1 in l for l in lines):
+            lines.append(f'    {arr1} -= 1  # Convert from 1-based to 0-based indexing')
+        if not any(arr2 in l for l in lines):
+            lines.append(f'    {arr2} -= 1  # Convert from 1-based to 0-based indexing')
+
+    # Pattern 3: var-- - decrement scalar
+    for m in re.finditer(r'\b(\w+)--', raw):
+        var = m.group(1)
+        # Skip loop variable 'i' and array indexing
+        if var != 'i' and '[' not in raw[m.start():m.end()+5]:
+            if not any(var in l for l in lines):
+                lines.append(f'    {var} -= 1  # Convert from 1-based to 0-based')
+
+    # Pattern 4: for(i=0;i<N;i++){out[i] = src[i];} - copy values
+    for m in re.finditer(
+        r'for\(i=0;i<(\d+);i\+\+\)\{(\w+)\[i\]\s*=\s*(\w+)\[i\];\}', raw
+    ):
+        count = m.group(1)
+        dst = m.group(2)
+        src = m.group(3)
+        lines.append(f'    {dst}[:] = {src}[:{count}]')
+
+    return lines
 
 
 def generate_blas_pyx(routines, ilp64=False):
