@@ -306,7 +306,15 @@ def _translate_f2py_expr(expr, routine_args):
         idx = _char_maps.get(char, f"ord('{char}')")
         return f'{var} == {idx}'
 
-    result = re.sub(r'\*(\w+)==[\'"](.)[\'"]', _deref_char_cmp, result)
+    # Replace *var=='X' with var == b'X' (bytes comparison)
+    def _deref_char_cmp_bytes(m):
+        var = m.group(1)
+        char = m.group(2)
+        return f'{var} == b"{char}"'
+
+    result = re.sub(r'\*(\w+)==[\'"](.)[\'"]', _deref_char_cmp_bytes, result)
+    # Also handle var[0]=='X' → var == b'X' (from parsed dimension expressions)
+    result = re.sub(r'(\w+)\[0\]==[\'"](.)[\'"]', lambda m: f'{m.group(1)} == b"{m.group(2)}"', result)
 
     # C ternary expressions: (cond ? a : b) -> (a if cond else b)
     # Handle min/max patterns: (a <= b ? a : b) -> min(a, b)
