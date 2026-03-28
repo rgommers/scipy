@@ -678,6 +678,19 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
     # --- Input validation and array conversion ---
     lines.append('')
 
+    # Ensure arrays have the expected dimensionality (f2py does this
+    # automatically, but our wrappers need to be explicit).
+    # A 1D array passed to a 2D parameter gets reshaped to (n, 1).
+    for aname in py_args:
+        ainfo = routine['args'].get(aname, {})
+        dim = ainfo.get('dimension', '')
+        if not dim or dim == '*':
+            continue
+        ndim = len([d for d in dim.split(',') if d.strip()])
+        if ndim >= 2:
+            lines.append(f'    if np.ndim({aname}) == 1:')
+            lines.append(f'        {aname} = np.asarray({aname}).reshape(-1, 1)')
+
     # Process array arguments: convert to Fortran-contiguous, correct dtype
     for aname in py_args:
         ainfo = routine['args'].get(aname, {})
