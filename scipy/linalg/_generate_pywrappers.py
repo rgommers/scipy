@@ -624,11 +624,12 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
     # Collect all cdef declarations first, then emit block only if non-empty
     cdef_lines = []
 
-    # Declare blas_int variables for hidden integer args
+    # Declare blas_int variables for hidden integer SCALAR args
+    # (skip integer arrays like iwork which have dimension)
     int_vars = []
     for aname in hidden_args:
         ainfo = routine['args'].get(aname, {})
-        if ainfo.get('ftype') == 'integer':
+        if ainfo.get('ftype') in ('integer', 'logical') and not ainfo.get('dimension'):
             int_vars.append(aname)
     if int_vars:
         cdef_lines.append(f'        blas_int {", ".join(int_vars)}')
@@ -1230,9 +1231,11 @@ def _build_return(routine):
 
     Returns list of dicts with 'var' (the variable name in scope)
     and 'name' (the name f2py would use in the result, via out=X).
+
+    f2py convention: pure intent(out) args first, then intent(in,out) args,
+    in the order they appear in the argument list.
     """
     is_function = routine['type'] == 'function'
-    output_args = _get_output_args(routine)
 
     return_parts = []
     seen = set()
@@ -1243,13 +1246,35 @@ def _build_return(routine):
         return_parts.append({'var': rn, 'name': rn})
         seen.add(rn)
 
-    # Then output arrays/scalars
-    for aname in output_args:
+    # Return outputs in arg_names order, with info always last.
+    # This matches f2py's return order convention.
+    for aname in routine['arg_names']:
+        if aname == 'info':
+            continue
         ainfo = routine['args'].get(aname, {})
+        intents = ainfo.get('intents', [])
         out_name = ainfo.get('out_name', aname)
-        if out_name not in seen:
-            return_parts.append({'var': aname, 'name': out_name})
-            seen.add(out_name)
+        if 'out' in intents:
+            if out_name not in seen:
+                return_parts.append({'var': aname, 'name': out_name})
+                seen.add(out_name)
+
+    # Also check for output args not in arg_names (e.g., extra output params)
+    for aname, ainfo in routine['args'].items():
+        if aname in seen or aname == 'info':
+            continue
+        intents = ainfo.get('intents', [])
+        out_name = ainfo.get('out_name', aname)
+        if 'out' in intents:
+            if out_name not in seen:
+                return_parts.append({'var': aname, 'name': out_name})
+                seen.add(out_name)
+
+    # info always last
+    if 'info' in routine['args']:
+        ainfo = routine['args']['info']
+        if 'out' in ainfo.get('intents', []):
+            return_parts.append({'var': 'info', 'name': 'info'})
 
     return return_parts
 
