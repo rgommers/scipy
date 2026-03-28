@@ -854,17 +854,19 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
                     lines.append(f'    {var} -= 1')
 
             # Handle for loops that increment/decrement arrays
-            # Pattern: for(i=0;i<N;++arr[i++]) in the rejoined string
-            for m in re.finditer(
-                r'for\(\w+=0;\w+<\w+;\+\+(\w+)\[\w+\+\+\]\)', raw_pre
-            ):
+            # Patterns in the rejoined pre-call string:
+            #   for(i=0;i<N;++arr[i++])
+            #   for(i=0;i<n;++ipiv[i],++jpiv[i++])
+            for m in re.finditer(r'\+\+(\w+)\[', raw_pre):
                 arr = m.group(1)
+                if arr == 'i':  # skip loop variable
+                    continue
                 lines.append(f'    {arr} = np.array({arr}, copy=True)')
                 lines.append(f'    {arr} += 1  # Convert 0-based to 1-based')
-            for m in re.finditer(
-                r'for\(\w+=0;\w+<\w+;--(\w+)\[\w+\+\+\]\)', raw_pre
-            ):
+            for m in re.finditer(r'--(\w+)\[', raw_pre):
                 arr = m.group(1)
+                if arr == 'i':
+                    continue
                 lines.append(f'    {arr} = np.array({arr}, copy=True)')
                 lines.append(f'    {arr} -= 1  # Convert 1-based to 0-based')
 
