@@ -601,15 +601,18 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
             else:
                 sig_parts.append(f'{ctype} {aname}')
 
-    # Add overwrite_ parameters for intent(in,out,copy) arrays
+    # Add overwrite_ parameters for arrays with copy or in,out intent
     for aname in py_args:
         ainfo = routine['args'].get(aname, {})
         intents = ainfo.get('intents', [])
-        if 'copy' in intents and 'in' in intents and 'out' in intents:
+        if not _is_array_arg(ainfo):
+            continue
+        if 'copy' in intents and 'in' in intents:
+            # intent(in,copy) or intent(in,out,copy)
             ow_name = _get_overwrite_param_name(aname)
             sig_parts.append(f'int {ow_name}=0')
-        elif 'in' in intents and 'out' in intents and _is_array_arg(ainfo):
-            # in,out without copy - overwrite by default
+        elif 'in' in intents and 'out' in intents:
+            # in,out without copy
             ow_name = _get_overwrite_param_name(aname)
             sig_parts.append(f'int {ow_name}=0')
 
@@ -726,8 +729,12 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
             lines.append(f'    else:')
             lines.append(f'        {aname} = np.asfortranarray({aname}, dtype={dt})')
         elif 'in' in intents and 'copy' in intents:
-            # intent(in,copy) - always copy
-            lines.append(f'    {aname} = np.array({aname}, dtype={dt}, order="F", copy=True)')
+            # intent(in,copy) - copy unless overwrite
+            ow_name = _get_overwrite_param_name(aname)
+            lines.append(f'    if not {ow_name}:')
+            lines.append(f'        {aname} = np.array({aname}, dtype={dt}, order="F", copy=True)')
+            lines.append(f'    else:')
+            lines.append(f'        {aname} = np.asfortranarray({aname}, dtype={dt})')
         elif 'in' in intents:
             # intent(in) only - just ensure correct dtype and order
             lines.append(f'    {aname} = np.asfortranarray({aname}, dtype={dt})')
