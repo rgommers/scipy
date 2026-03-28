@@ -577,11 +577,9 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
                 sig_parts.append(aname)
         elif ainfo.get('ftype') in ('integer', 'logical'):
             if (is_optional or default is not None) and default is not None:
-                # Check if default is a simple literal
                 if _is_simple_literal(default):
                     sig_parts.append(f'int {aname}={default}')
                 else:
-                    # Computed default - use sentinel
                     sig_parts.append(f'int {aname}=-1')
                     py_expr = _translate_f2py_expr(default, routine['args'])
                     body_defaults.append((aname, py_expr))
@@ -602,14 +600,14 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
             else:
                 sig_parts.append(f'{ctype} {aname}')
 
-    # Add overwrite_ parameters for arrays with copy or in,out intent
+    # Add overwrite_ parameters for arrays with copy, overwrite, or in,out intent
     for aname in py_args:
         ainfo = routine['args'].get(aname, {})
         intents = ainfo.get('intents', [])
         if not _is_array_arg(ainfo):
             continue
-        if 'copy' in intents and 'in' in intents:
-            # intent(in,copy) or intent(in,out,copy)
+        if ('copy' in intents or 'overwrite' in intents) and 'in' in intents:
+            # intent(in,copy), intent(in,overwrite), or intent(in,out,copy)
             ow_name = _get_overwrite_param_name(aname)
             sig_parts.append(f'int {ow_name}=0')
         elif 'in' in intents and 'out' in intents:
@@ -729,8 +727,8 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
             lines.append(f'        {aname} = np.array({aname}, dtype={dt}, order="F", copy=True)')
             lines.append(f'    else:')
             lines.append(f'        {aname} = np.asfortranarray({aname}, dtype={dt})')
-        elif 'in' in intents and 'copy' in intents:
-            # intent(in,copy) - copy unless overwrite
+        elif 'in' in intents and ('copy' in intents or 'overwrite' in intents):
+            # intent(in,copy) or intent(in,overwrite) - copy unless overwrite
             ow_name = _get_overwrite_param_name(aname)
             lines.append(f'    if not {ow_name}:')
             lines.append(f'        {aname} = np.array({aname}, dtype={dt}, order="F", copy=True)')
