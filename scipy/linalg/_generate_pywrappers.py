@@ -1459,11 +1459,24 @@ def _generate_lwork_wrapper(routine, lib_module_name, cdef_sigs):
     lines.append(f'        blas_int info = 0')
     lines.append(f'        {ctype} work')
 
-    # Check if there's a liwork query too
+    # Check for additional workspace queries
     has_liwork = any(a == 'liwork' for a in routine['arg_names'])
     if has_liwork:
         lines.append(f'        blas_int liwork = -1')
         lines.append(f'        blas_int iwork')
+
+    # Check for rwork output (complex routines)
+    rwork_is_output = ('rwork' in routine['args'] and
+                       'out' in routine['args'].get('rwork', {}).get('intents', []))
+    if rwork_is_output:
+        real_ctype = 'float' if primary_ftype == 'complex' else 'double'
+        lines.append(f'        {real_ctype} rwork')
+        # Check for lrwork
+        if 'lrwork' in routine['args']:
+            lines.append(f'        blas_int lrwork = -1')
+
+    iwork_is_output = ('iwork' in routine['args'] and
+                       'out' in routine['args'].get('iwork', {}).get('intents', []))
 
     # Declare all hidden/dummy args needed by the callstatement.
     # In _lwork routines, ALL non-input args are dummies (even arrays).
@@ -1471,6 +1484,10 @@ def _generate_lwork_wrapper(routine, lib_module_name, cdef_sigs):
     _already_declared = {'lwork', 'info', 'work'}
     if has_liwork:
         _already_declared.update({'liwork', 'iwork'})
+    if rwork_is_output:
+        _already_declared.add('rwork')
+        if 'lrwork' in routine['args']:
+            _already_declared.add('lrwork')
     hidden_sorted = _get_hidden_args(routine)
     for aname in hidden_sorted:
         if aname in _already_declared:
@@ -1544,7 +1561,16 @@ def _generate_lwork_wrapper(routine, lib_module_name, cdef_sigs):
         call_args = _translate_callstatement_args(routine, sig_types)
         if call_args:
             lines.append(f'    {lib_module_name}.{base_name}({call_args})')
-            lines.append(f'    return work, info')
+            # Build return tuple following arg_names order for output args
+            ret_parts = []
+            for aname in routine['arg_names']:
+                if aname == 'info':
+                    continue
+                ainfo = routine['args'].get(aname, {})
+                if 'out' in ainfo.get('intents', []):
+                    ret_parts.append(aname)
+            ret_parts.append('info')
+            lines.append(f'    return {", ".join(ret_parts)}')
             return '\n'.join(lines) + '\n'
 
     # Fallback
