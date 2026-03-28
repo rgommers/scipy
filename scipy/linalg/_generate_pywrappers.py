@@ -681,7 +681,7 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
             continue
         ndim = len([d for d in dim.split(',') if d.strip()])
         if ndim >= 2:
-            lines.append(f'    _was_1d_{aname} = np.ndim({aname}) == 1')
+            lines.append(f'    _was_1d_{aname} = ({aname} is not None) and np.ndim({aname}) == 1')
             lines.append(f'    if _was_1d_{aname}:')
             lines.append(f'        {aname} = np.asarray({aname}).reshape(-1, 1)')
             _reshaped_args.append(aname)
@@ -736,16 +736,34 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
             pass
 
     # --- Compute hidden args ---
+    # Some hidden args reference .shape of output arrays that haven't
+    # been allocated yet. We compute these after output allocation.
+    _output_only_names = set()
+    for _aname in routine['arg_names']:
+        _ainfo = routine['args'].get(_aname, {})
+        _intents = _ainfo.get('intents', [])
+        if 'out' in _intents and 'in' not in _intents and _is_array_arg(_ainfo):
+            _output_only_names.add(_aname)
+
     lines.append('')
+    _deferred_hidden = []
     for aname in hidden_args:
         ainfo = routine['args'].get(aname, {})
         default = ainfo.get('default')
-        if default is not None:
+        if default is None:
+            continue
+        # Check if default expression references shape of a pure output array
+        default_lower = default.lower()
+        needs_defer = False
+        for out_name in _output_only_names:
+            if f'shape({out_name}' in default_lower or f'{out_name}.shape' in default_lower:
+                needs_defer = True
+                break
+        if needs_defer:
+            _deferred_hidden.append(aname)
+        else:
             py_expr = _translate_f2py_expr(default, routine['args'])
-            if ainfo.get('ftype') == 'integer':
-                lines.append(f'    {aname} = {py_expr}')
-            else:
-                lines.append(f'    {aname} = {py_expr}')
+            lines.append(f'    {aname} = {py_expr}')
 
     # --- Computed defaults (placed after hidden args are computed) ---
     if body_defaults:
@@ -779,6 +797,14 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
                 shape = _translate_dimension_to_shape(dim)
                 lines.append(f'    if {aname} is None:')
                 lines.append(f'        {aname} = np.zeros({shape}, dtype={dt}, order="F")')
+
+    # --- Compute deferred hidden args (those that reference output array shapes) ---
+    for aname in _deferred_hidden:
+        ainfo = routine['args'].get(aname, {})
+        default = ainfo.get('default')
+        if default is not None:
+            py_expr = _translate_f2py_expr(default, routine['args'])
+            lines.append(f'    {aname} = {py_expr}')
 
     # --- Allocate hidden workspace arrays ---
     for aname in hidden_args:
