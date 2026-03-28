@@ -374,6 +374,11 @@ def _parse_routine_block(block_text):
             i += 1
             continue
 
+        # Skip standalone keywords
+        if line.lower().strip() in ('threadsafe',):
+            i += 1
+            continue
+
         # Variable declaration or check/depend line
         # Could be: "<type> [attrs] :: <varlist> [= default]"
         # Or: "check(...) :: <varname>"
@@ -423,6 +428,21 @@ def _parse_var_line(line, routine):
                 routine['args'].setdefault(varname, {}).setdefault(
                     'checks', []
                 ).append(content)
+            return
+
+    # Standalone intent/attribute line WITHOUT '::': "intent(in,out,copy,out=lu) a"
+    # This pattern occurs when attributes are added to already-declared variables
+    if not '::' in line:
+        attr_no_sep = re.match(
+            r'((?:intent|depend|check|dimension|optional|threadsafe)\b.+?)\s+(\w+)\s*$',
+            line, re.I
+        )
+        if attr_no_sep:
+            attrs_str = attr_no_sep.group(1)
+            varname = attr_no_sep.group(2)
+            if varname not in routine['args']:
+                routine['args'][varname] = {}
+            _apply_attributes(attrs_str, routine['args'][varname])
             return
 
     # Type declaration: "<type> [attributes] :: <varlist>"
