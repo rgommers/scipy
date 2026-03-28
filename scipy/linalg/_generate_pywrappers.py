@@ -230,7 +230,9 @@ def _translate_f2py_expr(expr, routine_args):
     # abs() is already Python-compatible
 
     # C ternary expressions: (cond ? a : b) -> (a if cond else b)
-    # This is complex due to nesting; handle simple cases
+    # Handle min/max patterns: (a <= b ? a : b) -> min(a, b)
+    result = _translate_min_max_ternary(result)
+    # Then generic ternaries
     result = _translate_ternary(result)
 
     # C logical operators
@@ -238,6 +240,91 @@ def _translate_f2py_expr(expr, routine_args):
     result = result.replace('||', ' or ')
 
     return result
+
+
+def _translate_min_max_ternary(expr):
+    """Translate C min/max ternary patterns to Python min()/max().
+
+    (a <= b ? a : b) -> min(a, b)
+    (a >= b ? a : b) -> max(a, b)
+    """
+    # We need to handle this with balanced paren matching since the
+    # expressions can be complex. Look for the outermost ternary.
+    # Pattern: (EXPR_A OP EXPR_B ? EXPR_C : EXPR_D)
+    # where EXPR_C ~= EXPR_A and EXPR_D ~= EXPR_B
+    if '?' not in expr:
+        return expr
+
+    # Try to find (a <= b ? a : b) or (a >= b ? a : b) pattern
+    # Use a simpler approach: find ? and : at the same paren depth
+    for attempt in range(5):  # max iterations
+        q_idx = expr.find('?')
+        if q_idx == -1:
+            break
+
+        # Find the matching : at the same depth
+        depth = 0
+        colon_idx = -1
+        for i in range(q_idx + 1, len(expr)):
+            if expr[i] == '(':
+                depth += 1
+            elif expr[i] == ')':
+                depth -= 1
+                if depth < 0:
+                    break
+            elif expr[i] == ':' and depth == 0:
+                colon_idx = i
+                break
+            elif expr[i] == '?' and depth == 0:
+                break  # nested ternary, skip
+
+        if colon_idx == -1:
+            break
+
+        # Find the opening paren before the condition
+        # Walk backwards from ? to find <=, >=
+        cond_str = expr[:q_idx].rstrip()
+        if '<=' in cond_str:
+            op_idx = cond_str.rfind('<=')
+            a_part = cond_str[:op_idx].rstrip()
+            b_part = cond_str[op_idx+2:].lstrip()
+            val_true = expr[q_idx+1:colon_idx].strip()
+            val_false = expr[colon_idx+1:].strip()
+
+            # Strip outer parens
+            if a_part.startswith('('):
+                a_part = a_part[1:]
+            if val_false.endswith(')'):
+                val_false = val_false[:-1]
+
+            # Check if it's a min pattern: (a <= b ? a : b)
+            if (a_part.strip().replace(' ', '') ==
+                    val_true.strip().replace(' ', '') and
+                b_part.strip().replace(' ', '') ==
+                    val_false.strip().replace(' ', '')):
+                return f'min({val_true.strip()}, {val_false.strip()})'
+
+        if '>=' in cond_str:
+            op_idx = cond_str.rfind('>=')
+            a_part = cond_str[:op_idx].rstrip()
+            b_part = cond_str[op_idx+2:].lstrip()
+            val_true = expr[q_idx+1:colon_idx].strip()
+            val_false = expr[colon_idx+1:].strip()
+
+            if a_part.startswith('('):
+                a_part = a_part[1:]
+            if val_false.endswith(')'):
+                val_false = val_false[:-1]
+
+            if (a_part.strip().replace(' ', '') ==
+                    val_true.strip().replace(' ', '') and
+                b_part.strip().replace(' ', '') ==
+                    val_false.strip().replace(' ', '')):
+                return f'max({val_true.strip()}, {val_false.strip()})'
+
+        break  # Don't loop if not a min/max pattern
+
+    return expr
 
 
 def _translate_ternary(expr):
@@ -377,7 +464,8 @@ def _generate_wrapper_function(routine, lib_module_name):
     lines.append(f'    """Wrapper for ``{name}``."""')
 
     # --- Variable declarations ---
-    lines.append('    cdef:')
+    # Collect all cdef declarations first, then emit block only if non-empty
+    cdef_lines = []
 
     # Declare blas_int variables for hidden integer args
     int_vars = []
@@ -386,7 +474,7 @@ def _generate_wrapper_function(routine, lib_module_name):
         if ainfo.get('ftype') == 'integer':
             int_vars.append(aname)
     if int_vars:
-        lines.append(f'        blas_int {", ".join(int_vars)}')
+        cdef_lines.append(f'        blas_int {", ".join(int_vars)}')
 
     # Declare output scalar variables (intent(out) without intent(in))
     for aname in routine['arg_names']:
@@ -395,19 +483,16 @@ def _generate_wrapper_function(routine, lib_module_name):
         if 'out' in intents and 'in' not in intents and not _is_array_arg(ainfo):
             ftype = ainfo.get('ftype', 'integer')
             if ftype == 'integer':
-                lines.append(f'        blas_int {aname}')
+                cdef_lines.append(f'        blas_int {aname}')
             else:
                 ctype = FTYPE_TO_CTYPE.get(ftype, 'double')
-                lines.append(f'        {ctype} {aname}')
+                cdef_lines.append(f'        {ctype} {aname}')
 
     # Declare function return variable if needed
     if is_function and routine.get('result_name'):
         rname = routine['result_name']
-        # Determine return type: check return_type, then look in args for
-        # the result variable or function name, then fall back to primary type
         rtype = routine.get('return_type')
         if not rtype:
-            # Check if result name or function name has a type declaration
             for vname in [rname, routine['name']]:
                 if vname in routine['args'] and 'ftype' in routine['args'][vname]:
                     rtype = routine['args'][vname]['ftype']
@@ -415,7 +500,11 @@ def _generate_wrapper_function(routine, lib_module_name):
         if not rtype:
             rtype = primary_ftype
         ctype = FTYPE_TO_CTYPE.get(rtype, 'double')
-        lines.append(f'        {ctype} {rname}')
+        cdef_lines.append(f'        {ctype} {rname}')
+
+    if cdef_lines:
+        lines.append('    cdef:')
+        lines.extend(cdef_lines)
 
     # --- Computed defaults (for args whose defaults reference other args) ---
     if body_defaults:
