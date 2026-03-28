@@ -207,7 +207,11 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     c = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=False,
                     check_finite=check_finite)
 
-    return c, lower
+    # Tile `lower` for backwards compat with batch mode
+    batch_shape = a.shape[:-2]
+    ret_lower = np.tile(lower, reps=batch_shape) if batch_shape else lower
+
+    return c, ret_lower
 
 
 def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
@@ -281,7 +285,7 @@ def _cho_solve(c, b, lower, overwrite_b, check_finite):
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
     potrs, = get_lapack_funcs(('potrs',), (c, b1))
-    x, info = potrs(c, b1, lower=lower, overwrite_b=overwrite_b)
+    x, info = potrs(c, b1, lower=int(lower), overwrite_b=overwrite_b)
     if info != 0:
         raise ValueError(f'illegal value in {-info}th argument of internal potrs')
     return x
