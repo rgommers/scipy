@@ -1461,7 +1461,10 @@ def _generate_lwork_wrapper(routine, lib_module_name, cdef_sigs):
         default = ainfo.get('default')
         ftype = ainfo.get('ftype', 'integer')
         is_optional = ainfo.get('optional', False)
-        if ftype in ('integer', 'logical'):
+        if _is_array_arg(ainfo):
+            # Array args in _lwork: leave untyped (Python object)
+            sig_parts.append(aname)
+        elif ftype in ('integer', 'logical'):
             if default is not None and _is_simple_literal(default):
                 sig_parts.append(f'int {aname}={default}')
             elif default is not None:
@@ -1474,9 +1477,6 @@ def _generate_lwork_wrapper(routine, lib_module_name, cdef_sigs):
                 sig_parts.append(f'{aname}=b"{char_default}"')
             else:
                 sig_parts.append(aname)
-        elif _is_array_arg(ainfo):
-            # Array args in _lwork: leave untyped (Python object)
-            sig_parts.append(aname)
         else:
             ct = FTYPE_TO_CTYPE.get(ftype, 'double')
             if default is not None and _is_simple_literal(default):
