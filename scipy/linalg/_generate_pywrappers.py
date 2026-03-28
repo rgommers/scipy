@@ -1613,6 +1613,454 @@ def generate_blas_pyx(routines, ilp64=False):
     return '\n'.join(lines)
 
 
+def _generate_gees_gges_wrappers():
+    """Generate hand-written wrappers for gees/gges routines with callbacks."""
+    return '''
+# --- gees/gges routines with callback function support ---
+# These routines take a user-defined eigenvalue selection function.
+# We use module-level variables to pass the Python callable through
+# to cdef callback functions.
+
+cdef object _gees_select_callable = None
+
+cdef blas_int _dselect2_callback(cy_d *arg1, cy_d *arg2) noexcept nogil:
+    with gil:
+        try:
+            return 1 if (<object>_gees_select_callable)(arg1[0], arg2[0]) else 0
+        except TypeError:
+            return 1 if (<object>_gees_select_callable)(arg1[0]) else 0
+
+cdef blas_int _sselect2_callback(cy_s *arg1, cy_s *arg2) noexcept nogil:
+    with gil:
+        try:
+            return 1 if (<object>_gees_select_callable)(arg1[0], arg2[0]) else 0
+        except TypeError:
+            return 1 if (<object>_gees_select_callable)(arg1[0]) else 0
+
+cdef blas_int _cselect1_callback(cy_c *arg) noexcept nogil:
+    with gil:
+        return 1 if (<object>_gees_select_callable)(arg[0]) else 0
+
+cdef blas_int _zselect1_callback(cy_z *arg) noexcept nogil:
+    with gil:
+        return 1 if (<object>_gees_select_callable)(arg[0]) else 0
+
+cdef object _gges_select_callable = None
+
+cdef blas_int _dselect3_callback(cy_d *a1, cy_d *a2, cy_d *a3) noexcept nogil:
+    with gil:
+        try:
+            return 1 if (<object>_gges_select_callable)(a1[0], a2[0], a3[0]) else 0
+        except TypeError:
+            try:
+                return 1 if (<object>_gges_select_callable)(a1[0], a2[0]) else 0
+            except TypeError:
+                return 1 if (<object>_gges_select_callable)(a1[0]) else 0
+
+cdef blas_int _sselect3_callback(cy_s *a1, cy_s *a2, cy_s *a3) noexcept nogil:
+    with gil:
+        try:
+            return 1 if (<object>_gges_select_callable)(a1[0], a2[0], a3[0]) else 0
+        except TypeError:
+            try:
+                return 1 if (<object>_gges_select_callable)(a1[0], a2[0]) else 0
+            except TypeError:
+                return 1 if (<object>_gges_select_callable)(a1[0]) else 0
+
+cdef blas_int _cselect2_callback(cy_c *a1, cy_c *a2) noexcept nogil:
+    with gil:
+        return 1 if (<object>_gges_select_callable)(a1[0], a2[0]) else 0
+
+cdef blas_int _zselect2_callback(cy_z *a1, cy_z *a2) noexcept nogil:
+    with gil:
+        return 1 if (<object>_gges_select_callable)(a1[0], a2[0]) else 0
+
+
+def dgees(select, a, int compute_v=1, int sort_t=0, w=None, vs=None,
+          int lwork=-1, int overwrite_a=0):
+    """Wrapper for ``dgees``."""
+    global _gees_select_callable
+    cdef:
+        blas_int n, nrows, ldvs, sdim, info
+
+    _was_1d_a = (a is not None) and np.ndim(a) == 1
+    if _was_1d_a:
+        a = np.asarray(a).reshape(-1, 1)
+    if not overwrite_a:
+        a = np.array(a, dtype=np.float64, order="F", copy=True)
+    else:
+        a = np.asfortranarray(a, dtype=np.float64)
+
+    n = a.shape[0]
+    nrows = a.shape[0]
+    ldvs = ((n if compute_v else 1))
+    if lwork == -1:
+        lwork = max(3*n, 1)
+
+    wr = np.empty((n,), dtype=np.float64, order="F")
+    wi = np.empty((n,), dtype=np.float64, order="F")
+    vs = np.empty((ldvs, n), dtype=np.float64, order="F")
+    work = np.empty((max(lwork, 1),), dtype=np.float64, order="F")
+    bwork = np.empty((n,), dtype=np.intc, order="F")
+
+    _gees_select_callable = select
+    cython_lapack.dgees(
+        (<char *>b"NV" + compute_v), (<char *>b"NS" + sort_t),
+        &_dselect2_callback, &n,
+        <cy_d *>np.PyArray_DATA(a), &nrows, &sdim,
+        <cy_d *>np.PyArray_DATA(wr), <cy_d *>np.PyArray_DATA(wi),
+        <cy_d *>np.PyArray_DATA(vs), &ldvs,
+        <cy_d *>np.PyArray_DATA(work), &lwork,
+        <blas_int *>np.PyArray_DATA(bwork), &info)
+    _gees_select_callable = None
+
+    if _was_1d_a:
+        a = a.reshape(-1)
+    return a, sdim, wr, wi, vs, work, info
+
+
+def sgees(select, a, int compute_v=1, int sort_t=0, w=None, vs=None,
+          int lwork=-1, int overwrite_a=0):
+    """Wrapper for ``sgees``."""
+    global _gees_select_callable
+    cdef:
+        blas_int n, nrows, ldvs, sdim, info
+
+    _was_1d_a = (a is not None) and np.ndim(a) == 1
+    if _was_1d_a:
+        a = np.asarray(a).reshape(-1, 1)
+    if not overwrite_a:
+        a = np.array(a, dtype=np.float32, order="F", copy=True)
+    else:
+        a = np.asfortranarray(a, dtype=np.float32)
+
+    n = a.shape[0]
+    nrows = a.shape[0]
+    ldvs = ((n if compute_v else 1))
+    if lwork == -1:
+        lwork = max(3*n, 1)
+
+    wr = np.empty((n,), dtype=np.float32, order="F")
+    wi = np.empty((n,), dtype=np.float32, order="F")
+    vs = np.empty((ldvs, n), dtype=np.float32, order="F")
+    work = np.empty((max(lwork, 1),), dtype=np.float32, order="F")
+    bwork = np.empty((n,), dtype=np.intc, order="F")
+
+    _gees_select_callable = select
+    cython_lapack.sgees(
+        (<char *>b"NV" + compute_v), (<char *>b"NS" + sort_t),
+        &_sselect2_callback, &n,
+        <cy_s *>np.PyArray_DATA(a), &nrows, &sdim,
+        <cy_s *>np.PyArray_DATA(wr), <cy_s *>np.PyArray_DATA(wi),
+        <cy_s *>np.PyArray_DATA(vs), &ldvs,
+        <cy_s *>np.PyArray_DATA(work), &lwork,
+        <blas_int *>np.PyArray_DATA(bwork), &info)
+    _gees_select_callable = None
+
+    if _was_1d_a:
+        a = a.reshape(-1)
+    return a, sdim, wr, wi, vs, work, info
+
+
+def cgees(select, a, int compute_v=1, int sort_t=0, w=None, vs=None,
+          int lwork=-1, int overwrite_a=0):
+    """Wrapper for ``cgees``."""
+    global _gees_select_callable
+    cdef:
+        blas_int n, nrows, ldvs, sdim, info
+
+    _was_1d_a = (a is not None) and np.ndim(a) == 1
+    if _was_1d_a:
+        a = np.asarray(a).reshape(-1, 1)
+    if not overwrite_a:
+        a = np.array(a, dtype=np.complex64, order="F", copy=True)
+    else:
+        a = np.asfortranarray(a, dtype=np.complex64)
+
+    n = a.shape[0]
+    nrows = a.shape[0]
+    ldvs = ((n if compute_v else 1))
+    if lwork == -1:
+        lwork = max(2*n, 1)
+
+    w = np.empty((n,), dtype=np.complex64, order="F")
+    vs = np.empty((ldvs, n), dtype=np.complex64, order="F")
+    work = np.empty((max(lwork, 1),), dtype=np.complex64, order="F")
+    rwork = np.empty((n,), dtype=np.float32, order="F")
+    bwork = np.empty((n,), dtype=np.intc, order="F")
+
+    _gees_select_callable = select
+    cython_lapack.cgees(
+        (<char *>b"NV" + compute_v), (<char *>b"NS" + sort_t),
+        &_cselect1_callback, &n,
+        <cy_c *>np.PyArray_DATA(a), &nrows, &sdim,
+        <cy_c *>np.PyArray_DATA(w),
+        <cy_c *>np.PyArray_DATA(vs), &ldvs,
+        <cy_c *>np.PyArray_DATA(work), &lwork,
+        <cy_s *>np.PyArray_DATA(rwork),
+        <blas_int *>np.PyArray_DATA(bwork), &info)
+    _gees_select_callable = None
+
+    if _was_1d_a:
+        a = a.reshape(-1)
+    return a, sdim, w, vs, work, info
+
+
+def zgees(select, a, int compute_v=1, int sort_t=0, w=None, vs=None,
+          int lwork=-1, int overwrite_a=0):
+    """Wrapper for ``zgees``."""
+    global _gees_select_callable
+    cdef:
+        blas_int n, nrows, ldvs, sdim, info
+
+    _was_1d_a = (a is not None) and np.ndim(a) == 1
+    if _was_1d_a:
+        a = np.asarray(a).reshape(-1, 1)
+    if not overwrite_a:
+        a = np.array(a, dtype=np.complex128, order="F", copy=True)
+    else:
+        a = np.asfortranarray(a, dtype=np.complex128)
+
+    n = a.shape[0]
+    nrows = a.shape[0]
+    ldvs = ((n if compute_v else 1))
+    if lwork == -1:
+        lwork = max(2*n, 1)
+
+    w = np.empty((n,), dtype=np.complex128, order="F")
+    vs = np.empty((ldvs, n), dtype=np.complex128, order="F")
+    work = np.empty((max(lwork, 1),), dtype=np.complex128, order="F")
+    rwork = np.empty((n,), dtype=np.float64, order="F")
+    bwork = np.empty((n,), dtype=np.intc, order="F")
+
+    _gees_select_callable = select
+    cython_lapack.zgees(
+        (<char *>b"NV" + compute_v), (<char *>b"NS" + sort_t),
+        &_zselect1_callback, &n,
+        <cy_z *>np.PyArray_DATA(a), &nrows, &sdim,
+        <cy_z *>np.PyArray_DATA(w),
+        <cy_z *>np.PyArray_DATA(vs), &ldvs,
+        <cy_z *>np.PyArray_DATA(work), &lwork,
+        <cy_d *>np.PyArray_DATA(rwork),
+        <blas_int *>np.PyArray_DATA(bwork), &info)
+    _gees_select_callable = None
+
+    if _was_1d_a:
+        a = a.reshape(-1)
+    return a, sdim, w, vs, work, info
+
+
+def dgges(select, a, b, int compute_vl=1, int compute_vr=1,
+          int lwork=-1, int overwrite_a=0, int overwrite_b=0, int sort_t=-1):
+    """Wrapper for ``dgges``."""
+    global _gges_select_callable
+    cdef:
+        blas_int n, lda, ldb, sdim, ldvsl, ldvsr, info
+
+    if not overwrite_a:
+        a = np.array(a, dtype=np.float64, order="F", copy=True)
+    else:
+        a = np.asfortranarray(a, dtype=np.float64)
+    if not overwrite_b:
+        b = np.array(b, dtype=np.float64, order="F", copy=True)
+    else:
+        b = np.asfortranarray(b, dtype=np.float64)
+
+    n = a.shape[0]
+    lda = max(1, n)
+    ldb = max(1, n)
+    ldvsl = ((n if compute_vl else 1))
+    ldvsr = ((n if compute_vr else 1))
+    if lwork == -1:
+        lwork = max(8*n+16, 1)
+
+    alphar = np.empty((n,), dtype=np.float64, order="F")
+    alphai = np.empty((n,), dtype=np.float64, order="F")
+    beta = np.empty((n,), dtype=np.float64, order="F")
+    vsl = np.empty((ldvsl, n), dtype=np.float64, order="F")
+    vsr = np.empty((ldvsr, n), dtype=np.float64, order="F")
+    work = np.empty((max(lwork, 1),), dtype=np.float64, order="F")
+    bwork = np.empty((n,), dtype=np.intc, order="F")
+
+    if sort_t == -1:
+        sort_t = 1 if select is not None else 0
+    _gges_select_callable = select if select is not None else (lambda a, b, c: True)
+    cython_lapack.dgges(
+        (<char *>b"NV" + compute_vl), (<char *>b"NV" + compute_vr),
+        (<char *>b"NS" + sort_t),
+        &_dselect3_callback, &n,
+        <cy_d *>np.PyArray_DATA(a), &lda,
+        <cy_d *>np.PyArray_DATA(b), &ldb, &sdim,
+        <cy_d *>np.PyArray_DATA(alphar), <cy_d *>np.PyArray_DATA(alphai),
+        <cy_d *>np.PyArray_DATA(beta),
+        <cy_d *>np.PyArray_DATA(vsl), &ldvsl,
+        <cy_d *>np.PyArray_DATA(vsr), &ldvsr,
+        <cy_d *>np.PyArray_DATA(work), &lwork,
+        <blas_int *>np.PyArray_DATA(bwork), &info)
+    _gges_select_callable = None
+
+    return a, b, sdim, alphar, alphai, beta, vsl, vsr, work, info
+
+
+def sgges(select, a, b, int compute_vl=1, int compute_vr=1,
+          int lwork=-1, int overwrite_a=0, int overwrite_b=0, int sort_t=-1):
+    """Wrapper for ``sgges``."""
+    global _gges_select_callable
+    cdef:
+        blas_int n, lda, ldb, sdim, ldvsl, ldvsr, info
+
+    if not overwrite_a:
+        a = np.array(a, dtype=np.float32, order="F", copy=True)
+    else:
+        a = np.asfortranarray(a, dtype=np.float32)
+    if not overwrite_b:
+        b = np.array(b, dtype=np.float32, order="F", copy=True)
+    else:
+        b = np.asfortranarray(b, dtype=np.float32)
+
+    n = a.shape[0]
+    lda = max(1, n)
+    ldb = max(1, n)
+    ldvsl = ((n if compute_vl else 1))
+    ldvsr = ((n if compute_vr else 1))
+    if lwork == -1:
+        lwork = max(8*n+16, 1)
+
+    alphar = np.empty((n,), dtype=np.float32, order="F")
+    alphai = np.empty((n,), dtype=np.float32, order="F")
+    beta = np.empty((n,), dtype=np.float32, order="F")
+    vsl = np.empty((ldvsl, n), dtype=np.float32, order="F")
+    vsr = np.empty((ldvsr, n), dtype=np.float32, order="F")
+    work = np.empty((max(lwork, 1),), dtype=np.float32, order="F")
+    bwork = np.empty((n,), dtype=np.intc, order="F")
+
+    if sort_t == -1:
+        sort_t = 1 if select is not None else 0
+    _gges_select_callable = select if select is not None else (lambda a, b, c: True)
+    cython_lapack.sgges(
+        (<char *>b"NV" + compute_vl), (<char *>b"NV" + compute_vr),
+        (<char *>b"NS" + sort_t),
+        &_sselect3_callback, &n,
+        <cy_s *>np.PyArray_DATA(a), &lda,
+        <cy_s *>np.PyArray_DATA(b), &ldb, &sdim,
+        <cy_s *>np.PyArray_DATA(alphar), <cy_s *>np.PyArray_DATA(alphai),
+        <cy_s *>np.PyArray_DATA(beta),
+        <cy_s *>np.PyArray_DATA(vsl), &ldvsl,
+        <cy_s *>np.PyArray_DATA(vsr), &ldvsr,
+        <cy_s *>np.PyArray_DATA(work), &lwork,
+        <blas_int *>np.PyArray_DATA(bwork), &info)
+    _gges_select_callable = None
+
+    return a, b, sdim, alphar, alphai, beta, vsl, vsr, work, info
+
+
+def cgges(select, a, b, int compute_vl=1, int compute_vr=1,
+          int lwork=-1, int overwrite_a=0, int overwrite_b=0, int sort_t=-1):
+    """Wrapper for ``cgges``."""
+    global _gges_select_callable
+    cdef:
+        blas_int n, lda, ldb, sdim, ldvsl, ldvsr, info
+
+    if not overwrite_a:
+        a = np.array(a, dtype=np.complex64, order="F", copy=True)
+    else:
+        a = np.asfortranarray(a, dtype=np.complex64)
+    if not overwrite_b:
+        b = np.array(b, dtype=np.complex64, order="F", copy=True)
+    else:
+        b = np.asfortranarray(b, dtype=np.complex64)
+
+    n = a.shape[0]
+    lda = max(1, n)
+    ldb = max(1, n)
+    ldvsl = ((n if compute_vl else 1))
+    ldvsr = ((n if compute_vr else 1))
+    if lwork == -1:
+        lwork = max(2*n, 1)
+
+    alpha = np.empty((n,), dtype=np.complex64, order="F")
+    beta = np.empty((n,), dtype=np.complex64, order="F")
+    vsl = np.empty((ldvsl, n), dtype=np.complex64, order="F")
+    vsr = np.empty((ldvsr, n), dtype=np.complex64, order="F")
+    work = np.empty((max(lwork, 1),), dtype=np.complex64, order="F")
+    rwork = np.empty((8*n,), dtype=np.float32, order="F")
+    bwork = np.empty((n,), dtype=np.intc, order="F")
+
+    if sort_t == -1:
+        sort_t = 1 if select is not None else 0
+    _gges_select_callable = select if select is not None else (lambda a, b: True)
+    cython_lapack.cgges(
+        (<char *>b"NV" + compute_vl), (<char *>b"NV" + compute_vr),
+        (<char *>b"NS" + sort_t),
+        &_cselect2_callback, &n,
+        <cy_c *>np.PyArray_DATA(a), &lda,
+        <cy_c *>np.PyArray_DATA(b), &ldb, &sdim,
+        <cy_c *>np.PyArray_DATA(alpha),
+        <cy_c *>np.PyArray_DATA(beta),
+        <cy_c *>np.PyArray_DATA(vsl), &ldvsl,
+        <cy_c *>np.PyArray_DATA(vsr), &ldvsr,
+        <cy_c *>np.PyArray_DATA(work), &lwork,
+        <cy_s *>np.PyArray_DATA(rwork),
+        <blas_int *>np.PyArray_DATA(bwork), &info)
+    _gges_select_callable = None
+
+    return a, b, sdim, alpha, beta, vsl, vsr, work, info
+
+
+def zgges(select, a, b, int compute_vl=1, int compute_vr=1,
+          int lwork=-1, int overwrite_a=0, int overwrite_b=0, int sort_t=-1):
+    """Wrapper for ``zgges``."""
+    global _gges_select_callable
+    cdef:
+        blas_int n, lda, ldb, sdim, ldvsl, ldvsr, info
+
+    if not overwrite_a:
+        a = np.array(a, dtype=np.complex128, order="F", copy=True)
+    else:
+        a = np.asfortranarray(a, dtype=np.complex128)
+    if not overwrite_b:
+        b = np.array(b, dtype=np.complex128, order="F", copy=True)
+    else:
+        b = np.asfortranarray(b, dtype=np.complex128)
+
+    n = a.shape[0]
+    lda = max(1, n)
+    ldb = max(1, n)
+    ldvsl = ((n if compute_vl else 1))
+    ldvsr = ((n if compute_vr else 1))
+    if lwork == -1:
+        lwork = max(2*n, 1)
+
+    alpha = np.empty((n,), dtype=np.complex128, order="F")
+    beta = np.empty((n,), dtype=np.complex128, order="F")
+    vsl = np.empty((ldvsl, n), dtype=np.complex128, order="F")
+    vsr = np.empty((ldvsr, n), dtype=np.complex128, order="F")
+    work = np.empty((max(lwork, 1),), dtype=np.complex128, order="F")
+    rwork = np.empty((8*n,), dtype=np.float64, order="F")
+    bwork = np.empty((n,), dtype=np.intc, order="F")
+
+    if sort_t == -1:
+        sort_t = 1 if select is not None else 0
+    _gges_select_callable = select if select is not None else (lambda a, b: True)
+    cython_lapack.zgges(
+        (<char *>b"NV" + compute_vl), (<char *>b"NV" + compute_vr),
+        (<char *>b"NS" + sort_t),
+        &_zselect2_callback, &n,
+        <cy_z *>np.PyArray_DATA(a), &lda,
+        <cy_z *>np.PyArray_DATA(b), &ldb, &sdim,
+        <cy_z *>np.PyArray_DATA(alpha),
+        <cy_z *>np.PyArray_DATA(beta),
+        <cy_z *>np.PyArray_DATA(vsl), &ldvsl,
+        <cy_z *>np.PyArray_DATA(vsr), &ldvsr,
+        <cy_z *>np.PyArray_DATA(work), &lwork,
+        <cy_d *>np.PyArray_DATA(rwork),
+        <blas_int *>np.PyArray_DATA(bwork), &info)
+    _gges_select_callable = None
+
+    return a, b, sdim, alpha, beta, vsl, vsr, work, info
+'''
+
+
 def _generate_extra_blas_wrappers():
     """Generate wrappers for BLAS routines not in the .pyf.src files.
 
@@ -1687,13 +2135,15 @@ def generate_lapack_pyx(routines, ilp64=False):
     lines.append('cimport numpy as np')
     lines.append('from scipy.linalg cimport cython_lapack')
     lines.append('from scipy.linalg.cython_lapack cimport (blas_int,')
-    lines.append('    s as cy_s, d as cy_d, c as cy_c, z as cy_z)')
+    lines.append('    s as cy_s, d as cy_d, c as cy_c, z as cy_z,')
+    lines.append('    sselect2, sselect3, dselect2, dselect3,')
+    lines.append('    cselect1, cselect2, zselect1, zselect2)')
     lines.append('')
     lines.append('np.import_array()')
     lines.append('')
     lines.append('')
 
-    # Routines with callback function args that need special handling
+    # gees/gges callback routines are hand-written, not auto-generated
     _callback_routines = {
         'cgees', 'dgees', 'sgees', 'zgees',
         'cgges', 'dgges', 'sgges', 'zgges',
@@ -1731,6 +2181,9 @@ def generate_lapack_pyx(routines, ilp64=False):
         lines.append(f'# Skipped {len(skipped)} routines not in cython_lapack:')
         lines.append(f'# {", ".join(sorted(skipped))}')
         lines.append('')
+
+    # Add hand-written gees/gges wrappers with callback support
+    lines.append(_generate_gees_gges_wrappers())
 
     return '\n'.join(lines)
 
