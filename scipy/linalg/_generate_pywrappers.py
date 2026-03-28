@@ -45,6 +45,22 @@ _pyf_parser = _import_module_from_file(
 )
 _extract_balanced_parens = _pyf_parser._extract_balanced_parens
 
+
+def _load_cdef_names(signature_file):
+    """Load available cdef function names from a cython_*_signatures.txt file."""
+    names = set()
+    with open(os.path.join(BASE_DIR, signature_file)) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            # Format: 'void caxpy(int *n, c *ca, ...)' or 'float sdot(...)'
+            parts = line.split('(')[0].strip().split()
+            if len(parts) >= 2:
+                names.add(parts[-1])
+    return names
+
+
 # Map f2py Fortran types to numpy dtype strings and C types
 FTYPE_TO_NUMPY = {
     'real': 'np.float32',
@@ -523,7 +539,8 @@ def _generate_wrapper_function(routine, lib_module_name):
     lines.append('')
     return_parts = _build_return(routine)
     if return_parts:
-        lines.append(f'    return {", ".join(return_parts)}')
+        return_vars = [r['var'] for r in return_parts]
+        lines.append(f'    return {", ".join(return_vars)}')
 
     return '\n'.join(lines) + '\n'
 
@@ -863,11 +880,10 @@ def _translate_char_ternary(expr, routine):
 
 
 def _build_return(routine):
-    """Build the return value expression for a routine.
+    """Build return value info for a routine.
 
-    Returns list of (variable_name, return_name) tuples.
-    variable_name is the actual variable in scope; return_name is
-    what f2py would name it in the return tuple (via out=X).
+    Returns list of dicts with 'var' (the variable name in scope)
+    and 'name' (the name f2py would use in the result, via out=X).
     """
     is_function = routine['type'] == 'function'
     output_args = _get_output_args(routine)
@@ -878,16 +894,15 @@ def _build_return(routine):
     # For functions, the return value comes first
     if is_function and routine.get('result_name'):
         rn = routine['result_name']
-        return_parts.append(rn)
+        return_parts.append({'var': rn, 'name': rn})
         seen.add(rn)
 
     # Then output arrays/scalars
     for aname in output_args:
         ainfo = routine['args'].get(aname, {})
         out_name = ainfo.get('out_name', aname)
-        # The actual variable is `aname`, returned as `out_name`
         if out_name not in seen:
-            return_parts.append(aname)
+            return_parts.append({'var': aname, 'name': out_name})
             seen.add(out_name)
 
     return return_parts
@@ -962,8 +977,30 @@ def _generate_post_call(routine):
     return lines
 
 
+def _generate_lwork_wrapper(routine, lib_module_name):
+    """Generate a _lwork helper function.
+
+    These call the main routine with lwork=-1 to query optimal workspace size,
+    then return the work array size as a Python int.
+    """
+    name = routine['name']
+    base_name = name.replace('_lwork', '')
+
+    # Get the args from the main routine minus work/lwork specifics
+    py_args = _get_python_args(routine)
+
+    lines = []
+    lines.append(f'def {name}({", ".join(py_args)}):')
+    lines.append(f'    """Workspace size query for ``{base_name}``."""')
+    lines.append(f'    # TODO: implement _lwork wrapper for {name}')
+    lines.append(f'    raise NotImplementedError("{name} not yet implemented")')
+    return '\n'.join(lines) + '\n'
+
+
 def generate_blas_pyx(routines, ilp64=False):
     """Generate the _pyblas.pyx content."""
+    available = _load_cdef_names('cython_blas_signatures.txt')
+
     lines = [COMMENT_HEADER]
     lines.append('# cython: boundscheck = False')
     lines.append('# cython: wraparound = False')
@@ -978,9 +1015,19 @@ def generate_blas_pyx(routines, ilp64=False):
     lines.append('')
     lines.append('')
 
+    skipped = []
     for routine in routines:
+        name = routine['name']
+        if name not in available:
+            skipped.append(name)
+            continue
         code = _generate_wrapper_function(routine, 'cython_blas')
         lines.append(code)
+        lines.append('')
+
+    if skipped:
+        lines.append(f'# Skipped {len(skipped)} routines not in cython_blas:')
+        lines.append(f'# {", ".join(sorted(skipped))}')
         lines.append('')
 
     return '\n'.join(lines)
@@ -988,6 +1035,8 @@ def generate_blas_pyx(routines, ilp64=False):
 
 def generate_lapack_pyx(routines, ilp64=False):
     """Generate the _pylapack.pyx content."""
+    available = _load_cdef_names('cython_lapack_signatures.txt')
+
     lines = [COMMENT_HEADER]
     lines.append('# cython: boundscheck = False')
     lines.append('# cython: wraparound = False')
@@ -1002,9 +1051,31 @@ def generate_lapack_pyx(routines, ilp64=False):
     lines.append('')
     lines.append('')
 
+    skipped = []
+    lwork_count = 0
     for routine in routines:
+        name = routine['name']
+
+        # _lwork helpers: these are artificial f2py routines that query
+        # workspace size by calling the main routine with lwork=-1
+        if '_lwork' in name:
+            code = _generate_lwork_wrapper(routine, 'cython_lapack')
+            lines.append(code)
+            lines.append('')
+            lwork_count += 1
+            continue
+
+        if name not in available:
+            skipped.append(name)
+            continue
+
         code = _generate_wrapper_function(routine, 'cython_lapack')
         lines.append(code)
+        lines.append('')
+
+    if skipped:
+        lines.append(f'# Skipped {len(skipped)} routines not in cython_lapack:')
+        lines.append(f'# {", ".join(sorted(skipped))}')
         lines.append('')
 
     return '\n'.join(lines)

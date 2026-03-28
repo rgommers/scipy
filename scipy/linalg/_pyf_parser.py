@@ -446,6 +446,7 @@ def _parse_var_line(line, routine):
             return
 
     # Type declaration: "<type> [attributes] :: <varlist>"
+    # or without :: separator: "<type> <varlist>"  (common for function return types)
     # Fortran types can be multi-word: "double precision", "double complex"
     type_pattern = (
         r'(real|double\s+precision|complex|double\s+complex|'
@@ -456,6 +457,27 @@ def _parse_var_line(line, routine):
         type_pattern + r'(.*?)\s*::\s*(.*)', line, re.I
     )
     if not decl_match:
+        # Try without :: separator: "<type> <varlist>"
+        decl_no_sep = re.match(
+            type_pattern + r'\s+([\w,\s]+)$', line, re.I
+        )
+        if decl_no_sep:
+            ftype = re.sub(r'\s+', ' ', decl_no_sep.group(1).strip().lower())
+            vars_str = decl_no_sep.group(2).strip()
+            var_decls = _split_var_declarations(vars_str)
+            for var_decl in var_decls:
+                varname = var_decl['name']
+                default = var_decl.get('default')
+                if varname in routine['args']:
+                    arg = routine['args'][varname]
+                else:
+                    arg = {}
+                    routine['args'][varname] = arg
+                arg['ftype'] = ftype
+                arg['dtype'] = _ftype_to_dtype.get(ftype, ftype)
+                if default is not None:
+                    arg['default'] = default
+            return
         # Try matching just attributes for existing vars: "intent(...) :: var"
         # or "depend(...) :: var"
         attr_match = re.match(r'((?:intent|depend|check|dimension)\(.+?\).*?)\s*::\s*(.*)', line, re.I)
