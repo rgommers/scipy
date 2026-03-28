@@ -1211,7 +1211,11 @@ def generate_blas_pyx(routines, ilp64=False):
     lines.append('')
     lines.append('import numpy as np')
     lines.append('cimport numpy as np')
-    lines.append('from scipy.linalg cimport cython_blas')
+    # Some BLAS routines (cspmv, cspr, csyr, zspmv, zspr, zsyr) are only
+    # in LAPACK, not BLAS. Load LAPACK signatures too for fallback.
+    lapack_sigs = _load_cdef_signatures('cython_lapack_signatures.txt')
+
+    lines.append('from scipy.linalg cimport cython_blas, cython_lapack')
     lines.append('from scipy.linalg.cython_blas cimport (blas_int,')
     lines.append('    s as cy_s, d as cy_d, c as cy_c, z as cy_z)')
     lines.append('')
@@ -1222,16 +1226,22 @@ def generate_blas_pyx(routines, ilp64=False):
     skipped = []
     for routine in routines:
         name = routine['name']
-        if name not in available:
+        if name in available:
+            code = _generate_wrapper_function(routine, 'cython_blas',
+                                              cdef_sigs.get(name))
+            lines.append(code)
+            lines.append('')
+        elif name in lapack_sigs:
+            # Fallback: use cython_lapack for routines in LAPACK but not BLAS
+            code = _generate_wrapper_function(routine, 'cython_lapack',
+                                              lapack_sigs.get(name))
+            lines.append(code)
+            lines.append('')
+        else:
             skipped.append(name)
-            continue
-        code = _generate_wrapper_function(routine, 'cython_blas',
-                                          cdef_sigs.get(name))
-        lines.append(code)
-        lines.append('')
 
     if skipped:
-        lines.append(f'# Skipped {len(skipped)} routines not in cython_blas:')
+        lines.append(f'# Skipped {len(skipped)} routines not in cython_blas or cython_lapack:')
         lines.append(f'# {", ".join(sorted(skipped))}')
         lines.append('')
 

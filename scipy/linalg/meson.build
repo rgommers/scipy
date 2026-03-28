@@ -262,8 +262,15 @@ pyblas_pyx = custom_target('pyblas_pyx',
   ],
 )
 
+# Need a generator that also depends on cython_lapack_pxd for the
+# 6 BLAS routines that are actually in LAPACK (cspmv, cspr, csyr, etc.)
+linalg_blas_lapack_cython_gen = generator(cython,
+  arguments : cython_args,
+  output : '@BASENAME@.c',
+  depends : [_cython_tree, __init__py, cython_blas_pxd, cython_lapack_pxd])
+
 py3.extension_module('_pyblas',
-  linalg_cython_gen.process(pyblas_pyx),
+  linalg_blas_lapack_cython_gen.process(pyblas_pyx),
   c_args: cython_c_args,
   link_args: version_link_args,
   dependencies: [cython_blas_lapack_dep, np_dep],
