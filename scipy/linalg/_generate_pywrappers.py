@@ -1541,7 +1541,7 @@ def _generate_lwork_wrapper(routine, lib_module_name, cdef_sigs):
             else:
                 lines.append(f'        blas_int {aname} = 0')
         elif ftype == 'character':
-            lines.append(f'        char {aname} = 0')
+            pass  # Character args handled after cdef block
         elif ftype:
             ct = FTYPE_TO_CTYPE.get(ftype, 'double')
             lines.append(f'        {ct} {aname} = 0')
@@ -1561,6 +1561,31 @@ def _generate_lwork_wrapper(routine, lib_module_name, cdef_sigs):
         elif ftype:
             ct = FTYPE_TO_CTYPE.get(ftype, 'double')
             lines.append(f'        {ct} {aname} = 0')
+
+    # Initialize character hidden args as Python bytes (after cdef block)
+    for aname in hidden_sorted:
+        if aname in _already_declared:
+            continue
+        ainfo = routine['args'].get(aname, {})
+        if ainfo.get('ftype') == 'character':
+            default = ainfo.get('default', '"N"')
+            char_val = default.replace('"', '').replace("'", '')
+            if not char_val:
+                char_val = 'N'
+            lines.append(f'    {aname} = b"{char_val}"')
+    # Same for non-hidden character args
+    for aname in routine['arg_names']:
+        if aname in _already_declared or aname in hidden_sorted:
+            continue
+        if aname in [s.split('=')[0].split()[-1] for s in sig_parts]:
+            continue
+        ainfo = routine['args'].get(aname, {})
+        if ainfo.get('ftype') == 'character':
+            default = ainfo.get('default', '"N"')
+            char_val = default.replace('"', '').replace("'", '')
+            if not char_val:
+                char_val = 'N'
+            lines.append(f'    {aname} = b"{char_val}"')
 
     # If the base routine exists in cdef_sigs, call it directly.
     # Otherwise fall back to NotImplementedError.
