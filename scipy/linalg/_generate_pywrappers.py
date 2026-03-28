@@ -1323,22 +1323,167 @@ def _generate_post_call(routine):
     return lines
 
 
-def _generate_lwork_wrapper(routine, lib_module_name):
+def _generate_lwork_wrapper(routine, lib_module_name, cdef_sigs):
     """Generate a _lwork helper function.
 
-    These call the main routine with lwork=-1 to query optimal workspace size,
-    then return the work array size as a Python int.
+    These call the main LAPACK routine with lwork=-1 to query optimal
+    workspace size. The routine writes the optimal size to work[0].
     """
     name = routine['name']
     base_name = name.replace('_lwork', '')
 
-    # Get the args from the main routine minus work/lwork specifics
+    # Get visible args
     py_args = _get_python_args(routine)
 
+    # Determine primary float type
+    primary_ftype = None
+    for aname in routine['arg_names']:
+        ainfo = routine['args'].get(aname, {})
+        ft = ainfo.get('ftype')
+        if ft and ft not in ('integer', 'logical', 'character'):
+            primary_ftype = ft
+            break
+    if primary_ftype is None:
+        primary_ftype = 'double precision'
+
+    numpy_dtype = _get_numpy_dtype(primary_ftype)
+    ctype = FTYPE_TO_CTYPE.get(primary_ftype, 'double')
+
+    # Build signature - only the visible input args.
+    # Skip work/lwork/info/iwork/liwork/rwork since they're handled internally.
+    _lwork_internal = {'work', 'lwork', 'info', 'iwork', 'liwork', 'rwork'}
+    sig_parts = []
+    for aname in py_args:
+        if aname in _lwork_internal:
+            continue
+        ainfo = routine['args'].get(aname, {})
+        intents = ainfo.get('intents', [])
+        # Skip output args
+        if 'out' in intents and 'in' not in intents:
+            continue
+        default = ainfo.get('default')
+        ftype = ainfo.get('ftype', 'integer')
+        is_optional = ainfo.get('optional', False)
+        if ftype in ('integer', 'logical'):
+            if default is not None and _is_simple_literal(default):
+                sig_parts.append(f'int {aname}={default}')
+            elif default is not None:
+                sig_parts.append(f'int {aname}=-1')
+            else:
+                sig_parts.append(f'int {aname}')
+        elif ftype == 'character':
+            if default:
+                char_default = default.replace('"', '').replace("'", '')
+                sig_parts.append(f'{aname}=b"{char_default}"')
+            else:
+                sig_parts.append(aname)
+        else:
+            ct = FTYPE_TO_CTYPE.get(ftype, 'double')
+            if default is not None and _is_simple_literal(default):
+                formatted = _format_literal(default, ftype)
+                sig_parts.append(f'{ct} {aname}={formatted}')
+            else:
+                sig_parts.append(f'{ct} {aname}')
+
+    sig = ', '.join(sig_parts)
+
     lines = []
-    lines.append(f'def {name}({", ".join(py_args)}):')
+    lines.append(f'def {name}({sig}):')
     lines.append(f'    """Workspace size query for ``{base_name}``."""')
-    lines.append(f'    # TODO: implement _lwork wrapper for {name}')
+    lines.append(f'    cdef:')
+    lines.append(f'        blas_int lwork = -1')
+    lines.append(f'        blas_int info = 0')
+    lines.append(f'        {ctype} work')
+
+    # Check if there's a liwork query too
+    has_liwork = any(a == 'liwork' for a in routine['arg_names'])
+    if has_liwork:
+        lines.append(f'        blas_int liwork = -1')
+        lines.append(f'        blas_int iwork')
+
+    # Declare all hidden/dummy args needed by the callstatement.
+    # In _lwork routines, ALL non-input args are dummies (even arrays).
+    # Topologically sorted by dependencies.
+    _already_declared = {'lwork', 'info', 'work'}
+    if has_liwork:
+        _already_declared.update({'liwork', 'iwork'})
+    hidden_sorted = _get_hidden_args(routine)
+    for aname in hidden_sorted:
+        if aname in _already_declared:
+            continue
+        ainfo = routine['args'].get(aname, {})
+        ftype = ainfo.get('ftype')
+        if ftype in ('integer', 'logical'):
+            default = ainfo.get('default')
+            if default:
+                py_default = _translate_f2py_expr(default, routine['args'])
+                lines.append(f'        blas_int {aname} = {py_default}')
+            else:
+                lines.append(f'        blas_int {aname} = 0')
+        elif ftype == 'character':
+            lines.append(f'        char {aname} = 0')
+        elif ftype:
+            ct = FTYPE_TO_CTYPE.get(ftype, 'double')
+            lines.append(f'        {ct} {aname} = 0')
+    # Also declare any non-hidden non-input args that appear in the
+    # callstatement but aren't in the signature (e.g., iwork, rwork)
+    for aname in routine['arg_names']:
+        if aname in _already_declared:
+            continue
+        if aname in [s.split('=')[0].split()[-1] for s in sig_parts]:
+            continue  # Already in signature
+        if aname in [h for h in hidden_sorted]:
+            continue  # Already declared above
+        ainfo = routine['args'].get(aname, {})
+        ftype = ainfo.get('ftype')
+        if ftype in ('integer', 'logical'):
+            lines.append(f'        blas_int {aname} = 0')
+        elif ftype:
+            ct = FTYPE_TO_CTYPE.get(ftype, 'double')
+            lines.append(f'        {ct} {aname} = 0')
+
+    # If the base routine exists in cdef_sigs, call it directly.
+    # Otherwise fall back to NotImplementedError.
+    if base_name not in cdef_sigs:
+        lines.append(f'    raise NotImplementedError("{name}: {base_name} not in cython_lapack")')
+        return '\n'.join(lines) + '\n'
+
+    # Apply computed defaults (e.g., hi=n-1)
+    for aname in py_args:
+        if aname in _lwork_internal:
+            continue
+        ainfo = routine['args'].get(aname, {})
+        default = ainfo.get('default')
+        if default and not _is_simple_literal(default):
+            py_expr = _translate_f2py_expr(default, routine['args'])
+            if ainfo.get('ftype') in ('integer', 'logical'):
+                lines.append(f'    if {aname} == -1:')
+                lines.append(f'        {aname} = {py_expr}')
+
+    # Parse the callstatement to build the call
+    cs = routine.get('callstatement')
+    if cs:
+        # Handle pre-call statements (e.g., hi++; lo++)
+        if cs.startswith('{'):
+            parsed_cs = _parse_callstatement(routine)
+            if parsed_cs and parsed_cs['pre_call']:
+                for stmt in parsed_cs['pre_call']:
+                    stmt = stmt.strip()
+                    # var++ -> var += 1
+                    m = re.match(r'(\w+)\+\+', stmt)
+                    if m:
+                        lines.append(f'    {m.group(1)} += 1')
+                    # F_INT i=expr -> already handled in cdef block
+
+        # Use the callstatement but call the base routine via cython_lapack
+        sig_types = cdef_sigs.get(base_name, [])
+        call_args = _translate_callstatement_args(routine, sig_types)
+        if call_args:
+            lines.append(f'    {lib_module_name}.{base_name}({call_args})')
+            lines.append(f'    return work, info')
+            return '\n'.join(lines) + '\n'
+
+    # Fallback
     lines.append(f'    raise NotImplementedError("{name} not yet implemented")')
     return '\n'.join(lines) + '\n'
 
@@ -1431,7 +1576,7 @@ def generate_lapack_pyx(routines, ilp64=False):
         # _lwork helpers: these are artificial f2py routines that query
         # workspace size by calling the main routine with lwork=-1
         if '_lwork' in name:
-            code = _generate_lwork_wrapper(routine, 'cython_lapack')
+            code = _generate_lwork_wrapper(routine, 'cython_lapack', cdef_sigs)
             lines.append(code)
             lines.append('')
             lwork_count += 1
