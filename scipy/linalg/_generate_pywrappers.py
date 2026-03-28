@@ -663,24 +663,17 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
         lines.append('    cdef:')
         lines.extend(cdef_lines)
 
-    # --- Computed defaults (for args whose defaults reference other args) ---
-    if body_defaults:
-        lines.append('')
-        for aname, expr in body_defaults:
-            ainfo = routine['args'].get(aname, {})
-            if ainfo.get('ftype') == 'integer':
-                lines.append(f'    if {aname} == -1:')
-                lines.append(f'        {aname} = {expr}')
-            else:
-                lines.append(f'    if {aname} is None:')
-                lines.append(f'        {aname} = {expr}')
+    # NOTE: body_defaults are emitted AFTER hidden args, not here.
+    # Many computed defaults depend on hidden args like n, m, etc.
 
     # --- Input validation and array conversion ---
     lines.append('')
 
     # Ensure arrays have the expected dimensionality (f2py does this
     # automatically, but our wrappers need to be explicit).
-    # A 1D array passed to a 2D parameter gets reshaped to (n, 1).
+    # A 1D array passed to a 2D parameter gets reshaped to (n, 1),
+    # and the output is squeezed back to 1D on return.
+    _reshaped_args = []
     for aname in py_args:
         ainfo = routine['args'].get(aname, {})
         dim = ainfo.get('dimension', '')
@@ -688,8 +681,10 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
             continue
         ndim = len([d for d in dim.split(',') if d.strip()])
         if ndim >= 2:
-            lines.append(f'    if np.ndim({aname}) == 1:')
+            lines.append(f'    _was_1d_{aname} = np.ndim({aname}) == 1')
+            lines.append(f'    if _was_1d_{aname}:')
             lines.append(f'        {aname} = np.asarray({aname}).reshape(-1, 1)')
+            _reshaped_args.append(aname)
 
     # Process array arguments: convert to Fortran-contiguous, correct dtype
     for aname in py_args:
@@ -744,6 +739,18 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
                 lines.append(f'    {aname} = {py_expr}')
             else:
                 lines.append(f'    {aname} = {py_expr}')
+
+    # --- Computed defaults (placed after hidden args are computed) ---
+    if body_defaults:
+        lines.append('')
+        for aname, expr in body_defaults:
+            ainfo = routine['args'].get(aname, {})
+            if ainfo.get('ftype') in ('integer', 'logical'):
+                lines.append(f'    if {aname} == -1:')
+                lines.append(f'        {aname} = {expr}')
+            else:
+                lines.append(f'    if {aname} is None:')
+                lines.append(f'        {aname} = {expr}')
 
     # --- Allocate output-only arrays ---
     lines.append('')
@@ -820,6 +827,12 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
     lines.append('')
     return_parts = _build_return(routine)
     if return_parts:
+        # Squeeze back arrays that were reshaped from 1D to 2D
+        for rp in return_parts:
+            var = rp['var']
+            if var in _reshaped_args:
+                lines.append(f'    if _was_1d_{var}:')
+                lines.append(f'        {var} = {var}.reshape(-1)')
         return_vars = [r['var'] for r in return_parts]
         lines.append(f'    return {", ".join(return_vars)}')
 
