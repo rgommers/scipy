@@ -895,7 +895,7 @@ del CONFIG
 
 _flapack = None
 if HAS_LP64:
-    from scipy.linalg import _flapack
+    from scipy.linalg import _pylapack as _flapack
 
 _flapack_64 = None
 if HAS_ILP64:
@@ -905,7 +905,7 @@ if not (HAS_LP64 or HAS_ILP64):
     raise RuntimeError("SciPy needs either LP64 or ILP64 LAPACK.")
 
 if HAS_LP64:
-    from scipy.linalg._flapack import *  # noqa: E402, F403
+    from scipy.linalg._pylapack import *  # noqa: E402, F403
 else:
     from scipy.linalg._flapack_64 import *  # noqa: E402, F403
 
