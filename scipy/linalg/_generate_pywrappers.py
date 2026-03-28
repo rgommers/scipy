@@ -809,6 +809,13 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
                 elif re.match(r'F_INT\s+(\w+)', stmt):
                     var = re.match(r'F_INT\s+(\w+)', stmt).group(1)
                     lines.append(f'    cdef blas_int {var}')
+                # Handle: var++ or var--
+                elif re.match(r'(\w+)\+\+$', stmt):
+                    var = re.match(r'(\w+)\+\+$', stmt).group(1)
+                    lines.append(f'    {var} += 1')
+                elif re.match(r'(\w+)--$', stmt):
+                    var = re.match(r'(\w+)--$', stmt).group(1)
+                    lines.append(f'    {var} -= 1')
 
     # --- Call the low-level cdef function ---
     lines.append('')
