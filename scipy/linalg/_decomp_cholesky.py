@@ -285,7 +285,8 @@ def _cho_solve(c, b, lower, overwrite_b, check_finite):
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
     potrs, = get_lapack_funcs(('potrs',), (c, b1))
-    x, info = potrs(c, b1, lower=int(lower), overwrite_b=overwrite_b)
+    _lower = bool(np.asarray(lower).flat[0]) if hasattr(lower, '__len__') else lower
+    x, info = potrs(c, b1, lower=_lower, overwrite_b=overwrite_b)
     if info != 0:
         raise ValueError(f'illegal value in {-info}th argument of internal potrs')
     return x
