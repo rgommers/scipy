@@ -1575,6 +1575,14 @@ def generate_blas_pyx(routines, ilp64=False):
     lines.append('np.import_array()')
     lines.append('')
     lines.append('')
+    lines.append('class error(Exception):')
+    lines.append('    """BLAS error."""')
+    lines.append('    pass')
+    lines.append('')
+    lines.append('# f2py compatibility alias')
+    lines.append('__pyblas_error = error')
+    lines.append('')
+    lines.append('')
 
     skipped = []
     for routine in routines:
@@ -1598,7 +1606,71 @@ def generate_blas_pyx(routines, ilp64=False):
         lines.append(f'# {", ".join(sorted(skipped))}')
         lines.append('')
 
+    # Add hand-written wrappers for routines not in .pyf.src files
+    # but present in cython_blas (auto-wrapped by f2py from BLAS library)
+    lines.append(_generate_extra_blas_wrappers())
+
     return '\n'.join(lines)
+
+
+def _generate_extra_blas_wrappers():
+    """Generate wrappers for BLAS routines not in the .pyf.src files.
+
+    These routines (dspr2, chpr2, zhpr2) are in the BLAS library and
+    auto-wrapped by f2py, but not explicitly defined in the pyf files.
+    """
+    return '''
+# --- Extra BLAS routines not in .pyf.src files ---
+# These are in cython_blas but not in the f2py interface files.
+# f2py auto-wraps them from the linked BLAS library.
+
+def dspr2(int n, double alpha, x, y, ap, int incx=1, int offx=0,
+          int incy=1, int offy=0, int lower=0, int overwrite_ap=0):
+    """Wrapper for ``dspr2``."""
+    x = np.asfortranarray(x, dtype=np.float64)
+    y = np.asfortranarray(y, dtype=np.float64)
+    if not overwrite_ap:
+        ap = np.array(ap, dtype=np.float64, order="F", copy=True)
+    else:
+        ap = np.asfortranarray(ap, dtype=np.float64)
+    cython_blas.dspr2((<char *>b"UL" + lower), &n,
+                      <cy_d *>&alpha, <cy_d *>np.PyArray_DATA(x) + offx, &incx,
+                      <cy_d *>np.PyArray_DATA(y) + offy, &incy,
+                      <cy_d *>np.PyArray_DATA(ap))
+    return ap
+
+
+def chpr2(int n, float complex alpha, x, y, ap, int incx=1, int offx=0,
+          int incy=1, int offy=0, int lower=0, int overwrite_ap=0):
+    """Wrapper for ``chpr2``."""
+    x = np.asfortranarray(x, dtype=np.complex64)
+    y = np.asfortranarray(y, dtype=np.complex64)
+    if not overwrite_ap:
+        ap = np.array(ap, dtype=np.complex64, order="F", copy=True)
+    else:
+        ap = np.asfortranarray(ap, dtype=np.complex64)
+    cython_blas.chpr2((<char *>b"UL" + lower), &n,
+                      <cy_c *>&alpha, <cy_c *>np.PyArray_DATA(x) + offx, &incx,
+                      <cy_c *>np.PyArray_DATA(y) + offy, &incy,
+                      <cy_c *>np.PyArray_DATA(ap))
+    return ap
+
+
+def zhpr2(int n, double complex alpha, x, y, ap, int incx=1, int offx=0,
+          int incy=1, int offy=0, int lower=0, int overwrite_ap=0):
+    """Wrapper for ``zhpr2``."""
+    x = np.asfortranarray(x, dtype=np.complex128)
+    y = np.asfortranarray(y, dtype=np.complex128)
+    if not overwrite_ap:
+        ap = np.array(ap, dtype=np.complex128, order="F", copy=True)
+    else:
+        ap = np.asfortranarray(ap, dtype=np.complex128)
+    cython_blas.zhpr2((<char *>b"UL" + lower), &n,
+                      <cy_z *>&alpha, <cy_z *>np.PyArray_DATA(x) + offx, &incx,
+                      <cy_z *>np.PyArray_DATA(y) + offy, &incy,
+                      <cy_z *>np.PyArray_DATA(ap))
+    return ap
+'''
 
 
 def generate_lapack_pyx(routines, ilp64=False):
