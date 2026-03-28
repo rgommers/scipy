@@ -25,7 +25,7 @@ routine_start_re = re.compile(
     r'(\n|\A)((     (\$|\*))|)\s*(subroutine|function)\b', re.I
 )
 routine_end_re = re.compile(
-    r'\n\s*end\s*(subroutine|function)\b.*(\n|\Z)', re.I
+    r'\n\s*end\s*(subroutine|function)\w*.*(\n|\Z)', re.I
 )
 function_start_re = re.compile(r'\n     (\$|\*)\s*function\b', re.I)
 
@@ -690,7 +690,7 @@ def _extract_routine_blocks(pyf_text):
     )
 
     end_pattern = re.compile(
-        r'^[ \t]*end\s+(subroutine|function)\b.*$',
+        r'^[ \t]*end\s+(subroutine|function)\w*.*$',
         re.MULTILINE | re.IGNORECASE
     )
 
