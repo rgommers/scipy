@@ -96,6 +96,7 @@ FTYPE_TO_NUMPY = {
     'complex': 'np.complex64',
     'double complex': 'np.complex128',
     'integer': 'np.intc',  # will be overridden for blas_int
+    'logical': 'np.intc',  # Fortran LOGICAL mapped to C int
 }
 
 FTYPE_TO_CTYPE = {
@@ -1654,21 +1655,43 @@ def _generate_gees_gges_wrappers():
 # We use module-level variables to pass the Python callable through
 # to cdef callback functions.
 
+import inspect as _inspect
+
+def _get_nargs(func):
+    """Get the number of positional parameters a callable accepts."""
+    try:
+        sig = _inspect.signature(func)
+        return sum(1 for p in sig.parameters.values()
+                   if p.default is _inspect.Parameter.empty
+                   and p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD))
+    except (ValueError, TypeError):
+        return -1  # unknown
+
+def _call_select2(func, a1, a2):
+    """Call a 2-arg select function, falling back to 1-arg."""
+    n = _get_nargs(func)
+    if n == 1:
+        return 1 if func(a1) else 0
+    return 1 if func(a1, a2) else 0
+
+def _call_select3(func, a1, a2, a3):
+    """Call a 3-arg select function, falling back to 2 or 1."""
+    n = _get_nargs(func)
+    if n <= 1:
+        return 1 if func(a1) else 0
+    elif n == 2:
+        return 1 if func(a1, a2) else 0
+    return 1 if func(a1, a2, a3) else 0
+
 cdef object _gees_select_callable = None
 
 cdef blas_int _dselect2_callback(cy_d *arg1, cy_d *arg2) noexcept nogil:
     with gil:
-        try:
-            return 1 if (<object>_gees_select_callable)(arg1[0], arg2[0]) else 0
-        except TypeError:
-            return 1 if (<object>_gees_select_callable)(arg1[0]) else 0
+        return _call_select2(<object>_gees_select_callable, arg1[0], arg2[0])
 
 cdef blas_int _sselect2_callback(cy_s *arg1, cy_s *arg2) noexcept nogil:
     with gil:
-        try:
-            return 1 if (<object>_gees_select_callable)(arg1[0], arg2[0]) else 0
-        except TypeError:
-            return 1 if (<object>_gees_select_callable)(arg1[0]) else 0
+        return _call_select2(<object>_gees_select_callable, arg1[0], arg2[0])
 
 cdef blas_int _cselect1_callback(cy_c *arg) noexcept nogil:
     with gil:
@@ -1682,31 +1705,19 @@ cdef object _gges_select_callable = None
 
 cdef blas_int _dselect3_callback(cy_d *a1, cy_d *a2, cy_d *a3) noexcept nogil:
     with gil:
-        try:
-            return 1 if (<object>_gges_select_callable)(a1[0], a2[0], a3[0]) else 0
-        except TypeError:
-            try:
-                return 1 if (<object>_gges_select_callable)(a1[0], a2[0]) else 0
-            except TypeError:
-                return 1 if (<object>_gges_select_callable)(a1[0]) else 0
+        return _call_select3(<object>_gges_select_callable, a1[0], a2[0], a3[0])
 
 cdef blas_int _sselect3_callback(cy_s *a1, cy_s *a2, cy_s *a3) noexcept nogil:
     with gil:
-        try:
-            return 1 if (<object>_gges_select_callable)(a1[0], a2[0], a3[0]) else 0
-        except TypeError:
-            try:
-                return 1 if (<object>_gges_select_callable)(a1[0], a2[0]) else 0
-            except TypeError:
-                return 1 if (<object>_gges_select_callable)(a1[0]) else 0
+        return _call_select3(<object>_gges_select_callable, a1[0], a2[0], a3[0])
 
 cdef blas_int _cselect2_callback(cy_c *a1, cy_c *a2) noexcept nogil:
     with gil:
-        return 1 if (<object>_gges_select_callable)(a1[0], a2[0]) else 0
+        return _call_select2(<object>_gges_select_callable, a1[0], a2[0])
 
 cdef blas_int _zselect2_callback(cy_z *a1, cy_z *a2) noexcept nogil:
     with gil:
-        return 1 if (<object>_gges_select_callable)(a1[0], a2[0]) else 0
+        return _call_select2(<object>_gges_select_callable, a1[0], a2[0])
 
 
 def dgees(select, a, int compute_v=1, int sort_t=0, w=None, vs=None,
