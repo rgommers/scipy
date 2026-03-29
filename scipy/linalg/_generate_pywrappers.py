@@ -588,7 +588,10 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
                 if _is_simple_literal(default):
                     sig_parts.append(f'int {aname}={default}')
                 else:
-                    sig_parts.append(f'int {aname}=-1')
+                    # Use 0 sentinel for lwork/liwork/lrwork (since -1 means
+                    # LAPACK workspace query)
+                    sentinel = 0 if aname in ('lwork', 'liwork', 'lrwork') else -1
+                    sig_parts.append(f'int {aname}={sentinel}')
                     py_expr = _translate_f2py_expr(default, routine['args'])
                     body_defaults.append((aname, py_expr))
             else:
@@ -785,7 +788,13 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
         for aname, expr in body_defaults:
             ainfo = routine['args'].get(aname, {})
             if ainfo.get('ftype') in ('integer', 'logical'):
-                lines.append(f'    if {aname} == -1:')
+                # Use different sentinels for lwork/liwork (-1 is LAPACK
+                # workspace query) vs other integer args
+                if aname in ('lwork', 'liwork', 'lrwork'):
+                    # sentinel is 0 (not -1, which means "query")
+                    lines.append(f'    if {aname} == 0:')
+                else:
+                    lines.append(f'    if {aname} == -1:')
                 lines.append(f'        {aname} = {expr}')
             else:
                 lines.append(f'    if {aname} is None:')
