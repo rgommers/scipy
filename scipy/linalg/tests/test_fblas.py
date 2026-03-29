@@ -102,7 +102,7 @@ class BaseAxpy:
 
 try:
     class TestSaxpy(BaseAxpy):
-        blas_func = fblas.saxpy
+        blas_func = staticmethod(fblas.saxpy)
         dtype = float32
 except AttributeError:
     class TestSaxpy:
@@ -110,13 +110,13 @@ except AttributeError:
 
 
 class TestDaxpy(BaseAxpy):
-    blas_func = fblas.daxpy
+    blas_func = staticmethod(fblas.daxpy)
     dtype = float64
 
 
 try:
     class TestCaxpy(BaseAxpy):
-        blas_func = fblas.caxpy
+        blas_func = staticmethod(fblas.caxpy)
         dtype = complex64
 except AttributeError:
     class TestCaxpy:
@@ -124,7 +124,7 @@ except AttributeError:
 
 
 class TestZaxpy(BaseAxpy):
-    blas_func = fblas.zaxpy
+    blas_func = staticmethod(fblas.zaxpy)
     dtype = complex128
 
 
@@ -155,7 +155,7 @@ class BaseScal:
 
 try:
     class TestSscal(BaseScal):
-        blas_func = fblas.sscal
+        blas_func = staticmethod(fblas.sscal)
         dtype = float32
 except AttributeError:
     class TestSscal:
@@ -163,13 +163,13 @@ except AttributeError:
 
 
 class TestDscal(BaseScal):
-    blas_func = fblas.dscal
+    blas_func = staticmethod(fblas.dscal)
     dtype = float64
 
 
 try:
     class TestCscal(BaseScal):
-        blas_func = fblas.cscal
+        blas_func = staticmethod(fblas.cscal)
         dtype = complex64
 except AttributeError:
     class TestCscal:
@@ -177,7 +177,7 @@ except AttributeError:
 
 
 class TestZscal(BaseScal):
-    blas_func = fblas.zscal
+    blas_func = staticmethod(fblas.zscal)
     dtype = complex128
 
 
@@ -233,7 +233,7 @@ class BaseCopy:
 
 try:
     class TestScopy(BaseCopy):
-        blas_func = fblas.scopy
+        blas_func = staticmethod(fblas.scopy)
         dtype = float32
 except AttributeError:
     class TestScopy:
@@ -241,13 +241,13 @@ except AttributeError:
 
 
 class TestDcopy(BaseCopy):
-    blas_func = fblas.dcopy
+    blas_func = staticmethod(fblas.dcopy)
     dtype = float64
 
 
 try:
     class TestCcopy(BaseCopy):
-        blas_func = fblas.ccopy
+        blas_func = staticmethod(fblas.ccopy)
         dtype = complex64
 except AttributeError:
     class TestCcopy:
@@ -255,7 +255,7 @@ except AttributeError:
 
 
 class TestZcopy(BaseCopy):
-    blas_func = fblas.zcopy
+    blas_func = staticmethod(fblas.zcopy)
     dtype = complex128
 
 
@@ -316,7 +316,7 @@ class BaseSwap:
 
 try:
     class TestSswap(BaseSwap):
-        blas_func = fblas.sswap
+        blas_func = staticmethod(fblas.sswap)
         dtype = float32
 except AttributeError:
     class TestSswap:
@@ -324,13 +324,13 @@ except AttributeError:
 
 
 class TestDswap(BaseSwap):
-    blas_func = fblas.dswap
+    blas_func = staticmethod(fblas.dswap)
     dtype = float64
 
 
 try:
     class TestCswap(BaseSwap):
-        blas_func = fblas.cswap
+        blas_func = staticmethod(fblas.cswap)
         dtype = complex64
 except AttributeError:
     class TestCswap:
@@ -338,7 +338,7 @@ except AttributeError:
 
 
 class TestZswap(BaseSwap):
-    blas_func = fblas.zswap
+    blas_func = staticmethod(fblas.zswap)
     dtype = complex128
 
 ##################################################
@@ -430,7 +430,7 @@ class BaseGemv:
 
 try:
     class TestSgemv(BaseGemv):
-        blas_func = fblas.sgemv
+        blas_func = staticmethod(fblas.sgemv)
         dtype = float32
 
         @pytest.mark.skipif(sys.platform != 'darwin', reason="MacOS specific test")
@@ -476,13 +476,13 @@ except AttributeError:
 
 
 class TestDgemv(BaseGemv):
-    blas_func = fblas.dgemv
+    blas_func = staticmethod(fblas.dgemv)
     dtype = float64
 
 
 try:
     class TestCgemv(BaseGemv):
-        blas_func = fblas.cgemv
+        blas_func = staticmethod(fblas.cgemv)
         dtype = complex64
 except AttributeError:
     class TestCgemv:
@@ -490,7 +490,7 @@ except AttributeError:
 
 
 class TestZgemv(BaseGemv):
-    blas_func = fblas.zgemv
+    blas_func = staticmethod(fblas.zgemv)
     dtype = complex128
 
 
@@ -534,10 +534,10 @@ class BaseGer:
             self.blas_func(a,x,y,incy=3)
 
 class TestSger(BaseGer):
-    blas_func = fblas.sger
+    blas_func = staticmethod(fblas.sger)
     dtype = float32
 class TestDger(BaseGer):
-    blas_func = fblas.dger
+    blas_func = staticmethod(fblas.dger)
     dtype = float64
 """
 ##################################################
@@ -578,24 +578,24 @@ class BaseGerComplex(BaseGer):
     #    assert_array_almost_equal(desired_a,a)
 
 class TestCgeru(BaseGerComplex):
-    blas_func = fblas.cgeru
+    blas_func = staticmethod(fblas.cgeru)
     dtype = complex64
     def transform(self,x):
         return x
 class TestZgeru(BaseGerComplex):
-    blas_func = fblas.zgeru
+    blas_func = staticmethod(fblas.zgeru)
     dtype = complex128
     def transform(self,x):
         return x
 
 class TestCgerc(BaseGerComplex):
-    blas_func = fblas.cgerc
+    blas_func = staticmethod(fblas.cgerc)
     dtype = complex64
     def transform(self,x):
         return conjugate(x)
 
 class TestZgerc(BaseGerComplex):
-    blas_func = fblas.zgerc
+    blas_func = staticmethod(fblas.zgerc)
     dtype = complex128
     def transform(self,x):
         return conjugate(x)
