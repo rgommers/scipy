@@ -1494,6 +1494,12 @@ def _generate_lwork_wrapper(routine, lib_module_name, cdef_sigs):
                 sig_parts.append(f'{ct} {aname}')
 
     sig = ', '.join(sig_parts)
+    # Extract just the names from sig_parts for later use
+    sig_parts_names = set()
+    for sp in sig_parts:
+        # Extract name from patterns like 'int n=4', 'float x', 'uplo=b"L"', 'a'
+        nm = sp.split('=')[0].strip().split()[-1]
+        sig_parts_names.add(nm)
 
     lines = []
     lines.append(f'def {name}({sig}):')
@@ -1641,6 +1647,26 @@ def _generate_lwork_wrapper(routine, lib_module_name, cdef_sigs):
         sig_types = cdef_sigs.get(base_name, [])
         call_args = _translate_callstatement_args(routine, sig_types)
         if call_args:
+            # In _lwork context, hidden args that are arrays in the main
+            # routine are declared as scalars. Replace np.PyArray_DATA(var)
+            # with &var for these.
+            import re as _re
+            _scalar_hidden = set()
+            for _h in hidden_sorted:
+                _ainfo = routine['args'].get(_h, {})
+                if _ainfo.get('dimension') and _h not in sig_parts_names:
+                    _scalar_hidden.add(_h)
+            # Also add non-hidden non-signature args declared as scalars
+            for _h in routine['arg_names']:
+                if _h in _already_declared or _h in sig_parts_names:
+                    continue
+                _ainfo = routine['args'].get(_h, {})
+                if _ainfo.get('dimension'):
+                    _scalar_hidden.add(_h)
+            for _sh in _scalar_hidden:
+                # Replace various PyArray_DATA patterns
+                call_args = call_args.replace(
+                    f'np.PyArray_DATA({_sh})', f'&{_sh}')
             lines.append(f'    {lib_module_name}.{base_name}({call_args})')
             # Build return tuple following arg_names order for output args
             ret_parts = []
@@ -1730,31 +1756,39 @@ def _generate_gees_gges_wrappers():
 
 import inspect as _inspect
 
-def _get_nargs(func):
-    """Get the number of positional parameters a callable accepts."""
+def _get_max_nargs(func):
+    """Get the maximum number of positional parameters a callable accepts."""
     try:
         sig = _inspect.signature(func)
         return sum(1 for p in sig.parameters.values()
-                   if p.default is _inspect.Parameter.empty
-                   and p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD))
+                   if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD))
     except (ValueError, TypeError):
         return -1  # unknown
 
 def _call_select2(func, a1, a2):
     """Call a 2-arg select function, falling back to 1-arg."""
-    n = _get_nargs(func)
-    if n == 1:
-        return 1 if func(a1) else 0
-    return 1 if func(a1, a2) else 0
+    n = _get_max_nargs(func)
+    if n >= 2 or n == -1:
+        try:
+            return 1 if func(a1, a2) else 0
+        except TypeError:
+            pass
+    return 1 if func(a1) else 0
 
 def _call_select3(func, a1, a2, a3):
     """Call a 3-arg select function, falling back to 2 or 1."""
-    n = _get_nargs(func)
-    if n <= 1:
-        return 1 if func(a1) else 0
-    elif n == 2:
-        return 1 if func(a1, a2) else 0
-    return 1 if func(a1, a2, a3) else 0
+    n = _get_max_nargs(func)
+    if n >= 3 or n == -1:
+        try:
+            return 1 if func(a1, a2, a3) else 0
+        except TypeError:
+            pass
+    if n >= 2 or n == -1:
+        try:
+            return 1 if func(a1, a2) else 0
+        except TypeError:
+            pass
+    return 1 if func(a1) else 0
 
 cdef object _gees_select_callable = None
 
