@@ -285,6 +285,9 @@ def _translate_f2py_expr(expr, routine_args):
 
     # abs() is already Python-compatible
 
+    # f2py rank() -> np.ndim()
+    result = re.sub(r'\brank\(', 'np.ndim(', result)
+
     # f2py internal variables: var_capi==Py_None -> var is None
     result = re.sub(r'(\w+)_capi==Py_None', r'\1 is None', result)
     result = re.sub(r'(\w+)_capi!=Py_None', r'\1 is not None', result)
@@ -887,6 +890,9 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
                 lines.append(f'    {arr} = np.array({arr}, copy=True)')
                 lines.append(f'    {arr} -= 1  # Convert 1-based to 0-based')
 
+    # --- Input validation (check() directives from pyf) ---
+    _generate_checks(routine, py_args, lines)
+
     # --- Call the low-level cdef function ---
     lines.append('')
     call_args = _build_call_args(routine, lib_module_name, cdef_param_types)
@@ -1364,6 +1370,52 @@ def _build_return(routine):
             return_parts.append({'var': 'info', 'name': 'info'})
 
     return return_parts
+
+
+def _generate_checks(routine, py_args, lines):
+    """Generate input validation from check() directives.
+
+    Translates f2py check() expressions to Python and raises ValueError
+    with f2py-compatible error messages on failure.
+    """
+    # Build position maps for f2py-compatible error messages
+    arg_positions = {}  # arg_name -> (position_type, position_number)
+    pos_arg_idx = 0
+    kw_arg_idx = 0
+    _ordinals = {1: '1st', 2: '2nd', 3: '3rd'}
+    for aname in py_args:
+        ainfo = routine['args'].get(aname, {})
+        has_default = 'default' in ainfo or ainfo.get('optional')
+        if has_default:
+            kw_arg_idx += 1
+            nth = _ordinals.get(kw_arg_idx, f'{kw_arg_idx}th')
+            arg_positions[aname] = f'{nth} keyword {aname}'
+        else:
+            pos_arg_idx += 1
+            nth = _ordinals.get(pos_arg_idx, f'{pos_arg_idx}th')
+            arg_positions[aname] = f'{nth} argument {aname}'
+
+    checks_emitted = False
+    for aname in routine['arg_names']:
+        ainfo = routine['args'].get(aname, {})
+        checks = ainfo.get('checks', [])
+        if not checks:
+            continue
+        for check_expr in checks:
+            py_check = _translate_f2py_expr(check_expr, routine['args'])
+            if not py_check:
+                continue
+            # Skip checks for hidden args the user can't influence
+            intents = ainfo.get('intents', [])
+            if 'hide' in intents and aname not in py_args:
+                continue
+            if not checks_emitted:
+                lines.append('')
+                checks_emitted = True
+            pos_msg = arg_positions.get(aname, f'argument {aname}')
+            lines.append(f'    if not ({py_check}):')
+            lines.append(f'        raise ValueError('
+                         f'"(failed for {pos_msg})")')
 
 
 def _generate_post_call(routine):
