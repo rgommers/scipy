@@ -697,9 +697,13 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
             continue
         ndim = len([d for d in dim.split(',') if d.strip()])
         if ndim >= 2:
-            lines.append(f'    _was_1d_{aname} = ({aname} is not None) and np.ndim({aname}) == 1')
+            lines.append(f'    _was_1d_{aname} = ({aname} is not None) and np.ndim({aname}) <= 1')
             lines.append(f'    if _was_1d_{aname}:')
-            lines.append(f'        {aname} = np.asarray({aname}).reshape(-1, 1)')
+            lines.append(f'        {aname} = np.asarray({aname})')
+            lines.append(f'        if {aname}.ndim == 0:')
+            lines.append(f'            {aname} = {aname}.reshape(1, 1)')
+            lines.append(f'        else:')
+            lines.append(f'            {aname} = {aname}.reshape(-1, 1)')
             _reshaped_args.append(aname)
 
     # Convert character args from str to bytes if needed
