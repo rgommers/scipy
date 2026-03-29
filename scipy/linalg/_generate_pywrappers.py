@@ -898,6 +898,10 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
     elif is_function and routine.get('result_name'):
         result_var = routine['result_name']
         lines.append(f'    {result_var} = {lib_module_name}.{name}({call_args})')
+        # Check for return value adjustment (e.g., "- 1" for 1-based to 0-based)
+        cs = routine.get('callstatement', '')
+        if cs and re.search(r'\)\s*-\s*1\s*$', cs):
+            lines.append(f'    {result_var} -= 1')
     else:
         lines.append(f'    {lib_module_name}.{name}({call_args})')
 
