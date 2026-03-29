@@ -1510,8 +1510,9 @@ def _generate_post_call(routine):
                 lines.append(f'    {var} -= 1  # Convert from 1-based to 0-based')
 
     # Pattern 4: for(i=0;i<N;i++){out[i] = src[i];} - copy values
+    # Note: trailing } may be stripped, so make it optional
     for m in re.finditer(
-        r'for\(i=0;i<(\d+);i\+\+\)\{(\w+)\[i\]\s*=\s*(\w+)\[i\];\}', raw
+        r'for\(i=0;i<(\d+);i\+\+\)\{(\w+)\[i\]\s*=\s*(\w+)\[i\];\}?', raw
     ):
         count = m.group(1)
         dst = m.group(2)
