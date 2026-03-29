@@ -695,7 +695,9 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
         dim = ainfo.get('dimension', '')
         if not dim or dim == '*':
             continue
-        ndim = len([d for d in dim.split(',') if d.strip()])
+        # Count dimensions by splitting on top-level commas (not inside parens)
+        _dim_parts = _split_respecting_parens_and_quotes(dim)
+        ndim = len([d for d in _dim_parts if d.strip()])
         if ndim >= 2:
             lines.append(f'    _was_1d_{aname} = ({aname} is not None) and np.ndim({aname}) <= 1')
             lines.append(f'    if _was_1d_{aname}:')
@@ -743,11 +745,13 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
                 lines.append(f'        {aname} = np.asfortranarray({aname}, dtype={dt})')
         elif 'in' in intents and 'out' in intents:
             # intent(in,out) without copy - still handle overwrite
+            # Guard against None for optional in/out args
             ow_name = _get_overwrite_param_name(aname)
-            lines.append(f'    if not {ow_name}:')
-            lines.append(f'        {aname} = np.array({aname}, dtype={dt}, order="F", copy=True)')
-            lines.append(f'    else:')
-            lines.append(f'        {aname} = np.asfortranarray({aname}, dtype={dt})')
+            lines.append(f'    if {aname} is not None:')
+            lines.append(f'        if not {ow_name}:')
+            lines.append(f'            {aname} = np.array({aname}, dtype={dt}, order="F", copy=True)')
+            lines.append(f'        else:')
+            lines.append(f'            {aname} = np.asfortranarray({aname}, dtype={dt})')
         elif 'in' in intents and ('copy' in intents or 'overwrite' in intents):
             # intent(in,copy) or intent(in,overwrite) - copy unless overwrite
             ow_name = _get_overwrite_param_name(aname)
@@ -1410,13 +1414,39 @@ def _generate_checks(routine, py_args, lines):
         if not dim or dim == '*':
             continue
         intents = ainfo.get('intents', [])
-        # Only check user-provided optional arrays (not allocated internally)
-        is_optional_out = ('out' in intents and 'in' not in intents)
-        is_inout = ('in' in intents and 'out' in intents) or ('copy' in intents)
-        if not (is_optional_out or is_inout or not intents):
+        # Skip pure output arrays (allocated internally, not user-provided)
+        if 'out' in intents and 'in' not in intents and 'copy' not in intents:
             continue
-        parts = [p.strip() for p in dim.split(',') if p.strip()]
-        if len(parts) >= 2:
+        parts = [p.strip() for p in _split_respecting_parens_and_quotes(dim)
+                 if p.strip()]
+        # Skip if any dimension part is '*' (means any size)
+        if any(p.strip() == '*' for p in parts):
+            continue
+        if len(parts) == 1:
+            # 1D array: check length matches dimension, but only for
+            # simple expressions that don't reference hidden args
+            # (hidden args may not be computed yet or may depend on
+            # the array being checked)
+            d0_raw = parts[0]
+            d0 = _translate_f2py_expr(d0_raw, routine['args'])
+            if '?' not in d0 and d0.count('(') == d0.count(')'):
+                # Check if expression only references visible args or
+                # simple hidden args (n, m) not computed from this array
+                deps = routine['args'].get(aname, {}).get('depend', [])
+                # Only validate if dimension is a simple expression
+                # involving n, m, or constants - not ly, rows, etc.
+                _simple_dim = re.match(
+                    r'^[\w\s\+\-\*\/\(\),]+$', d0
+                ) and all(
+                    c not in d0 for c in ['ly', 'rows', 'cols', 'ldx',
+                                          'ldy', 'lda', 'ldb', 'ldc']
+                )
+                if _simple_dim:
+                    lines.append(f'    if {aname} is not None and hasattr({aname}, "shape"):')
+                    lines.append(f'        if {aname}.shape[0] != {d0}:')
+                    pos_msg = arg_positions.get(aname, f'argument {aname}')
+                    lines.append(f'            raise error("(failed for {pos_msg})")')
+        elif len(parts) >= 2:
             # 2D array: check shape matches (dim0, dim1)
             d0 = _translate_f2py_expr(parts[0], routine['args'])
             d1 = _translate_f2py_expr(parts[1], routine['args'])
@@ -1808,7 +1838,7 @@ def generate_blas_pyx(routines, ilp64=False):
     lines.append('np.import_array()')
     lines.append('')
     lines.append('')
-    lines.append('class error(Exception):')
+    lines.append('class error(ValueError):')
     lines.append('    """BLAS error."""')
     lines.append('    pass')
     lines.append('')
@@ -2393,7 +2423,7 @@ def generate_lapack_pyx(routines, ilp64=False):
     lines.append('np.import_array()')
     lines.append('')
     lines.append('')
-    lines.append('class error(Exception):')
+    lines.append('class error(ValueError):')
     lines.append('    """LAPACK error."""')
     lines.append('    pass')
     lines.append('')
