@@ -716,6 +716,9 @@ def _generate_wrapper_function(routine, lib_module_name, cdef_param_types=None):
             continue
 
         intents = ainfo.get('intents', [])
+        # Default: arrays without explicit intent are treated as intent(in)
+        if not intents and _is_array_arg(ainfo):
+            intents = ['in']
         ftype = ainfo.get('ftype', primary_ftype)
         dt = _get_numpy_dtype(ftype)
         is_optional = ainfo.get('optional', False)
@@ -1414,7 +1417,7 @@ def _generate_checks(routine, py_args, lines):
                 checks_emitted = True
             pos_msg = arg_positions.get(aname, f'argument {aname}')
             lines.append(f'    if not ({py_check}):')
-            lines.append(f'        raise ValueError('
+            lines.append(f'        raise error('
                          f'"(failed for {pos_msg})")')
 
 
@@ -2356,6 +2359,11 @@ def generate_lapack_pyx(routines, ilp64=False):
     lines.append('    cselect1, cselect2, zselect1, zselect2)')
     lines.append('')
     lines.append('np.import_array()')
+    lines.append('')
+    lines.append('')
+    lines.append('class error(Exception):')
+    lines.append('    """LAPACK error."""')
+    lines.append('    pass')
     lines.append('')
     lines.append('')
 
