@@ -1398,6 +1398,35 @@ def _generate_checks(routine, py_args, lines):
             nth = _ordinals.get(pos_arg_idx, f'{pos_arg_idx}th')
             arg_positions[aname] = f'{nth} argument {aname}'
 
+    # Add implicit shape checks for optional arrays with explicit dimensions
+    # (f2py validates shape matches dimension spec when user provides array)
+    for aname in py_args:
+        ainfo = routine['args'].get(aname, {})
+        dim = ainfo.get('dimension', '')
+        if not dim or dim == '*':
+            continue
+        intents = ainfo.get('intents', [])
+        # Only check user-provided optional arrays (not allocated internally)
+        is_optional_out = ('out' in intents and 'in' not in intents)
+        is_inout = ('in' in intents and 'out' in intents) or ('copy' in intents)
+        if not (is_optional_out or is_inout or not intents):
+            continue
+        parts = [p.strip() for p in dim.split(',') if p.strip()]
+        if len(parts) >= 2:
+            # 2D array: check shape matches (dim0, dim1)
+            d0 = _translate_f2py_expr(parts[0], routine['args'])
+            d1 = _translate_f2py_expr(parts[1], routine['args'])
+            # Skip if dimension expression contains untranslated C syntax
+            # or is too complex (nested min/max, ternary, etc.)
+            if any(c in d0 + d1 for c in '?;{}'):
+                continue
+            if d0.count('(') != d0.count(')') or d1.count('(') != d1.count(')'):
+                continue
+            lines.append(f'    if {aname} is not None and hasattr({aname}, "shape") and {aname}.ndim >= 2:')
+            lines.append(f'        if {aname}.shape[0] != {d0} or {aname}.shape[1] != {d1}:')
+            pos_msg = arg_positions.get(aname, f'argument {aname}')
+            lines.append(f'            raise error("(failed for {pos_msg})")')
+
     checks_emitted = False
     for aname in routine['arg_names']:
         ainfo = routine['args'].get(aname, {})
@@ -1408,10 +1437,8 @@ def _generate_checks(routine, py_args, lines):
             py_check = _translate_f2py_expr(check_expr, routine['args'])
             if not py_check:
                 continue
-            # Skip checks for hidden args the user can't influence
-            intents = ainfo.get('intents', [])
-            if 'hide' in intents and aname not in py_args:
-                continue
+            # Include checks for hidden args too (they validate relationships
+            # between user-provided arrays, e.g., k>=(side?n:m) in trmm)
             if not checks_emitted:
                 lines.append('')
                 checks_emitted = True
