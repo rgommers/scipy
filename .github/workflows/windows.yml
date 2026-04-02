@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
+      - fix-superlu-pointer-cast-warnings
   pull_request:
     branches:
       - main
@@ -56,10 +57,6 @@ jobs:
   #############################################################################
   full_spin_min_numpy:
     name: full, py3.12/npMin, spin
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: windows-2025
     steps:
       - name: Checkout
