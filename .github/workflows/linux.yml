@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - maintenance/**
+      - ci-check-aarch64
   pull_request:
     branches:
       - main
@@ -682,10 +683,6 @@ jobs:
   #################################################################################
   test_aarch64:
     name: aarch64, fast, fail slow, py3.12/npAny, spin
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-24.04-arm
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
