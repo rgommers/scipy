@@ -4,7 +4,7 @@
  * https://github.com/scipy/xsf/pull/99), whose code has been refactored by
  * Scipy developers so that only parts fit for xsf as a library of simple
  * numerical kernels which can be used on both CPU and GPU are included in
- * xsf. The below code uses dstevd from LAPACK to calculate eigenvalues and
+ * xsf. The below code uses dstevr from LAPACK to calculate eigenvalues and
  * eigenvectors of symmetric tridiagonal recurrence matrices, and thus is not
  * fit for xsf.
  *
@@ -32,6 +32,9 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
+#include <exception>
+#include <limits>
 #include <new>
 #include <vector>
 
@@ -43,6 +46,11 @@
 #include "tridiagonal.h"
 
 namespace special {
+
+/* Largest number of terms of the Fourier series we're willing to sum. Beyond
+ * this the computation is reported as SF_ERROR_NO_RESULT rather than attempted.
+ */
+constexpr int MAX_PARTIAL_SUM_N = 100000;
 
 /* Stateful functor for mathieu characteristic values
  *
@@ -63,17 +71,22 @@ template <xsf::mathieu::Parity FuncParity, typename T> struct mathieu_cv {
     using namespace xsf::mathieu;
     auto constexpr Even = Parity::Even;
     auto constexpr Odd = Parity::Odd;
+    constexpr const char *name = (FuncParity == Even) ? "mathieu_a" : "mathieu_b";
 
+    /* ``m`` must be a non-negative (positive for the odd functions) integer,
+     * and both arguments must be finite. Note that ``m != floor(m)`` does not
+     * rule out infinities, and that a non-finite ``m`` would make the cast to
+     * CBLAS_INT below undefined behavior. */
+    bool domain_error =
+        !std::isfinite(m) || (m != std::floor(m)) || !std::isfinite(q);
     if constexpr (FuncParity == Even) {
-      if ((m < 0) || (m != std::floor(m))) {
-        xsf::set_error("mathieu_a", SF_ERROR_DOMAIN, NULL);
-        return std::numeric_limits<double>::quiet_NaN();
-      }
+      domain_error = domain_error || (m < 0);
     } else {
-      if ((m <= 0) || (m != std::floor(m)) || std::isnan(q)) {
-        xsf::set_error("mathieu_b", SF_ERROR_DOMAIN, NULL);
-        return std::numeric_limits<double>::quiet_NaN();
-      }
+      domain_error = domain_error || (m <= 0);
+    }
+    if (domain_error) {
+      xsf::set_error(name, SF_ERROR_DOMAIN, NULL);
+      return std::numeric_limits<T>::quiet_NaN();
     }
 
     if (m > 500) {
@@ -85,18 +98,18 @@ template <xsf::mathieu::Parity FuncParity, typename T> struct mathieu_cv {
     }
 
     auto int_m = static_cast<CBLAS_INT>(m);
-    auto N = int_m + 25;
+    /* Use the same truncation as the Fourier coefficient computation in
+     * mathieu_coeffs; a q independent truncation loses many digits for large
+     * |q|. */
+    auto N = static_cast<CBLAS_INT>(
+        get_partial_sum_N(static_cast<int>(int_m), static_cast<double>(q)));
 
     try {
       // Make sure allocation actually succeeds.
       D.resize(N);
       E.resize(N - 1);
-    } catch (const std::bad_alloc &) {
-      if constexpr (FuncParity == Even) {
-        xsf::set_error("mathieu_a", SF_ERROR_MEMORY, NULL);
-      } else {
-        xsf::set_error("mathieu_b", SF_ERROR_MEMORY, NULL);
-      }
+    } catch (const std::exception &) {
+      xsf::set_error(name, SF_ERROR_MEMORY, NULL);
       return std::numeric_limits<T>::quiet_NaN();
     }
 
@@ -111,12 +124,8 @@ template <xsf::mathieu::Parity FuncParity, typename T> struct mathieu_cv {
     double eigenvalue;
     auto status = solver(D, E, idx, eigenvalue);
     if (status != SF_ERROR_OK) {
-      if constexpr (FuncParity == Even) {
-        xsf::set_error("mathieu_a", status, NULL);
-      } else {
-        xsf::set_error("mathieu_b", status, NULL);
-      }
-      return std::numeric_limits<double>::quiet_NaN();
+      xsf::set_error(name, status, NULL);
+      return std::numeric_limits<T>::quiet_NaN();
     }
 
     // Pull out the characteristic value from among the eigenvalues.
@@ -151,7 +160,7 @@ template <xsf::mathieu::Parity FuncParity> struct mathieu_coeffs {
       // Make sure allocation actually succeeds.
       D.resize(N);
       E.resize(N - 1);
-    } catch (const std::bad_alloc &) {
+    } catch (const std::exception &) {
       return SF_ERROR_MEMORY;
     }
 
@@ -198,19 +207,33 @@ template <xsf::mathieu::Parity FuncParity, typename T> struct mathieu_xem {
     using namespace xsf::mathieu;
     auto constexpr Even = Parity::Even;
     auto constexpr Odd = Parity::Odd;
+    constexpr const char *name =
+        (FuncParity == Even) ? "mathieu_cem" : "mathieu_sem";
 
     double q_d = static_cast<double>(q);
     double x_d = static_cast<double>(x);
     double out_d, out_diff_d;
 
-    if ((m < 0) || m != std::floor(m) || std::isnan(q) || std::isnan(x)) {
+    /* ``m`` must be a non-negative integer and ``q`` must be finite. Note that
+     * ``m != floor(m)`` does not rule out infinities, and that a non-finite
+     * ``m`` or ``q`` would make the cast to int below, respectively the
+     * computation of the truncation size in get_partial_sum_N, undefined
+     * behavior. */
+    if ((m < 0) || !std::isfinite(m) || m != std::floor(m) ||
+        !std::isfinite(q) || std::isnan(x)) {
       out = std::numeric_limits<T>::quiet_NaN();
       out_diff = std::numeric_limits<T>::quiet_NaN();
-      if constexpr (FuncParity == Even) {
-        xsf::set_error("mathieu_cem", SF_ERROR_DOMAIN, NULL);
-      } else {
-        xsf::set_error("mathieu_sem", SF_ERROR_DOMAIN, NULL);
-      }
+      xsf::set_error(name, SF_ERROR_DOMAIN, NULL);
+      last_m = -1; // invalidate cache upon error
+      return;
+    }
+
+    /* Orders this large always exceed the truncation size limit checked below.
+     * Rejecting them here keeps the cast to int well defined. */
+    if (m > MAX_PARTIAL_SUM_N) {
+      out = std::numeric_limits<T>::quiet_NaN();
+      out_diff = std::numeric_limits<T>::quiet_NaN();
+      xsf::set_error(name, SF_ERROR_NO_RESULT, NULL);
       last_m = -1; // invalidate cache upon error
       return;
     }
@@ -228,16 +251,12 @@ template <xsf::mathieu::Parity FuncParity, typename T> struct mathieu_xem {
     /* Check if either q or m has changed, and if so recompute the fourier
      * coefficients. */
     if (q_d != last_q || int_m != last_m) {
-      // Chooses
+      // Chooses the number of terms of the Fourier series to sum.
       auto N = get_partial_sum_N(int_m, q_d);
-      if (N > 100000) {
+      if (N <= 0 || N > MAX_PARTIAL_SUM_N) {
         out = std::numeric_limits<T>::quiet_NaN();
         out_diff = std::numeric_limits<T>::quiet_NaN();
-        if constexpr (FuncParity == Even) {
-          xsf::set_error("mathieu_cem", SF_ERROR_NO_RESULT, NULL);
-        } else {
-          xsf::set_error("mathieu_sem", SF_ERROR_NO_RESULT, NULL);
-        }
+        xsf::set_error(name, SF_ERROR_NO_RESULT, NULL);
         last_m = -1; // invalidate cache upon error
         return;
       }
@@ -245,12 +264,11 @@ template <xsf::mathieu::Parity FuncParity, typename T> struct mathieu_xem {
       try {
         // Make sure allocation actually succeeds.
         coefs.resize(N);
-      } catch (const std::bad_alloc &) {
-        if constexpr (FuncParity == Even) {
-          xsf::set_error("mathieu_cem", SF_ERROR_MEMORY, NULL);
-        } else {
-          xsf::set_error("mathieu_sem", SF_ERROR_MEMORY, NULL);
-        }
+      } catch (const std::exception &) {
+        out = std::numeric_limits<T>::quiet_NaN();
+        out_diff = std::numeric_limits<T>::quiet_NaN();
+        xsf::set_error(name, SF_ERROR_MEMORY, NULL);
+        last_m = -1; // invalidate cache upon error
         return;
       }
 
@@ -259,11 +277,7 @@ template <xsf::mathieu::Parity FuncParity, typename T> struct mathieu_xem {
         out = std::numeric_limits<T>::quiet_NaN();
         out_diff = std::numeric_limits<T>::quiet_NaN();
         last_m = -1; // invalidate cache upon error
-        if constexpr (FuncParity == Even) {
-          xsf::set_error("mathieu_cem", status, NULL);
-        } else {
-          xsf::set_error("mathieu_sem", status, NULL);
-        }
+        xsf::set_error(name, status, NULL);
         return;
       }
       last_q = q_d;
