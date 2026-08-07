@@ -549,7 +549,6 @@ class TestMapCoordinates:
         out2 = ndimage.map_coordinates(data, idx, order=order)
         assert_array_almost_equal(out1, out2)
 
-    @skip_xp_backends("jax.numpy", reason="`order` is required in jax")
     def test_map_coordinates03(self, xp):
         data = _asarray([[4, 1, 3, 2],
                          [7, 6, 8, 5],
@@ -575,6 +574,37 @@ class TestMapCoordinates:
         out = ndimage.map_coordinates(data[:, ::2], idx)
         assert_array_almost_equal(out, xp.asarray([[0, 0], [0, 4], [0, 7]]))
         assert_array_almost_equal(out, ndimage.shift(data[:, ::2], (1, 1)))
+
+    @pytest.mark.parametrize("order", range(6))
+    @pytest.mark.parametrize("mode", ["constant", "grid-constant", "nearest",
+                                      "mirror", "reflect", "wrap", "grid-wrap"])
+    def test_map_coordinates_matches_numpy_for_every_mode(self, xp, order, mode):
+        """Every (order, mode) must give the NumPy answer, delegated or not.
+
+        A backend namesake need not accept the same arguments as SciPy, nor
+        attach the same meaning to a mode name.  JAX's `map_coordinates` takes
+        `order` as a required positional, implements only order <= 1, and uses
+        `constant` and `wrap` for what SciPy calls `grid-constant` and
+        `grid-wrap`.  Forwarding the caller's arguments verbatim therefore
+        raised `TypeError: missing 1 required positional argument: 'order'` for
+        the default call, and returned silently different values for the
+        default *mode* whenever a coordinate fell outside the input.
+
+        The coordinates below deliberately include out-of-bounds values, where
+        the modes differ from one another, and exact half-integers, where
+        nearest-neighbour tie-breaking differs.
+        """
+        data = np.arange(7.0)
+        coordinates = np.asarray([np.concatenate([
+            np.arange(-2.0, 8.0, 0.5),                    # ties, and out of bounds
+            np.linspace(-1.9, 7.9, 41),                   # generic positions
+        ])])
+        expected = ndimage.map_coordinates(data, coordinates, order=order, mode=mode)
+
+        actual = ndimage.map_coordinates(
+            xp.asarray(data), xp.asarray(coordinates), order=order, mode=mode
+        )
+        assert_array_almost_equal(actual, xp.asarray(expected))
 
     @skip_xp_backends(np_only=True)
     def test_map_coordinates_endianness_with_output_parameter(self, xp):

@@ -35,6 +35,64 @@ CUPY_BLOCKLIST = [
 ]
 
 
+# `jax.scipy.ndimage.map_coordinates` cannot be handed our arguments verbatim.
+# It takes `order` as a *required positional* argument, implements only a
+# subset of what SciPy offers, and -- less obviously -- uses two of SciPy's
+# mode names for different semantics.
+#
+# Forwarding arguments unchanged therefore had two failure modes:
+#   * `map_coordinates(x, coords)` raised `TypeError: missing 1 required
+#     positional argument: 'order'` on JAX while working everywhere else;
+#   * `mode='constant'` (the default) and `mode='wrap'` returned *silently
+#     different* values from SciPy for any out-of-bounds coordinate, because
+#     JAX's meanings for those two names are SciPy's `grid-constant` and
+#     `grid-wrap`.
+#
+# So delegate only what JAX implements with SciPy's semantics, translating the
+# two names that do correspond, and let everything else fall through to the
+# NumPy implementation -- which is what the rest of `ndimage` already does on a
+# non-CuPy backend.
+#: SciPy mode -> JAX mode, for modes whose semantics agree at *any* order.
+#: `constant` and `wrap` are deliberately absent: SciPy's versions treat the
+#: half-sample beyond each edge differently from anything JAX offers.
+_JAX_MODES = {
+    "nearest": "nearest",
+    "grid-constant": "constant",
+}
+
+#: Modes that agree only for linear interpolation.  At order 0 these three fold
+#: the coordinate before rounding it, and break ties in the other direction
+#: from SciPy -- measurable only at exactly half-integer coordinates, and wrong
+#: silently when it happens.
+_JAX_MODES_ORDER1_ONLY = {
+    "mirror": "mirror",
+    "reflect": "reflect",
+    "grid-wrap": "wrap",
+}
+
+
+def _jax_map_coordinates_args(
+    input, coordinates, output=None, order=3, mode='constant', cval=0.0,
+    prefilter=True
+):
+    """Translate a `map_coordinates` call for JAX, or None if JAX cannot do it.
+
+    Returns ``(args, kwargs)`` for `jax.scipy.ndimage.map_coordinates`, or None
+    to fall back to the NumPy implementation.
+
+    `prefilter` is deliberately ignored: it only has an effect for order > 1,
+    and those orders are never delegated.
+    """
+    if output is not None or order not in (0, 1):
+        return None
+    jax_mode = _JAX_MODES.get(mode)
+    if jax_mode is None and order == 1:
+        jax_mode = _JAX_MODES_ORDER1_ONLY.get(mode)
+    if jax_mode is None:
+        return None
+    return (input, coordinates, order), {"mode": jax_mode, "cval": cval}
+
+
 def delegate_xp(delegator, module_name):
     def inner(func):
         @functools.wraps(func)
@@ -48,11 +106,16 @@ def delegate_xp(delegator, module_name):
                 cupyx_module = importlib.import_module(f"cupyx.scipy.{module_name}")
                 cupyx_func = getattr(cupyx_module, func.__name__)
                 return cupyx_func(*args, **kwds)
-            elif is_jax(xp) and func.__name__ == "map_coordinates":
+            elif (
+                is_jax(xp)
+                and func.__name__ == "map_coordinates"
+                and (jax_args := _jax_map_coordinates_args(*args, **kwds))
+                is not None
+            ):
                 spx = scipy_namespace_for(xp)
                 jax_module = getattr(spx, module_name)
                 jax_func = getattr(jax_module, func.__name__)
-                return jax_func(*args, **kwds)
+                return jax_func(*jax_args[0], **jax_args[1])
             else:
                 # the original function (does all np.asarray internally)
                 # XXX: output arrays
