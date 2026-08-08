@@ -250,9 +250,19 @@ class TestMannWhitneyU:
     def test_auto(self, xp):
         # Test that default method ('auto') chooses intended method
         if is_jax(xp):
-            message = "`method='auto'` is incompatible with JAX arrays."
+            # Only the tie check reads the data, and it is reached only when
+            # the sample sizes have not already settled the choice.  Above the
+            # threshold 'auto' is decided by shapes alone and must work.
+            x = xp.asarray([1., 3., 5., 7., 9., 11., 13., 15., 17.])
+            y = xp.asarray([2., 4., 6., 8., 10., 12., 14., 16., 18.])
+            xp_assert_close(mannwhitneyu(x, y).pvalue,
+                            mannwhitneyu(x, y, method='asymptotic').pvalue)
+
+            # At or below the threshold the choice needs the data, so it must
+            # say so rather than silently picking one.
+            message = "`method='auto'` is incompatible with JAX arrays"
             with pytest.raises(ValueError, match=message):
-                mannwhitneyu(xp.arange(10), xp.arange(10))
+                mannwhitneyu(x[:8], y[:8])
             return
 
         rng = np.random.default_rng(923823782530925934)
