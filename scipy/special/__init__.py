@@ -791,8 +791,18 @@ from ._ufuncs import *
 from . import _basic
 from ._basic import *
 
-# Replace some function definitions from _ufuncs and _basic
-# to add Array API support
+from . import _spherical_bessel
+from ._spherical_bessel import (
+    spherical_jn,
+    spherical_yn,
+    spherical_in,
+    spherical_kn
+)
+
+# Replace some function definitions from _ufuncs, _basic and _spherical_bessel
+# to add Array API support.  This import must come after every module it
+# overrides -- importing one of them afterwards silently puts the undelegated
+# function back, which is why _spherical_bessel moved up from below.
 from ._support_alternative_backends import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
@@ -809,12 +819,6 @@ from ._ellip_harm import (
     ellip_normal
 )
 from ._lambertw import lambertw
-from ._spherical_bessel import (
-    spherical_jn,
-    spherical_yn,
-    spherical_in,
-    spherical_kn
-)
 
 # We replace some function definitions from _ufuncs with those from
 # _support_alternative_backends above, but those are all listed in _ufuncs.__all__,

@@ -12,6 +12,7 @@ from scipy._lib._array_api import (
 )
 import scipy._external.array_api_extra as xpx
 from . import _basic
+from . import _spherical_bessel
 from . import _spfun_stats
 from . import _ufuncs
 
@@ -536,6 +537,15 @@ _special_funcs = (
         xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"]),
         torch_native=False,
     ),
+    _FuncInfo(
+        _ufuncs.eval_legendre, 2,
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            jax_jit=True,
+        ),
+        int_only=(True, False), test_large_ints=False,
+        torch_native=False,
+    ),
     _FuncInfo(_ufuncs.expit, 1),
     _FuncInfo(
         _ufuncs.expn, 2,
@@ -674,6 +684,15 @@ _special_funcs = (
             jax_jit=True,
         ),
         alt_names_map={"torch": "bessel_j1"}, test_large_ints=False,
+    ),
+    _FuncInfo(
+        _ufuncs.jv, 2,
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            jax_jit=True,
+        ),
+        test_large_ints=False,
+        torch_native=False,
     ),
     _FuncInfo(
         _ufuncs.k0, 1,
@@ -862,6 +881,26 @@ _special_funcs = (
         xp_capabilities(cpu_only=True, exceptions=["jax.numpy"]),
         torch_native=False,
     ),
+    _FuncInfo(
+        _spherical_bessel.spherical_jn, 2,
+        # jax_jit=False: the NumPy fallback is traceable via xpx.lazy_apply
+        # only for ufuncs, which can report their output dtype through
+        # resolve_dtypes.  These are Python functions, so the fallback reaches
+        # np.asarray on a tracer.
+        xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False),
+        int_only=(True, False), is_ufunc=False, positive_only=(True, False),
+        test_large_ints=False, torch_native=False,
+    ),
+    _FuncInfo(
+        _spherical_bessel.spherical_yn, 2,
+        # jax_jit=False: the NumPy fallback is traceable via xpx.lazy_apply
+        # only for ufuncs, which can report their output dtype through
+        # resolve_dtypes.  These are Python functions, so the fallback reaches
+        # np.asarray on a tracer.
+        xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False),
+        int_only=(True, False), is_ufunc=False, positive_only=(True, False),
+        test_large_ints=False, torch_native=False,
+    ),
     _FuncInfo(_ufuncs.stdtr,  2, _needs_betainc, generic_impl=_stdtr,
               torch_native=False),
     _FuncInfo(
@@ -906,6 +945,15 @@ _special_funcs = (
         ),
         positive_only={"cupy": (True, False)}, int_only=(True, False),
         test_large_ints=False, torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.yv, 2,
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            jax_jit=True,
+        ),
+        test_large_ints=False,
+        torch_native=False,
     ),
     _FuncInfo(
         _basic.zeta, 2, is_ufunc=False,
