@@ -8,6 +8,7 @@ from scipy._lib._array_api import (
     np_compat, xp_device, xp_promote, xp_result_device,
     xp_result_type, is_torch, _xp_copy_to_numpy
 )
+from scipy._lib._array_api_override import _parse_array_api_env
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
 from scipy._external.array_api_extra.testing import lazy_xp_function
@@ -445,3 +446,27 @@ def test_xp_result_device(xp, devices):
     assert xp_result_device() is None
     assert xp_result_device(1.5, None) is None
     assert xp_result_device(np.asarray([1.0])) is None
+
+
+@pytest.mark.parametrize("value, expected", [
+    (None, False),
+    ("", False),
+    ("0", False),
+    ("false", False),
+    ("False", False),
+    ("no", False),
+    ("off", False),
+    ("  0  ", False),
+    ("1", "1"),
+    ("true", "true"),
+    ("all", "all"),
+    ('["numpy", "torch"]', '["numpy", "torch"]'),
+])
+def test_parse_array_api_env(value, expected):
+    """``SCIPY_ARRAY_API=0`` must disable, not enable.
+
+    The variable is not a plain boolean -- the test suite also accepts ``all``
+    and a JSON list of backend ids -- so everything that is not a recognised
+    "off" spelling has to survive verbatim.
+    """
+    assert _parse_array_api_env(value) == expected
