@@ -210,14 +210,21 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
 
 
 def _mwu_choose_method(n1, n2, ties):
-    """Choose method 'asymptotic' or 'exact' depending on input size, ties"""
+    """Choose method 'asymptotic' or 'exact' depending on input size, ties
+
+    ``ties`` is a zero-argument callable rather than a value so that the data
+    is only inspected when the sample sizes have not already decided the
+    method.  ``n1`` and ``n2`` come from the shapes, so the large-sample branch
+    is decidable on any backend; the tie check is the only data-dependent part,
+    and on a lazy backend evaluating it is an error rather than a cost.
+    """
 
     # if both inputs are large, asymptotic is OK
     if n1 > 8 and n2 > 8:
         return "asymptotic"
 
     # if there are any ties, asymptotic is preferred
-    if ties:
+    if ties():
         return "asymptotic"
 
     return "exact"
@@ -239,7 +246,9 @@ def mwu_result_object(statistic, pvalue, zstatistic=None):
     jax_jit=False,  # the exact null distribution is NumPy-only
     marray=True,
     extra_note=("Only ``method='asymptotic'`` is compatible with MArray input."
-                "``method='auto'`` is incompatible with JAX arrays."))
+                " ``method='auto'`` is incompatible with JAX arrays when either"
+                " sample has 8 or fewer observations, because the choice of"
+                " method then depends on whether the data contain ties."))
 @_axis_nan_policy_factory(mwu_result_object, n_samples=2,
                           result_to_tuple=wilcoxon_result_unpacker,
                           n_outputs=wilcoxon_outputs)
@@ -501,10 +510,18 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         U, f = xp.maximum(U1, U2), 2  # and will multiply SF by two for two-sided test
 
     if method == "auto":
-        if is_jax(xp):
-            message = "`method='auto'` is incompatible with JAX arrays."
-            raise ValueError(message)
-        method = _mwu_choose_method(n1, n2, xp.any(t > 1))
+        def ties():
+            # Reached only when the sample sizes did not settle the choice.
+            if is_jax(xp):
+                message = ("`method='auto'` is incompatible with JAX arrays "
+                           "when either sample has 8 or fewer observations, "
+                           "because the choice of method then depends on "
+                           "whether the data contain ties. Pass "
+                           "`method='asymptotic'` or `method='exact'`.")
+                raise ValueError(message)
+            return xp.any(t > 1)
+
+        method = _mwu_choose_method(n1, n2, ties)
 
     if method == "exact":
         if not hasattr(_mwu_state, 's'):
