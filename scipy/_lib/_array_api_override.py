@@ -23,8 +23,30 @@ from scipy._lib._sparse import SparseABC
 type Array = Any  # To be changed to a Protocol later (see array-api#589)
 type ArrayLike = Array | npt.ArrayLike
 
+def _parse_array_api_env(value: str | None) -> str | bool:
+    """Interpret the ``SCIPY_ARRAY_API`` environment variable.
+
+    The variable is not a plain boolean: the test suite also accepts ``"all"``
+    and a JSON list of backend ids, which have to be passed through as strings.
+    So only the recognised "off" spellings are collapsed to False, and anything
+    else is handed on verbatim.
+
+    The point of the off-list is that a bare truthiness test reads ``"0"`` --
+    a non-empty string -- as *enabled*, which is the opposite of what anyone
+    writing ``SCIPY_ARRAY_API=0`` means, and the opposite of how SciPy's own
+    ``SCIPY_XSLOW`` behaves.
+    """
+    if value is None:
+        return False
+    return False if value.strip().lower() in _ARRAY_API_OFF else value
+
+
+_ARRAY_API_OFF = frozenset({"", "0", "false", "no", "off"})
+
 # To enable array API and strict array-like input validation
-SCIPY_ARRAY_API: str | bool = os.environ.get("SCIPY_ARRAY_API", False)
+SCIPY_ARRAY_API: str | bool = _parse_array_api_env(
+    os.environ.get("SCIPY_ARRAY_API")
+)
 # To control the default device - for use in the test suite only
 SCIPY_DEVICE = os.environ.get("SCIPY_DEVICE", "cpu")
 
