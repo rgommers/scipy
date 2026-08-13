@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
+      - test-pythran-0190rc1
   pull_request:
     branches:
       - main
@@ -103,10 +104,6 @@ jobs:
   fast_spin_arm64:
     name: fast, py3.12/npAny, spin (Win-ARM64), no pythran
     runs-on: windows-11-arm
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1 &&
-      (github.repository == 'scipy/scipy' || github.repository == '')
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -117,22 +114,23 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: "3.12"
+          python-version: "3.15-dev"
           architecture: "arm64"
 
       - name: pip-packages
         run: |
           # `numpy<2.4.3` pin is due to np.linalg.solve crash, see gh-24774
-          python -m pip install "numpy<2.4.3" --group build --group dev-cli --group test-core
+          python -m pip install --group build --group dev-cli --group test-core
           python -m pip install -r requirements/openblas.txt
           python -m pip install -r requirements/pkgconf.txt
+          python -m pip install git+https://github.com/serge-sans-paille/pythran.git@release/0.19.0
 
       - name: Build
         run: |
           $env:Path = "C:\Program Files\LLVM\bin;" + $env:Path
           $env:cc = "clang-cl"
           $env:cxx = "clang-cl"
-          spin build --with-scipy-openblas=32 --setup-args="-Duse-pythran=false"
+          spin build --with-scipy-openblas=32  # --setup-args="-Duse-pythran=false"
 
       - name: Test
         run: |
