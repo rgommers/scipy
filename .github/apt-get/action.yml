@@ -15,26 +15,46 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - shell: bash
+    - name: apt-get update && install
+      shell: bash
       env:
         PACKAGES: ${{ inputs.packages }}
         REPOSITORY: ${{ inputs.repository }}
       run: |
+        set -euo pipefail
         opts=(
           -o Acquire::Retries=3
           -o Acquire::http::Timeout=30
           -o Acquire::https::Timeout=30
           -o DPkg::Lock::Timeout=120  # wait out unattended-upgrades rather than erroring
-          -o Dpkg::Options::=--force-unsafe-io  # no fsync; the runner is ephemeral
+          -o DPkg::Options::=--force-unsafe-io  # no fsync; the runner is ephemeral
         )
+        # `Acquire::Retries` only retries individual downloads, so retry the whole
+        # command too - a mirror that goes away mid-update is the common CI flake.
+        update() {
+          local attempt
+          for attempt in 1 2 3; do
+            if [[ $attempt -gt 1 ]]; then
+              echo "::warning::apt-get update failed, retrying (attempt ${attempt}/3)"
+              sleep 15
+            fi
+            if sudo timeout 5m apt-get update "${opts[@]}"; then
+              return 0
+            fi
+          done
+          echo "::error::apt-get update failed after 3 attempts"
+          exit 1
+        }
         install() {
           sudo DEBIAN_FRONTEND=noninteractive timeout 10m apt-get install -y "${opts[@]}" "$@"
         }
-        sudo timeout 5m apt-get update "${opts[@]}"
+        update
         if [[ -n "$REPOSITORY" ]]; then
           install software-properties-common
-          sudo add-apt-repository -y "$REPOSITORY"
-          sudo timeout 5m apt-get update "${opts[@]}"
+          sudo DEBIAN_FRONTEND=noninteractive timeout 5m add-apt-repository -y "$REPOSITORY"
+          update
         fi
-        read -ra packages <<< "$PACKAGES"
+        # Fold newlines into spaces first: `read` stops at the first newline, so a
+        # caller using a `|` block scalar would otherwise lose packages silently.
+        read -ra packages <<< "${PACKAGES//$'\n'/ }"
         install "${packages[@]}"
