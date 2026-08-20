@@ -1078,7 +1078,6 @@
     "iladiag": "int (char *)",
     "iladlc": "int (int *, int *, __pyx_t_5scipy_6linalg_13cython_lapack_d *, int *)",
     "iladlr": "int (int *, int *, __pyx_t_5scipy_6linalg_13cython_lapack_d *, int *)",
-    "ilaenv2stage": "int (int *, char *, char *, int *, int *, int *, int *)",
     "ilaprec": "int (char *)",
     "ilaslc": "int (int *, int *, __pyx_t_5scipy_6linalg_13cython_lapack_s *, int *)",
     "ilaslr": "int (int *, int *, __pyx_t_5scipy_6linalg_13cython_lapack_s *, int *)",
