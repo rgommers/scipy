@@ -50,7 +50,10 @@ Non-Python build requirements are:
 - ``pkg-config``
 
 Minimum versions of common compilers are enforced in the top-level
-``meson.build`` file. The minimum LAPACK version is currently 3.9.1.
+``meson.build`` file. The minimum LAPACK version is currently 3.9.1; that one
+is not enforced at configure time, because not every LAPACK provider reports a
+usable version. Building against an older LAPACK will instead fail at link
+time, with a long list of undefined symbols.
 More detailed information on these build dependencies can be found in
 :ref:`toolchain-roadmap`.
 

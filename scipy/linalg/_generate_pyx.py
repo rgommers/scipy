@@ -162,9 +162,11 @@ Usable from Cython via::
     cimport scipy.linalg.cython_lapack
 
 This module provides Cython-level wrappers for all primary routines included
-in LAPACK 3.4.0 except for ``zcgesv`` since its interface is not consistent
-from LAPACK 3.4.0 to 3.6.0. It also provides some of the
-fixed-api auxiliary routines.
+in LAPACK 3.9.1, the oldest version SciPy supports. It also provides most of
+the fixed-api auxiliary routines. Routines that were added after 3.9.1 are not
+wrapped, and neither are the few routines taking assumed-length Fortran
+character arguments (such as ``ilaenv``), since those cannot be called through
+a C interface.
 
 These wrappers do not check for alignment of arrays.
 Alignment should be checked before these wrappers are used.

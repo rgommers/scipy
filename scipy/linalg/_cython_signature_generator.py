@@ -10,7 +10,18 @@ To generate the LAPACK wrapper signatures call:
 python _cython_signature_generator.py lapack <lapack_src_directory> <out_file>
 
 This script expects to be run on the source directory for
-the oldest supported version of LAPACK (currently 3.4.0).
+the oldest supported version of LAPACK (currently 3.9.1).
+
+The generated signatures must be valid for every supported LAPACK version, so
+they are the intersection over those versions: routines that only exist in
+newer LAPACK are picked up automatically by running against the oldest one, and
+routines that were later removed have to be excluded by hand (see
+``lapack_exclusions``).  Argument names follow the oldest supported version as
+well, since they are part of the public Cython API and renaming them breaks
+downstream code that passes arguments by keyword.
+
+Note that f2py's ``crackfortran`` needs the ``charset_normalizer`` package to
+read the handful of LAPACK sources that contain non-ASCII bytes.
 """
 
 import glob
