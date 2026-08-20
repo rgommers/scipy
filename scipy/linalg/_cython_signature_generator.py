@@ -93,8 +93,7 @@ d dznrm2(int *n, z *x, int *incx)
 s scnrm2(int *n, c *x, int *incx)
 void srotg(s *sa, s *sb, s *c, s *s)
 void zdrot(int *n, z *cx, int *incx, z *cy, int *incy, d *c, d *s)
-void zrotg(z *ca, z *cb, d *c, z *s)
-'''
+void zrotg(z *ca, z *cb, d *c, z *s)'''
 
 lapack_manual_wrappers = '''void cgees(char *jobvs, char *sort, cselect1 *select, int *n, c *a, int *lda, int *sdim, c *w, c *vs, int *ldvs, c *work, int *lwork, s *rwork, bint *bwork, int *info)
 void cgeesx(char *jobvs, char *sort, cselect1 *select, char *sense, int *n, c *a, int *lda, int *sdim, c *w, c *vs, int *ldvs, s *rconde, s *rcondv, c *work, int *lwork, s *rwork, bint *bwork, int *info)
@@ -131,7 +130,8 @@ void zlassq(int *n, z *x, int *incx, d *scale, d *sumsq)'''
 
 # Exclude scabs and sisnan since they aren't currently included
 # in the scipy-specific ABI wrappers.
-blas_exclusions = ['scabs1', 'xerbla']
+# xerbla and xerbla_array are excluded because they take Fortran strings.
+blas_exclusions = ['scabs1', 'xerbla', 'xerbla_array']
 
 # Exclude routines with string arguments to avoid
 # compatibility woes with different standards for string arguments.
