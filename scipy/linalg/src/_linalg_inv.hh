@@ -276,17 +276,21 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
      * Therefore, if `overwrite_a = True`, we skip the copy-and-transpose steps above,
      * and `ret_data` will simply contain the result from the LAPACK call.
      *
+     * In the `overwrite_a=True` case we additionally reserve `n` elements for
+     * `diag_save`; see the `St::POS_DEF` branch below for what it is for.
+     *
      */
-    CBLAS_INT buf_size = overwrite_a ? lwork : 2*n*n + lwork;
+    CBLAS_INT buf_size = overwrite_a ? lwork + (CBLAS_INT)n : 2*n*n + lwork;
 
     T* buffer = (T *)PyMem_RawMalloc(buf_size*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
 
-    T *data=NULL, *scratch=NULL, *work=NULL;
+    T *data=NULL, *scratch=NULL, *work=NULL, *diag_save=NULL;
     if (overwrite_a) {
         // work in-place
         data = ret_data;
         work = &buffer[0];
+        diag_save = &buffer[lwork];
     }
     else {
         // Chop buffer into parts, one for data and one for work
@@ -368,13 +372,8 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                 if constexpr (!detail::type_traits<T>::is_complex) {
                     // Real: is_symm and is_herm are always equal
                     if (is_symm) {
-                        /*
-                         * If working on a copy (overwrite_a is False):
-                         *    try Cholesky first, fall back to sytrf if it fails
-                         * If working in-place, do the inversion in one go,
-                         *    (if Cholesky failed, it already destroyed the input)
-                         */
-                        slice_structure = overwrite_a ? St::SYM : St::POS_DEF ;
+                        // try Cholesky first, fall back to sytrf if it fails
+                        slice_structure = St::POS_DEF;
                     }
                     else {
                         slice_structure = St::GENERAL;
@@ -388,7 +387,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                     else if (is_herm) {
                         // Hermitian (may also be symmetric if entries are real)
                         // try Cholesky first, fall back to hetrf if it fails
-                        slice_structure = overwrite_a ? St::HER : St::POS_DEF ;
+                        slice_structure = St::POS_DEF;
                     }
                     else {
                         // is_symm && !is_herm: complex symmetric, not hermitian
@@ -425,6 +424,13 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
             }
             case St::POS_DEF:
             {
+                if (overwrite_a && posdef_fallback) {
+                    // potrf overwrites the `uplo` triangle, diagonal included, and
+                    // there is no separate copy to restore from when working
+                    // in-place. Stash the diagonal; see the fallback branch below.
+                    for (npy_intp j = 0; j < n; j++) { diag_save[j] = data[j + j*n]; }
+                }
+
                 invert_slice_cholesky(uplo, intn, data, work, irwork, slice_status);
 
                 if ((slice_status.lapack_info == 0) || (!slice_status.is_singular) ) {
@@ -438,8 +444,28 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                 else { // potrf failed
                     if(posdef_fallback) {
                         // restore
-                        copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]);
-                        swap_cf(scratch, data, n, n, n);
+                        if (overwrite_a) {
+                            /*
+                             * potrf only references the `uplo` triangle, and the
+                             * slice was detected to be exactly symmetric/hermitian,
+                             * so the opposite triangle still mirrors the clobbered
+                             * one. Copy it back over, then undo the diagonal --
+                             * mirroring writes that too, and it is its own mirror.
+                             */
+                            char other_uplo = (uplo == 'U') ? 'L' : 'U';
+                            if constexpr (detail::type_traits<T>::is_complex) {
+                                // POS_DEF is only auto-detected for hermitian slices
+                                fill_other_triangle(other_uplo, data, intn);
+                            }
+                            else {
+                                fill_other_triangle_noconj(other_uplo, data, intn);
+                            }
+                            for (npy_intp j = 0; j < n; j++) { data[j + j*n] = diag_save[j]; }
+                        }
+                        else {
+                            copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]);
+                            swap_cf(scratch, data, n, n, n);
+                        }
                         init_status(slice_status, idx, slice_structure);
 
                         // no break: fall back to the symmetric solver

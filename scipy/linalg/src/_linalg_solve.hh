@@ -483,7 +483,8 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     CBLAS_INT buf_size_a = overwrite_a ? 0 : n*n;
     CBLAS_INT buf_size_b = overwrite_b ? 0 : n*nrhs;
     CBLAS_INT buf_size_trcon = 2*n; // // 2*n for tridiag trcon
-    CBLAS_INT buf_size = 2*buf_size_a + buf_size_b + buf_size_trcon + lwork;
+    CBLAS_INT buf_size_diag = overwrite_a ? (CBLAS_INT)n : 0;
+    CBLAS_INT buf_size = 2*buf_size_a + buf_size_b + buf_size_trcon + lwork + buf_size_diag;
 
     T* buffer = (T *)PyMem_RawMalloc(buf_size*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
@@ -491,15 +492,16 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     /*
      * Chop the buffer into parts:
      *
-     *    size_a     size_a    size_b     2n     lwork
-     * |----------|---------|----------|------|---------|
-     * ^          ^         ^          ^      ^
-     * scratch    data      data_b     work2  work
+     *    size_a     size_a    size_b     2n     lwork   size_diag
+     * |----------|---------|----------|------|---------|----------|
+     * ^          ^         ^          ^      ^         ^
+     * scratch    data      data_b     work2  work      diag_save
      *
      * - scratch & data are for A (lhs)
      * - data_b is for b (rhs)
      * - work2 is for the tridiag solver, trcon's work array
      * - work is for all other LAPACK functions
+     * - diag_save is only used when overwrite_a; see the `St::POS_DEF` branch
      *
      */
 
@@ -523,6 +525,11 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
 
     T *work2 = &buffer[2*buf_size_a + buf_size_b]; // 2*n for is for tridiag's trcon; XXX malloc it only if needed?
     T* work = &buffer[2*buf_size_a + buf_size_b + 2*n];
+
+    T *diag_save = NULL;
+    if (overwrite_a) {
+        diag_save = &buffer[2*buf_size_a + buf_size_b + buf_size_trcon + lwork];
+    }
 
     CBLAS_INT* ipiv = (CBLAS_INT *)PyMem_RawMalloc(n*sizeof(CBLAS_INT));
     if (ipiv == NULL) {
@@ -603,14 +610,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
                 if (is_herm || (is_symm && !detail::type_traits<T>::is_complex)) {
                     // either real symmetric or complex hermitian; try Cholesky first,
                     // fall back to sym/her if it fails
-                    if (!overwrite_a) {
-                        slice_structure = St::POS_DEF;
-                    }
-                    else {
-                        // working in-place: cannot try Cholesky, have to use the
-                        // right structure straight away
-                        slice_structure = is_symm ? St::SYM : St::HER;
-                    }
+                    slice_structure = St::POS_DEF;
                 }
                 else if (is_symm && detail::type_traits<T>::is_complex) {
                     // complex symmetric, not hermitian
@@ -655,6 +655,13 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
             }
             case St::POS_DEF:
             {
+                if (overwrite_a && posdef_fallback) {
+                    // potrf overwrites the `uplo` triangle, diagonal included, and
+                    // there is no separate copy to restore from when working
+                    // in-place. Stash the diagonal; see the fallback branch below.
+                    for (npy_intp j = 0; j < n; j++) { diag_save[j] = data[j + j*n]; }
+                }
+
                 solve_slice_cholesky(uplo, intn, int_nrhs, data, data_b, work, irwork, slice_status);
 
                 if ((slice_status.lapack_info == 0) || (!slice_status.is_singular) ) {
@@ -667,8 +674,30 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
                 else { // potrf failed
                     if(posdef_fallback) {
                         // restore
-                        copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]);
-                        swap_cf(scratch, data, n, n, n);
+                        if (overwrite_a) {
+                            /*
+                             * potrf only references the `uplo` triangle, and the
+                             * slice was detected to be exactly symmetric/hermitian,
+                             * so the opposite triangle still mirrors the clobbered
+                             * one. Copy it back over, then undo the diagonal --
+                             * mirroring writes that too, and it is its own mirror.
+                             * (potrf failing means potrs never ran, so `data_b` is
+                             * still intact and needs no restoring.)
+                             */
+                            char other_uplo = (uplo == 'U') ? 'L' : 'U';
+                            if constexpr (detail::type_traits<T>::is_complex) {
+                                // POS_DEF is only auto-detected for hermitian slices
+                                fill_other_triangle(other_uplo, data, intn);
+                            }
+                            else {
+                                fill_other_triangle_noconj(other_uplo, data, intn);
+                            }
+                            for (npy_intp j = 0; j < n; j++) { data[j + j*n] = diag_save[j]; }
+                        }
+                        else {
+                            copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]);
+                            swap_cf(scratch, data, n, n, n);
+                        }
                         init_status(slice_status, idx, slice_structure);
 
                         // no break: fall back to the general solver
