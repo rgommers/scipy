@@ -1385,7 +1385,9 @@ namespace lapack {
             ARRAY_OUT(T, u2, 2, true, ctx.zeros(compute_u2 ? mmp : 0, compute_u2 ? mmp : 0));
             ARRAY_OUT(T, v1t, 2, true, ctx.zeros(compute_v1t ? q : 0, compute_v1t ? q : 0));
             ARRAY_OUT(T, v2t, 2, true, ctx.zeros(compute_v2t ? mmq : 0, compute_v2t ? mmq : 0));
-            ARRAY_HIDDEN(CBLAS_INT, iwork, p + mmp - r);
+            CBLAS_INT iwork_len;
+            if (!work_size(1LL * p + mmp - r, &iwork_len)) { return nullptr; }
+            ARRAY_HIDDEN(CBLAS_INT, iwork, iwork_len);
 
             const char u1c = compute_u1 ? 'Y' : 'N', u2c = compute_u2 ? 'Y' : 'N';
             const char v1c = compute_v1t ? 'Y' : 'N', v2c = compute_v2t ? 'Y' : 'N';
@@ -1495,7 +1497,9 @@ namespace lapack {
             CHECK(lwork >= 7, lwork);
 
             ARRAY_HIDDEN(T, work, lwork);
-            ARRAY_HIDDEN(CBLAS_INT, iwork, std::max<CBLAS_INT>(3, m + 3 * n));
+            CBLAS_INT iwork_len;
+            if (!work_size(std::max(3LL, 1LL * m + 3LL * n), &iwork_len)) { return nullptr; }
+            ARRAY_HIDDEN(CBLAS_INT, iwork, iwork_len);
 
             lapack::gejsv("CEFGAR"[joba], "UFWN"[jobu], "VJWN"[jobv], jobr ? 'R' : 'N',
                           jobt ? 'T' : 'N', jobp ? 'P' : 'N', m, n, a.data<T>(), lda,
