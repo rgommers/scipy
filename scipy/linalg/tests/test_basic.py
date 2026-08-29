@@ -41,6 +41,54 @@ parametrize_overwrite_b_arg = pytest.mark.parametrize(
 )
 
 
+# The structures `solve`/`inv` auto-detect and dispatch on. `posdef` and
+# `hermitian_posdef` take the Cholesky path; `sym_indefinite` and `hermitian`
+# make potrf fail and exercise the fall-back to {sy,he}trf; `complex_sym` never
+# tries Cholesky at all.
+STRUCTURE_KINDS = [
+    "general", "sym_indefinite", "posdef",
+    "hermitian", "hermitian_posdef", "complex_sym",
+]
+
+
+def _structured_matrix(kind, n, complex_dtype):
+    """An `n x n`, well-conditioned matrix with an exactly detectable structure."""
+    rng = np.random.default_rng(1234)
+    real_dtype = np.float32 if complex_dtype == np.complex64 else np.float64
+    m = rng.standard_normal((n, n))
+    k = rng.standard_normal((n, n))
+    # mixed-sign diagonal: keeps the matrix well conditioned while guaranteeing
+    # that it is *not* positive definite, so that potrf fails and we fall back
+    indef = 2*n*np.diag(np.r_[np.ones(n // 2), -np.ones(n - n // 2)])
+
+    if kind == "general":
+        a, dtype = m + n*np.eye(n), real_dtype
+    elif kind == "sym_indefinite":
+        a, dtype = m + m.T + indef, real_dtype
+    elif kind == "posdef":
+        a, dtype = m @ m.T + n*np.eye(n), real_dtype
+    elif kind == "hermitian":
+        a = m + m.T + indef + 1j*(np.triu(k, 1) - np.triu(k, 1).T)
+        dtype = complex_dtype
+    elif kind == "hermitian_posdef":
+        c = m + 1j*k
+        a, dtype = c @ c.conj().T + n*np.eye(n), complex_dtype
+    elif kind == "complex_sym":
+        s = m + 1j*k
+        a, dtype = s + s.T + indef, complex_dtype
+    else:
+        raise ValueError(f"unknown structure {kind!r}")
+
+    a = np.asarray(a, dtype=dtype)
+    # Structure detection in the C code compares with `==`, not a tolerance, so
+    # make the symmetry exact rather than merely up to round-off.
+    if kind in ("sym_indefinite", "posdef", "complex_sym"):
+        a = (a + a.T) / 2
+    elif kind in ("hermitian", "hermitian_posdef"):
+        a = (a + a.conj().T) / 2
+    return a
+
+
 def _eps_cast(dtyp):
     """Get the epsilon for dtype, possibly downcast to BLAS types."""
     dt = dtyp
@@ -1265,15 +1313,52 @@ class TestSolve:
         with pytest.raises(LinAlgError):
             solve(A, b, assume_a="banded")
 
+    @parametrize_overwrite_arg
+    @pytest.mark.parametrize("kind", STRUCTURE_KINDS)
+    @pytest.mark.parametrize("dtype", [np.complex64, np.complex128],
+                             ids=["single", "double"])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_overwrite_a_structures(self, overwrite_kw, kind, dtype, order):
+        # `overwrite_a` must not change which algorithm is used, and hence must
+        # not change the result, for any auto-detected structure. Regression
+        # test for gh-26045: the symmetric/hermitian branch tries Cholesky first
+        # and restores the input if potrf fails, which used to read from a NULL
+        # buffer under `overwrite_a` (segfault), and then to skip Cholesky
+        # altogether (a silent 1.6-4.5x slowdown on positive definite input).
+        n = 6
+        a0 = np.asarray(_structured_matrix(kind, n, dtype), order=order)
+        b = np.asarray(np.arange(1., n + 1), dtype=a0.dtype)
+        a = a0.copy(order=order)
+
+        x = solve(a, b.copy(), **overwrite_kw)
+
+        atol = 1e-4 if a0.dtype.itemsize <= 8 else 1e-10
+        assert_allclose(a0 @ x, b, atol=atol)
+
+        # the result must not merely be close to, but identical to, the
+        # `overwrite_a=False` one: same structure detected, same LAPACK path
+        assert_equal(x, solve(a0.copy(order=order), b.copy()))
+
+        # ... and the input must have been consumed exactly when promised
+        a_inplace = overwrite_kw.get("overwrite_a", False) and order == 'F'
+        assert (a == a0).all() != a_inplace
+
     def test_sym_overwrite(self):
         # regression test for https://github.com/scipy/scipy/issues/26045
         # the issue reported a segfault in `inv` due to a conspiracy between
         # overwrite_a and try-except-Cholesky routine for a symmetric input;
         # The same problem exists for solve---which we test for here.
+        # NB: unlike `inv`, `solve` cannot be tripped by an integer input: it
+        # normalizes the dtype in `_ensure_dtype_cdsz` before
+        # `_normalize_lapack_dtype` gets a chance to set `overwrite_a`.
         a3 = np.asarray([[1, 2, 0], [2, 3, 0], [0, 0, 1]], dtype=float, order='F')
         b3 = np.eye(3, dtype=float, order='F')
 
+        a3_ref = a3.copy()
         soln = solve(a3, b3, overwrite_a=True)
+        # guard against this test silently going vacuous if the gating in
+        # `_basic.solve` ever stops passing `overwrite_a` through to C
+        assert not (a3 == a3_ref).all()
         expected = np.asarray([[-3.,  2., -0.],
                                [ 2., -1.,  0.],
                                [ 0.,  0.,  1.]])
@@ -1791,10 +1876,42 @@ class TestInv:
         with pytest.raises(LinAlgError):
             inv(a, assume_a="diagonal")
 
+    @parametrize_overwrite_arg
+    @pytest.mark.parametrize("kind", STRUCTURE_KINDS)
+    @pytest.mark.parametrize("dtype", [np.complex64, np.complex128],
+                             ids=["single", "double"])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_overwrite_a_structures(self, overwrite_kw, kind, dtype, order):
+        # `overwrite_a` must not change which algorithm is used, and hence must
+        # not change the result, for any auto-detected structure. Regression
+        # test for gh-26045: the symmetric/hermitian branch tries Cholesky first
+        # and restores the input if potrf fails, which used to read from a NULL
+        # buffer under `overwrite_a` (segfault), and then to skip Cholesky
+        # altogether (a silent 1.6x slowdown on positive definite input).
+        n = 6
+        a0 = np.asarray(_structured_matrix(kind, n, dtype), order=order)
+        a = a0.copy(order=order)
+
+        a_inv = inv(a, **overwrite_kw)
+
+        atol = 1e-4 if a0.dtype.itemsize <= 8 else 1e-10
+        assert_allclose(a_inv @ a0, np.eye(n), atol=atol)
+
+        # the result must not merely be close to, but identical to, the
+        # `overwrite_a=False` one: same structure detected, same LAPACK path
+        assert_equal(a_inv, inv(a0.copy(order=order)))
+
+        # ... and the input must have been consumed exactly when promised
+        a_inplace = overwrite_kw.get("overwrite_a", False) and order == 'F'
+        assert np.shares_memory(a, a_inv) == a_inplace
+        assert (a == a0).all() != a_inplace
+
     def test_sym_overwrite_a(self):
         # regression test for https://github.com/scipy/scipy/issues/26045
         # setting overwrite_a makes it work in-place; for symmetric inputs this
         # conflicts with trying Cholesky first.
+        # NB: no explicit `overwrite_a` here -- `_normalize_lapack_dtype` sets it
+        # when it upcasts the integer input, and `astype` keeps the F ordering.
         a3 = np.asarray([[1, 2, 0], [2, 3, 0], [0, 0, 1]], order='F')
         a3inv = inv(a3)
 
