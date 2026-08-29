@@ -690,6 +690,18 @@ class TestEveryRoutine:
                if not getattr(mod, n).__doc__.startswith(n + '(')]
         assert bad == [], f'docstring does not open with its own signature: {bad}'
 
+    # `ilaver` reports the LAPACK version, takes no arguments at all, and ignores
+    # whatever it is handed; the one routine with no argument parsing to exercise.
+    NO_ARGUMENT_ROUTINES = {'ilaver'}
+
+    def test_calling_with_a_bogus_keyword_raises_type_error(self, modname):
+        mod = self._module(modname)
+        for name in _exposed(mod):
+            if name in self.NO_ARGUMENT_ROUTINES:
+                continue
+            with assert_raises(TypeError):
+                getattr(mod, name)(definitely_not_an_argument=1)
+
 
 # --------------------------------------------------------------------------------------
 # Reference counting.

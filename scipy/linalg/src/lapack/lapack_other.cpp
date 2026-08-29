@@ -1992,9 +1992,17 @@ namespace lapack {
         }
 
 
-        /** @brief `ilaver` reports the LAPACK version and has no flavor at all, so it is a
-         *         plain function rather than a template and gets a bare method-table row. */
-        static PyObject *ilaver(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args)) noexcept
+        /**
+         * @brief `ilaver` reports the LAPACK version and has no flavor at all, so it is a plain
+         *        function rather than a template and gets a bare method-table row.
+         *
+         * @note It takes no arguments, but is still declared in the three-argument
+         *       `METH_VARARGS | METH_KEYWORDS` shape every other row uses, because
+         *       `add_wrapped_table` calls them all through one function-pointer type.  Anything
+         *       it is passed is ignored.
+         */
+        static PyObject *ilaver(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args),
+                                PyObject *Py_UNUSED(kwds)) noexcept
         {
             CBLAS_INT major = 0, minor = 0, patch = 0;
             lapack::ilaver(&major, &minor, &patch);
@@ -2094,7 +2102,7 @@ namespace lapack {
             ROW(dlamch, lamch, f64),
             ROW(crot, rot, c64),
             ROW(zrot, rot, c128),
-            {"ilaver", (PyCFunction)ilaver, METH_NOARGS, nullptr},
+            {"ilaver", (PyCFunction)(void (*)())ilaver, METH_VARARGS | METH_KEYWORDS, nullptr},
             {nullptr, nullptr, 0, nullptr},
         };
 
