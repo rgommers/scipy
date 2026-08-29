@@ -529,6 +529,13 @@ class TestArgumentProtocol:
         with assert_raises(TypeError, match=r'takes at most 7 arguments \(8 given\)'):
             ddot(x, y, 3, 0, 1, 0, 1, nope=1)
 
+    def test_error_message_names_the_module_once(self):
+        # The qualified name already carries the module, and must not be repeated.
+        ddot, x, y = self._ddot()
+        with assert_raises(TypeError) as exc:
+            ddot(x)
+        assert exc.value.args[0].count('_fblas') == 1
+
 
 # --------------------------------------------------------------------------------------
 # Scalar coercion: the deliberately permissive ports of f2py's *_from_pyobj.
