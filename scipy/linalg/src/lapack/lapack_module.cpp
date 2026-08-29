@@ -65,6 +65,10 @@ static PyObject *lapackfunc_repr(PyObject *self) {
 
 
 static int lapackfunc_traverse(PyObject *self, visitproc visit, void *arg) {
+    /* A GC-tracked instance of a heap type must visit its type: the type holds the module
+     * (PyType_FromModuleAndSpec), the module holds every wrapper, and each wrapper holds the
+     * type.  Leaving the type unvisited makes that cycle uncollectable and leaks the module. */
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(((LapackFunc *)self)->dict);
     Py_VISIT(((LapackFunc *)self)->doc);
     return 0;
